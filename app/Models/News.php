@@ -88,6 +88,190 @@ final class News
         }
     }
 
+    // --- Admin methods ---
+
+    /** @return array<int, array<string, mixed>> */
+    public function allForAdmin(int $limit = 50, int $offset = 0, ?string $status = null): array
+    {
+        $sql = 'SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL';
+        $params = [];
+
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND n.status = :status';
+            $params['status'] = $status;
+        }
+
+        $sql .= ' ORDER BY n.news_id DESC LIMIT :limit OFFSET :offset';
+        $statement = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $statement->bindValue(':' . $key, $value);
+        }
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $statement->execute();
+
+        return array_map([self::class, 'mapRow'], $statement->fetchAll());
+    }
+
+    public function countForAdmin(?string $status = null): int
+    {
+        $sql = 'SELECT COUNT(*) FROM tbl_news WHERE deleted_at IS NULL';
+        $params = [];
+
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+
+        $statement = $this->db->prepare($sql);
+        $statement->execute($params);
+        return (int) $statement->fetchColumn();
+    }
+
+    /** @param array<string, mixed> $data */
+    public function create(array $data): ?int
+    {
+        $statement = $this->db->prepare(
+            'INSERT INTO tbl_news (news_title, news_content, news_content_short, news_date, photo, banner, category_id, comment, meta_title, meta_keyword, meta_description, slug, status, published_at, contributor_pewarta, contributor_editor, contributor_redaksi, published) VALUES (:title, :content, :excerpt, :date, :photo, :banner, :category_id, :comment, :meta_title, :meta_keyword, :meta_description, :slug, :status, :published_at, :pewarta, :editor, :redaksi, :published)'
+        );
+
+        $statement->execute([
+            ':title' => $data['news_title'] ?? $data['title'] ?? '',
+            ':content' => $data['news_content'] ?? $data['content'] ?? '',
+            ':excerpt' => $data['news_content_short'] ?? $data['excerpt'] ?? '',
+            ':date' => $data['news_date'] ?? $data['date'] ?? date('Y-m-d'),
+            ':photo' => $data['photo'] ?? '',
+            ':banner' => $data['banner'] ?? '',
+            ':category_id' => (int) ($data['category_id'] ?? 0),
+            ':comment' => $data['comment'] ?? 'On',
+            ':meta_title' => $data['meta_title'] ?? '',
+            ':meta_keyword' => $data['meta_keyword'] ?? '',
+            ':meta_description' => $data['meta_description'] ?? '',
+            ':slug' => $data['slug'] ?? '',
+            ':status' => $data['status'] ?? 'draft',
+            ':published_at' => ($data['status'] ?? '') === 'published' ? ($data['published_at'] ?? date('Y-m-d H:i:s')) : null,
+            ':pewarta' => $data['contributor_pewarta'] ?? '',
+            ':editor' => $data['contributor_editor'] ?? '',
+            ':redaksi' => $data['contributor_redaksi'] ?? '',
+            ':published' => ($data['status'] ?? '') === 'published' ? 1 : 0,
+        ]);
+
+        $id = (int) $this->db->lastInsertId();
+        return $id > 0 ? $id : null;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateNews(int $id, array $data): bool
+    {
+        $allowedFields = [
+            'news_title' => 'news_title',
+            'title' => 'news_title',
+            'news_content' => 'news_content',
+            'content' => 'news_content',
+            'news_content_short' => 'news_content_short',
+            'excerpt' => 'news_content_short',
+            'news_date' => 'news_date',
+            'date' => 'news_date',
+            'photo' => 'photo',
+            'banner' => 'banner',
+            'category_id' => 'category_id',
+            'comment' => 'comment',
+            'meta_title' => 'meta_title',
+            'meta_keyword' => 'meta_keyword',
+            'meta_description' => 'meta_description',
+            'slug' => 'slug',
+            'status' => 'status',
+            'published_at' => 'published_at',
+            'contributor_pewarta' => 'contributor_pewarta',
+            'contributor_editor' => 'contributor_editor',
+            'contributor_redaksi' => 'contributor_redaksi',
+        ];
+
+        $sets = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            $column = $allowedFields[$key] ?? null;
+            if ($column === null) {
+                continue;
+            }
+            $paramKey = ':' . str_replace('.', '_', $column);
+            $sets[] = "{$column} = {$paramKey}";
+            $params[$paramKey] = $value;
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        // Auto-set published flag based on status
+        if (isset($data['status'])) {
+            $sets[] = 'published = :published_flag';
+            $params[':published_flag'] = $data['status'] === 'published' ? 1 : 0;
+            if ($data['status'] === 'published' && !isset($data['published_at'])) {
+                $sets[] = 'published_at = COALESCE(published_at, NOW())';
+            }
+        }
+
+        $sql = 'UPDATE tbl_news SET ' . implode(', ', $sets) . ' WHERE news_id = :id AND deleted_at IS NULL';
+        $statement = $this->db->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->rowCount() > 0;
+    }
+
+    public function softDelete(int $id): bool
+    {
+        try {
+            $statement = $this->db->prepare('UPDATE tbl_news SET deleted_at = NOW(), published = 0 WHERE news_id = :id AND deleted_at IS NULL');
+            $statement->execute([':id' => $id]);
+            return $statement->rowCount() > 0;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function categories(): array
+    {
+        try {
+            $statement = $this->db->query('SELECT category_id, category_name FROM tbl_category ORDER BY category_name');
+            return $statement->fetchAll();
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    public function generateUniqueSlug(string $title, ?int $excludeId = null): string
+    {
+        $base = Slugger::slugify($title);
+        $slug = $base;
+        $suffix = 1;
+
+        while (true) {
+            $sql = 'SELECT news_id FROM tbl_news WHERE slug = :slug AND deleted_at IS NULL';
+            $params = [':slug' => $slug];
+            if ($excludeId !== null) {
+                $sql .= ' AND news_id <> :exclude';
+                $params[':exclude'] = $excludeId;
+            }
+            $sql .= ' LIMIT 1';
+            $statement = $this->db->prepare($sql);
+            $statement->execute($params);
+            if (!$statement->fetch()) {
+                break;
+            }
+            $slug = $base . '-' . $suffix;
+            $suffix++;
+            if ($suffix > 100) {
+                $slug = $base . '-' . bin2hex(random_bytes(4));
+                break;
+            }
+        }
+
+        return $slug;
+    }
+
     /** @param array<string, mixed> $row @return array<string, mixed> */
     public static function mapRow(array $row): array
     {

@@ -130,23 +130,35 @@
     bindDeleteButtons('Kategori akan dihapus dari daftar simulasi.');
   }
 
-  function renderNewsList() {
-    const body = renderShell('View News', 'Daftar berita tampil lebih bersih. Aksi hapus memakai custom confirmation modal.', `<a href="${adminUrl('news-add')}" class="btn btn-primary">Add News</a>`);
+  async function renderNewsList() {
+    const body = renderShell('View News', 'Daftar berita dari database. Aksi hapus memakai custom confirmation modal.', `<a href="${adminUrl('news-add')}" class="btn btn-primary">Add News</a>`);
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data berita...</div>';
+
+    let items = news; // fallback to static data
+    try {
+      const res = await fetch('/admin/news/list', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = json.data || [];
+      }
+    } catch (e) { /* use fallback */ }
+
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         ${renderSearchToolbar('News')}
         <div class="admin-responsive-table mt-5">
           <table class="cms-table">
-            <thead><tr><th>SL</th><th>News Title</th><th>News Short Content</th><th>Photo</th><th>Category</th><th>Action</th></tr></thead>
-            <tbody>${news.map((item, index) => `
+            <thead><tr><th>SL</th><th>News Title</th><th>News Short Content</th><th>Photo</th><th>Category</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>${items.map((item, index) => `
               <tr>
                 <td>${index + 1}</td>
-                <td><strong>${escape(item.title)}</strong><p class="mt-1 text-xs text-neutral-500">${item.date}</p></td>
-                <td><p class="news-caption-cell">${escape(item.excerpt)}</p></td>
-                <td><img src="${item.image}" class="table-thumb" alt="${escape(item.title)}" /></td>
-                <td><span class="cms-pill">${item.category}</span></td>
+                <td><strong>${escape(item.title || item.news_title || '')}</strong><p class="mt-1 text-xs text-neutral-500">${item.date || item.published_at || ''}</p></td>
+                <td><p class="news-caption-cell">${escape(item.excerpt || item.news_content_short || '')}</p></td>
+                <td>${item.photo ? `<img src="${item.photo.startsWith('http') || item.photo.startsWith('/') ? item.photo : 'https://genbijambi.com/public/uploads/' + item.photo}" class="table-thumb" alt="${escape(item.title || '')}" />` : '<span class="text-neutral-400">-</span>'}</td>
+                <td><span class="cms-pill">${escape(item.category || item.category_name || '')}</span></td>
+                <td><span class="cms-pill ${item.status === 'published' ? 'cms-pill-green' : item.status === 'draft' ? 'cms-pill-yellow' : ''}">${item.status || 'published'}</span></td>
                 <td>
-                  <div class="flex gap-2"><a href="${adminUrl('news-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-delete>Delete</button></div>
+                  <div class="flex gap-2"><a href="${adminUrl('news-edit')}?id=${item.id || item.news_id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-delete data-news-id="${item.id || item.news_id}">Delete</button></div>
                 </td>
               </tr>
             `).join('')}</tbody>
@@ -154,21 +166,99 @@
         </div>
       </section>
     `;
-    bindDeleteButtons('Berita akan dihapus dari daftar simulasi.');
+    bindNewsDeleteButtons();
   }
 
-  function renderNewsEditor(isEdit) {
-    const id = Number(new URLSearchParams(location.search).get('id')) || 100;
-    const item = isEdit ? (news.find((entry) => entry.id === id) || news[0]) : {
+  function bindNewsDeleteButtons() {
+    document.querySelectorAll('[data-delete][data-news-id]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.newsId;
+        const ok = await Admin.showConfirm({ title: 'Hapus berita?', message: 'Berita akan dihapus (soft delete). Data masih bisa dipulihkan.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(`/admin/news/${id}/delete`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Berita berhasil dihapus.');
+            button.closest('tr')?.remove();
+          } else {
+            Admin.showToast('Gagal menghapus berita.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal menghapus berita.');
+        }
+      });
+    });
+  }
+
+  async function renderNewsEditor(isEdit) {
+    const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+    let item = {
       title: '',
       excerpt: '',
       body: [''],
-      date: '2026-05-05',
+      date: new Date().toISOString().slice(0, 10),
       category: 'BANK INDONESIA',
+      category_id: 4,
       image: '',
       author: 'Redaksi GenBI Jambi',
-      editor: 'Editor GenBI Jambi'
+      editor: 'Editor GenBI Jambi',
+      content: '',
+      meta_title: '',
+      meta_keyword: '',
+      meta_description: '',
+      contributor_pewarta: '',
+      contributor_editor: '',
     };
+
+    // Load from backend if editing
+    if (isEdit && id > 0) {
+      try {
+        const res = await fetch(`/admin/news/${id}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          const d = json.data || {};
+          item = {
+            ...item,
+            id: d.id || d.news_id,
+            title: d.title || d.news_title || '',
+            excerpt: d.excerpt || d.news_content_short || '',
+            content: d.content || d.news_content || '',
+            date: (d.date || d.published_at || '').slice(0, 10),
+            category: d.category || d.category_name || '',
+            category_id: d.category_id || 0,
+            image: d.photo || d.image || '',
+            author: d.contributor_pewarta || d.author || '',
+            editor: d.contributor_editor || d.editor || '',
+            meta_title: d.meta_title || '',
+            meta_keyword: d.meta_keyword || '',
+            meta_description: d.meta_description || '',
+            contributor_pewarta: d.contributor_pewarta || '',
+            contributor_editor: d.contributor_editor || '',
+          };
+        }
+      } catch (e) {
+        // Fallback to static data
+        const staticItem = news.find((entry) => entry.id === id) || news[0];
+        if (staticItem) item = { ...item, ...staticItem };
+      }
+    }
+
+    // Load categories from backend
+    let backendCategories = categories;
+    try {
+      const catRes = await fetch('/admin/news/categories', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (catRes.ok) {
+        const catJson = await catRes.json();
+        if (catJson.data && catJson.data.length > 0) {
+          backendCategories = catJson.data.map(c => ({ id: c.category_id, name: c.category_name }));
+        }
+      }
+    } catch (e) { /* use fallback */ }
     const body = renderShell(
       isEdit ? 'Edit News' : 'Add News',
       'Ruang tulis sekarang memakai Editor.js. Judul, paragraf, quote, list, dan gambar disusun sebagai blok seperti editor Medium.',
@@ -211,7 +301,7 @@
           <section class="config-card medium-config-card">
             <h2>Publishing</h2>
             ${control('News Publish Date', `<input class="config-input" type="date" value="${dateInput(item.date)}" />`)}
-            ${control('Category', `<select class="config-input">${categories.map((cat) => `<option ${cat.name === item.category ? 'selected' : ''}>${cat.name}</option>`).join('')}</select>`)}
+            ${control('Category', `<select class="config-input" id="news-category-select">${backendCategories.map((cat) => `<option value="${cat.id}" ${cat.id === item.category_id || cat.name === item.category ? 'selected' : ''}>${cat.name}</option>`).join('')}</select>`)}
             ${control('Comment', '<select class="config-input"><option>On</option><option>Off</option></select>')}
           </section>
           <section class="config-card medium-config-card">
@@ -221,10 +311,19 @@
             ${control('Banner', '<input class="config-input" type="file" />')}
           </section>
           <section class="config-card medium-config-card">
+            <h2>Contributors</h2>
+            ${control('Pewarta', `<input class="config-input" id="news-pewarta" value="${escape(item.contributor_pewarta || item.author || '')}" />`)}
+            ${control('Editor', `<input class="config-input" id="news-editor-name" value="${escape(item.contributor_editor || item.editor || '')}" />`)}
+          </section>
+          <section class="config-card medium-config-card">
             <h2>SEO Information</h2>
-            ${control('Meta Title', `<input class="config-input" value="${escape(item.title)}" />`)}
-            ${control('Meta Keywords', `<textarea class="config-input" rows="4">${escape(`${item.category}, GenBI Jambi, berita Jambi`)}</textarea>`)}
-            ${control('Meta Description', `<textarea class="config-input" rows="5">${escape(item.excerpt)}</textarea>`)}
+            ${control('Meta Title', `<input class="config-input" id="news-meta-title" value="${escape(item.meta_title || item.title)}" />`)}
+            ${control('Meta Keywords', `<textarea class="config-input" id="news-meta-keyword" rows="4">${escape(item.meta_keyword || `${item.category}, GenBI Jambi, berita Jambi`)}</textarea>`)}
+            ${control('Meta Description', `<textarea class="config-input" id="news-meta-desc" rows="5">${escape(item.meta_description || item.excerpt)}</textarea>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Status</h2>
+            ${control('Publish Status', `<select class="config-input" id="news-status"><option value="draft" ${(item.status || 'draft') === 'draft' ? 'selected' : ''}>Draft</option><option value="published" ${item.status === 'published' ? 'selected' : ''}>Published</option><option value="archived" ${item.status === 'archived' ? 'selected' : ''}>Archived</option></select>`)}
           </section>
           <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update News' : 'Submit News'}</button>
         </aside>
@@ -236,15 +335,77 @@
 
     document.querySelector('#news-editor-form').addEventListener('submit', async (event) => {
       event.preventDefault();
+      let editorContent = '';
       if (editor?.save) {
-        try { await editor.save(); } catch (error) { console.warn('Editor save skipped in preview mode', error); }
+        try {
+          const outputData = await editor.save();
+          // Convert Editor.js blocks to HTML
+          editorContent = outputData.blocks.map(block => {
+            if (block.type === 'paragraph') return `<p>${block.data.text}</p>`;
+            if (block.type === 'header') return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
+            if (block.type === 'list') {
+              const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
+              return `<${tag}>${block.data.items.map(i => `<li>${i}</li>`).join('')}</${tag}>`;
+            }
+            if (block.type === 'quote') return `<blockquote><p>${block.data.text}</p>${block.data.caption ? `<cite>${block.data.caption}</cite>` : ''}</blockquote>`;
+            if (block.type === 'image') return `<figure><img src="${block.data.file?.url || block.data.url || ''}" alt="${block.data.caption || ''}" />${block.data.caption ? `<figcaption>${block.data.caption}</figcaption>` : ''}</figure>`;
+            return `<p>${block.data.text || ''}</p>`;
+          }).join('\n');
+        } catch (error) {
+          // Fallback: get content from fallback editor
+          const fallbackEl = document.querySelector('#editor-fallback article');
+          if (fallbackEl) editorContent = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#editor-fallback article');
+        if (fallbackEl) editorContent = fallbackEl.innerHTML;
       }
+
       const ok = await Admin.showConfirm({
         title: isEdit ? 'Update berita?' : 'Submit berita?',
-        message: 'Konten editor dan konfigurasi akan disimpan pada mode simulasi frontend.',
+        message: isEdit ? 'Berita akan diperbarui di database.' : 'Berita baru akan disimpan ke database.',
         confirmText: isEdit ? 'Update' : 'Submit'
       });
-      if (ok) Admin.showToast(isEdit ? 'Berita diperbarui pada mode simulasi.' : 'Berita ditambahkan pada mode simulasi.');
+      if (!ok) return;
+
+      // Gather form data
+      const payload = {
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: editorContent || item.content || '',
+        date: document.querySelector('[type="date"]')?.value || '',
+        category_id: Number(document.querySelector('#news-category-select')?.value) || 0,
+        status: document.querySelector('#news-status')?.value || 'draft',
+        contributor_pewarta: document.querySelector('#news-pewarta')?.value?.trim() || '',
+        contributor_editor: document.querySelector('#news-editor-name')?.value?.trim() || '',
+        meta_title: document.querySelector('#news-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
+      };
+
+      const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const url = isEdit ? `/admin/news/${id}/update` : '/admin/news';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
+            // Redirect to edit page for the new article
+            setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+      }
     });
   }
 
@@ -271,7 +432,23 @@
         class: window.ImageTool,
         config: {
           uploader: {
-            uploadByFile(file) {
+            async uploadByFile(file) {
+              const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+              const formData = new FormData();
+              formData.append('image', file);
+              try {
+                const res = await fetch('/admin/news/upload', {
+                  method: 'POST',
+                  headers: { 'X-CSRF-TOKEN': token },
+                  credentials: 'same-origin',
+                  body: formData
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  return { success: 1, file: { url: json.data.url } };
+                }
+              } catch (e) { /* fallback below */ }
+              // Fallback to data URL if upload fails
               return readFileAsDataUrl(file).then((url) => ({ success: 1, file: { url } }));
             },
             uploadByUrl(url) {

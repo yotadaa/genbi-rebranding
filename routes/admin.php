@@ -15,9 +15,19 @@ $router->group([$csrfMiddleware], function ($router) use ($authController) {
 });
 
 // Protected admin routes (require authentication + CSRF on POST)
-$router->group([$authMiddleware, $csrfMiddleware], function ($router) use ($adminPageController, $adminNewsCommentController, $adminPrestasiController, $adminPrestasiTokenController, ) {
+$router->group([$authMiddleware, $csrfMiddleware], function ($router) use ($adminPageController, $adminNewsController, $adminNewsCommentController, $adminPrestasiController, $adminPrestasiTokenController, ) {
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
     $router->get('/admin/dashboard', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
+    // News CMS
+    $router->get('/admin/news/list', static fn(Request $request, Response $response) => $adminNewsController->index($request, $response));
+    $router->get('/admin/news/categories', static fn(Request $request, Response $response) => $adminNewsController->categories($request, $response));
+    $router->get('/admin/news/{id}', static fn(Request $request, Response $response, array $params) => $adminNewsController->show($request, $response, $params));
+    $router->post('/admin/news', static fn(Request $request, Response $response) => $adminNewsController->store($request, $response));
+    $router->post('/admin/news/{id}/update', static fn(Request $request, Response $response, array $params) => $adminNewsController->update($request, $response, $params));
+    $router->post('/admin/news/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminNewsController->delete($request, $response, $params));
+    $router->post('/admin/news/upload', static fn(Request $request, Response $response) => $adminNewsController->upload($request, $response));
+
+    // News Comments
     $router->get('/admin/news-comments', static fn(Request $request, Response $response) => $adminNewsCommentController->index($request, $response));
     $router->post('/admin/news-comments/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminNewsCommentController->action($request, $response, $params, 'approve'));
     $router->post('/admin/news-comments/{id}/reject', static fn(Request $request, Response $response, array $params) => $adminNewsCommentController->action($request, $response, $params, 'reject'));

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
@@ -77,6 +78,7 @@ $authController = new AuthController($authService);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
 $adminPageController = new AdminPageController($renderer);
+$adminNewsController = new AdminNewsController($newsModel);
 $adminNewsCommentController = new NewsCommentController($commentModel);
 $adminPrestasiController = new AdminPrestasiController($prestasiModel);
 $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
