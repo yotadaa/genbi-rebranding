@@ -6,18 +6,20 @@ use App\Services\SeoConfig;
 use App\Services\SeoService;
 
 require dirname(__DIR__, 2) . '/bootstrap/app.php';
+App\Core\Env::load(__DIR__ . '/fixtures/test.env');
 
 // --- absoluteUrl ---
-assert(SeoService::absoluteUrl('/news/test') === 'https://genbijambi.com/news/test');
+assert(SeoService::absoluteUrl('/news/test') === 'http://example.test/news/test');
 assert(SeoService::absoluteUrl('https://example.com/img.jpg') === 'https://example.com/img.jpg');
-assert(SeoService::absoluteUrl('/') === 'https://genbijambi.com/');
+assert(SeoService::absoluteUrl('/') === 'http://example.test/');
 
 // --- imageUrl ---
-assert(SeoService::imageUrl(null) === 'https://genbijambi.com/assets/images/default-og-genbi.jpg');
-assert(SeoService::imageUrl('') === 'https://genbijambi.com/assets/images/default-og-genbi.jpg');
+assert(SeoService::imageUrl(null) === 'http://example.test/assets/images/default-og-genbi.jpg');
+assert(SeoService::imageUrl('') === 'http://example.test/assets/images/default-og-genbi.jpg');
 assert(SeoService::imageUrl('https://cdn.example.com/photo.jpg') === 'https://cdn.example.com/photo.jpg');
-assert(SeoService::imageUrl('/uploads/news/photo.jpg') === 'https://genbijambi.com/uploads/news/photo.jpg');
-assert(SeoService::imageUrl('news/photo.jpg') === 'https://genbijambi.com/uploads/news/photo.jpg');
+assert(SeoService::imageUrl('/uploads/news/photo.jpg') === 'http://example.test/uploads/news/photo.jpg');
+assert(SeoService::imageUrl('/public/uploads/news/photo.jpg') === 'http://example.test/uploads/news/photo.jpg');
+assert(SeoService::imageUrl('news/photo.jpg') === 'http://example.test/uploads/news/photo.jpg');
 
 // --- cleanDescription ---
 assert(SeoService::cleanDescription(null) === SeoConfig::DEFAULT_DESCRIPTION);
@@ -39,7 +41,7 @@ assert(str_contains($iso, 'T'));
 // --- forPage ---
 $home = SeoService::forPage('index.html');
 assert($home['title'] === 'GenBI Provinsi Jambi | Generasi Baru Indonesia');
-assert($home['canonical'] === 'https://genbijambi.com/');
+assert($home['canonical'] === 'http://example.test/');
 assert($home['og_type'] === 'website');
 assert(str_contains($home['og_image'], 'default-og-genbi'));
 assert($home['robots'] === 'index, follow');
@@ -59,7 +61,7 @@ $news = SeoService::forNews([
 ]);
 assert(str_contains($news['title'], 'Talkshow Siginjai Fest 2026'));
 assert(str_contains($news['title'], SeoConfig::SITE_NAME));
-assert($news['canonical'] === 'https://genbijambi.com/news/talkshow-siginjai-fest-2026-100');
+assert($news['canonical'] === 'http://example.test/news/talkshow-siginjai-fest-2026-100');
 assert($news['og_type'] === 'article');
 assert(str_contains($news['og_image'], 'talkshow.jpg'));
 assert($news['og_article_section'] === 'BANK INDONESIA');
@@ -90,8 +92,8 @@ $prestasi = SeoService::forPrestasi([
     'image' => '/uploads/prestasi/kti.jpg',
 ]);
 assert(str_contains($prestasi['title'], 'Juara KTI Nasional'));
-assert($prestasi['canonical'] === 'https://genbijambi.com/prestasi/juara-kti-nasional-5');
-assert($prestasi['og_image'] === 'https://genbijambi.com/uploads/prestasi/kti.jpg');
+assert($prestasi['canonical'] === 'http://example.test/prestasi/juara-kti-nasional-5');
+assert($prestasi['og_image'] === 'http://example.test/uploads/prestasi/kti.jpg');
 
 // --- renderMetaBlock ---
 $block = SeoService::renderMetaBlock($home);

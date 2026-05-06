@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Config\App;
+
 final class SeoConfig
 {
     public const SITE_NAME = 'GenBI Provinsi Jambi';
-    public const BASE_URL = 'https://genbijambi.com';
+    public const BASE_URL = App::DEFAULT_URL;
     public const DEFAULT_OG_IMAGE = '/assets/images/default-og-genbi.jpg';
     public const DEFAULT_DESCRIPTION = 'Profil, kegiatan, berita, prestasi, dan agenda GenBI Provinsi Jambi.';
 

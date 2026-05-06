@@ -6,6 +6,7 @@ use App\Core\Slugger;
 use App\Models\News;
 
 require dirname(__DIR__, 2) . '/bootstrap/app.php';
+App\Core\Env::load(__DIR__ . '/fixtures/test.env');
 
 $row = News::mapRow([
     'news_id' => 94,
@@ -37,6 +38,13 @@ assert($row['category'] === 'BANK INDONESIA');
 assert($row['author'] === 'Pewarta');
 assert($row['editor'] === 'Editor');
 assert($row['meta_description'] === 'Meta description');
+
+$relativeImageRow = News::mapRow([
+    'news_id' => 98,
+    'news_title' => 'Talkshow Ekonomi Syariah Siginjai Fest',
+    'photo' => 'news-98.jpeg',
+]);
+assert($relativeImageRow['photo'] === 'http://example.test/uploads/news-98.jpeg');
 
 assert(Slugger::slugify('Talkshow Siginjai Fest 2026!') === 'talkshow-siginjai-fest-2026');
 

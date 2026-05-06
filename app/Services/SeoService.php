@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Config\App;
+
 final class SeoService
 {
     public static function forPage(string $file): array
@@ -106,7 +108,7 @@ final class SeoService
             return $path;
         }
 
-        return rtrim(SeoConfig::BASE_URL, '/') . '/' . ltrim($path, '/');
+        return rtrim(App::config()['url'], '/') . '/' . ltrim($path, '/');
     }
 
     public static function imageUrl(?string $path): string
@@ -114,6 +116,8 @@ final class SeoService
         if (empty($path)) {
             return self::absoluteUrl(SeoConfig::DEFAULT_OG_IMAGE);
         }
+
+        $path = str_replace('/public/uploads/', '/uploads/', $path);
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;

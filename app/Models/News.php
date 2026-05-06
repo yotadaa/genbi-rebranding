@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Config\App;
 use App\Core\Slugger;
 use PDO;
 use Throwable;
@@ -345,10 +346,10 @@ final class News
         if ($filename === '') {
             return '';
         }
-        // Already a full URL or absolute path
-        if (str_starts_with($filename, 'http') || str_starts_with($filename, '/')) {
+        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://') || str_starts_with($filename, '/')) {
             return $filename;
         }
-        return 'https://genbijambi.com/public/uploads/' . $filename;
+
+        return rtrim(App::config()['url'], '/') . '/uploads/' . ltrim($filename, '/');
     }
 }

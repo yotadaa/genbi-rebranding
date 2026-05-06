@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Config\App;
+
 final class StructuredData
 {
-    private const BASE_URL = 'https://genbijambi.com';
-
     /** Organization schema for site-wide injection. */
     public static function organization(): string
     {
+        $baseUrl = self::baseUrl();
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             'name' => 'GenBI Provinsi Jambi',
             'alternateName' => 'Generasi Baru Indonesia Provinsi Jambi',
-            'url' => self::BASE_URL,
-            'logo' => self::BASE_URL . '/assets/images/logo-genbi.png',
+            'url' => $baseUrl,
+            'logo' => $baseUrl . '/assets/images/logo-genbi.png',
             'description' => 'Komunitas penerima beasiswa Bank Indonesia di Provinsi Jambi.',
             'address' => [
                 '@type' => 'PostalAddress',
@@ -42,11 +43,12 @@ final class StructuredData
 
         $list = [];
         foreach ($items as $i => $item) {
+            $baseUrl = self::baseUrl();
             $list[] = [
                 '@type' => 'ListItem',
                 'position' => $i + 1,
                 'name' => $item['name'],
-                'item' => str_starts_with($item['url'], 'http') ? $item['url'] : self::BASE_URL . $item['url'],
+                'item' => str_starts_with($item['url'], 'http') ? $item['url'] : $baseUrl . $item['url'],
             ];
         }
 
@@ -63,6 +65,7 @@ final class StructuredData
     public static function newsArticle(array $news): string
     {
         $title = $news['title'] ?? $news['news_title'] ?? '';
+        $baseUrl = self::baseUrl();
         $slug = $news['slug'] ?? '';
         $description = $news['excerpt'] ?? $news['news_content_short'] ?? $news['meta_description'] ?? '';
         $image = $news['image'] ?? $news['photo'] ?? $news['banner'] ?? '';
@@ -74,7 +77,7 @@ final class StructuredData
             '@type' => 'NewsArticle',
             'headline' => mb_substr($title, 0, 110),
             'description' => mb_substr(strip_tags($description), 0, 200),
-            'url' => self::BASE_URL . '/news/' . $slug,
+            'url' => $baseUrl . '/news/' . $slug,
             'datePublished' => self::isoDate($published),
             'author' => [
                 '@type' => 'Person',
@@ -85,13 +88,14 @@ final class StructuredData
                 'name' => 'GenBI Provinsi Jambi',
                 'logo' => [
                     '@type' => 'ImageObject',
-                    'url' => self::BASE_URL . '/assets/images/logo-genbi.png',
+                    'url' => $baseUrl . '/assets/images/logo-genbi.png',
                 ],
             ],
         ];
 
         if ($image !== '') {
-            $data['image'] = str_starts_with($image, 'http') ? $image : self::BASE_URL . $image;
+            $image = str_replace('/public/uploads/', '/uploads/', $image);
+            $data['image'] = str_starts_with($image, 'http') ? $image : $baseUrl . $image;
         }
 
         return self::script($data);
@@ -101,6 +105,7 @@ final class StructuredData
     public static function event(array $event): string
     {
         $title = $event['title'] ?? $event['event_title'] ?? '';
+        $baseUrl = self::baseUrl();
         $description = $event['excerpt'] ?? $event['event_content_short'] ?? '';
         $startDate = $event['start_date'] ?? $event['event_start_date'] ?? '';
         $endDate = $event['end_date'] ?? $event['event_end_date'] ?? '';
@@ -113,12 +118,12 @@ final class StructuredData
             '@type' => 'Event',
             'name' => $title,
             'description' => mb_substr(strip_tags($description), 0, 200),
-            'url' => self::BASE_URL . '/event/' . $id,
+            'url' => $baseUrl . '/event/' . $id,
             'startDate' => self::isoDate($startDate),
             'organizer' => [
                 '@type' => 'Organization',
                 'name' => 'GenBI Provinsi Jambi',
-                'url' => self::BASE_URL,
+                'url' => $baseUrl,
             ],
         ];
 
@@ -135,7 +140,8 @@ final class StructuredData
         }
 
         if ($image !== '') {
-            $data['image'] = str_starts_with($image, 'http') ? $image : self::BASE_URL . $image;
+            $image = str_replace('/public/uploads/', '/uploads/', $image);
+            $data['image'] = str_starts_with($image, 'http') ? $image : $baseUrl . $image;
         }
 
         return self::script($data);
@@ -153,5 +159,10 @@ final class StructuredData
     private static function script(array $data): string
     {
         return '<script type="application/ld+json">' . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+    }
+
+    private static function baseUrl(): string
+    {
+        return rtrim(App::config()['url'], '/');
     }
 }

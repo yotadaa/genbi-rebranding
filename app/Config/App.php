@@ -8,12 +8,14 @@ use App\Core\Env;
 
 final class App
 {
+    public const DEFAULT_URL = 'https://official.genbijambi.com';
+
     /** @return array{env: string, url: string} */
     public static function config(): array
     {
         return [
             'env' => Env::get('APP_ENV', 'local') ?? 'local',
-            'url' => rtrim(Env::get('APP_URL', 'http://127.0.0.1:8000') ?? 'http://127.0.0.1:8000', '/'),
+            'url' => rtrim(Env::get('APP_URL', self::DEFAULT_URL) ?? self::DEFAULT_URL, '/'),
         ];
     }
 }
