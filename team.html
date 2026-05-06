@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team | GenBI Provinsi Jambi</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <section class="bg-stone py-16 md:py-24">
+      <div class="site-container fade-up">
+        <p class="eyebrow">Team</p>
+        <h1 class="page-title mt-5 max-w-4xl">Direktori anggota yang mudah dicari.</h1>
+        <p class="lead mt-7 max-w-3xl">Halaman team dibuat sebagai direktori. Search selalu tampil pertama, lalu filter custom untuk divisi, kampus, dan tahun.</p>
+      </div>
+    </section>
+    <section class="bg-cream py-12 md:py-16">
+      <div class="site-container">
+        <div class="fade-up mb-8 grid gap-3 rounded-[1.75rem] border border-neutral-900/10 bg-white/80 p-4 shadow-sm md:grid-cols-[1fr_220px_220px_160px]">
+          <input id="team-search" class="input-soft" placeholder="Cari nama, jabatan, divisi, atau kampus" />
+          <div id="team-division"></div>
+          <div id="team-campus"></div>
+          <div id="team-year"></div>
+        </div>
+        <div class="fade-up mb-5 flex items-center justify-between text-sm text-neutral-600">
+          <p id="team-count"></p>
+          <button id="team-reset" class="chip">Reset filter</button>
+        </div>
+        <div class="fade-up soft-card overflow-hidden" id="team-list"></div>
+      </div>
+    </section>
+  </main>
+  <div id="member-modal" class="public-fixed-modal hidden"></div>
+  <div id="site-footer"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/api-core.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/lib/ui.js"></script>
+  <script src="assets/js/pages/team.js"></script>
+</body>
+</html>

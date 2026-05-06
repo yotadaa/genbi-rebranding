@@ -1,0 +1,29 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Markdown docs/plans requested to stay out of Git
+*.md
+
+# Dependencies and generated artifacts
+node_modules/
+vendor/
+
+# Runtime files
+storage/logs/*
+storage/cache/*
+storage/sessions/*
+!storage/logs/.gitkeep
+!storage/cache/.gitkeep
+!storage/sessions/.gitkeep
+
+# Local OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Temporary outputs
+*.log
+*.tmp

@@ -1,0 +1,40 @@
+User-agent: *
+Allow: /
+
+# Admin dan area internal
+Disallow: /admin/
+Disallow: /login
+Disallow: /logout
+Disallow: /profile
+Disallow: /settings
+
+# Endpoint sistem
+Disallow: /api/
+Disallow: /ajax/
+Disallow: /storage/
+Disallow: /vendor/
+Disallow: /database/
+Disallow: /app/
+Disallow: /bootstrap/
+Disallow: /routes/
+
+# Form token private
+Disallow: /prestasi/submit/
+Disallow: /token/
+Disallow: /*?token=
+
+# Query dan hasil pencarian internal
+Disallow: /search?
+Disallow: /*?q=
+Disallow: /*?keyword=
+Disallow: /*?page=*
+Disallow: /*?sort=
+Disallow: /*?filter=
+
+# Jangan block asset publik
+Allow: /assets/
+Allow: /uploads/
+Allow: /public/uploads/
+
+# Sitemap index
+Sitemap: https://genbijambi.com/sitemap.xml

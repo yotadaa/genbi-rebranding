@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News | GenBI Provinsi Jambi</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <section class="bg-stone py-16 md:py-24">
+      <div class="article-container fade-up">
+        <p class="eyebrow">News</p>
+        <h1 class="page-title mt-5">Berita GenBI Jambi.</h1>
+        <p class="lead mt-7">Layout dibuat seperti publikasi editorial. Pengguna membaca daftar berita dengan ritme yang nyaman, bukan grid kartu yang padat.</p>
+      </div>
+    </section>
+    <section class="bg-cream py-12 md:py-16">
+      <div class="article-container">
+        <div class="news-filter fade-up mb-8 grid gap-3 md:grid-cols-[1fr_220px]">
+          <input id="news-search" class="input-soft" placeholder="Cari berita, kategori, atau topik" />
+          <div id="news-category"></div>
+        </div>
+        <div class="fade-up mb-4 text-sm text-neutral-600" id="news-count"></div>
+        <div class="fade-up" id="news-list"></div>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/api-core.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/lib/ui.js"></script>
+  <script src="assets/js/pages/news.js"></script>
+</body>
+</html>

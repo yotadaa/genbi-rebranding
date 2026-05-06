@@ -1,0 +1,98 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Public;
+
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\StaticPageRenderer;
+use App\Models\News;
+use App\Services\SeoService;
+use Throwable;
+
+final class NewsController
+{
+    public function __construct(private StaticPageRenderer $renderer, private ?News $news = null)
+    {
+    }
+
+    public function index(Request $request, Response $response): void
+    {
+        if ($request->acceptsJson()) {
+            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate([
+                'category' => $request->query('category'),
+            ]));
+
+            if ($items !== null) {
+                $response->json(['data' => $items]);
+                return;
+            }
+        }
+
+        $seo = SeoService::forPage('news.html');
+        $meta = SeoService::renderMetaBlock($seo);
+        $response->html($this->renderer->render('news.html', ['meta' => $meta]));
+    }
+
+    /** @param array{slug?: string} $params */
+    public function show(Request $request, Response $response, array $params): void
+    {
+        $slug = $params['slug'] ?? '';
+        if ($request->acceptsJson()) {
+            $item = $this->readFromDatabase(static function (News $news) use ($slug): ?array {
+                $row = $news->findBySlug($slug);
+                if ($row !== null) {
+                    $news->incrementViews((int) $row['id']);
+                }
+
+                return $row;
+            });
+
+            if (is_array($item)) {
+                $response->json($item);
+                return;
+            }
+
+            $response->json(['message' => 'News not found'], 404);
+            return;
+        }
+
+        // Fetch news from DB for SEO meta injection (HTML rendering)
+        $item = $this->readFromDatabase(static fn (News $news): ?array => $news->findBySlug($slug));
+        if (is_array($item)) {
+            $seo = SeoService::forNews($item);
+        } else {
+            $seo = SeoService::forPage('news.html');
+        }
+        $meta = SeoService::renderMetaBlock($seo);
+        $response->html($this->renderer->render('news-detail.html', ['slug' => $slug, 'meta' => $meta]));
+    }
+
+    /** @param array{id?: string} $params */
+    public function legacyShow(Request $request, Response $response, array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $id > 0 ? $this->readFromDatabase(static fn (News $news): ?array => $news->findById($id)) : null;
+        if (is_array($item) && !empty($item['slug'])) {
+            $response->redirect('/news/' . rawurlencode((string) $item['slug']), 301);
+            return;
+        }
+
+        $response->redirect('/news-detail.html?id=' . rawurlencode((string) ($params['id'] ?? '')), 301);
+    }
+
+    /** @template T @param callable(News): T $callback @return T|null */
+    private function readFromDatabase(callable $callback): mixed
+    {
+        if (!$this->news instanceof News) {
+            return null;
+        }
+
+        try {
+            return $callback($this->news);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact | GenBI Provinsi Jambi</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+  <main>
+    <section class="bg-stone py-16 md:py-24">
+      <div class="site-container fade-up">
+        <p class="eyebrow">Contact</p>
+        <h1 class="page-title mt-5 max-w-4xl">Hubungi GenBI Provinsi Jambi.</h1>
+        <p class="lead mt-7 max-w-3xl">Kontak dibuat jelas. Informasi utama terlihat sebelum formulir, lalu form memberi feedback langsung dalam mode prototipe.</p>
+      </div>
+    </section>
+    <section class="bg-cream py-12 md:py-20">
+      <div class="site-container grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <div class="fade-up grid gap-4" id="contact-info"></div>
+        <form id="contact-form" class="fade-up soft-card p-5 md:p-7">
+          <div class="grid gap-4 md:grid-cols-2">
+            <input name="name" class="input-soft" placeholder="Nama" />
+            <input name="phone" class="input-soft" placeholder="Nomor telepon" />
+            <input name="email" class="input-soft" placeholder="Email" />
+            <input name="subject" class="input-soft" placeholder="Subjek" />
+          </div>
+          <textarea name="message" class="input-soft mt-4 min-h-44 resize-none" placeholder="Pesan"></textarea>
+          <button class="btn btn-primary mt-5" type="submit">Kirim Pesan</button>
+          <p id="form-message" class="mt-4 hidden rounded-2xl bg-blue-50 p-4 text-sm font-medium text-blue-950"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/api-core.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/lib/ui.js"></script>
+  <script src="assets/js/pages/contact.js"></script>
+</body>
+</html>
