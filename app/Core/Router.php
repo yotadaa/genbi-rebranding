@@ -44,7 +44,7 @@ final class Router
     public function dispatch(Request $request, Response $response): void
     {
         foreach ($this->routes as $route) {
-            if ($route['method'] !== $request->method()) {
+            if (!$this->methodMatches($route['method'], $request->method())) {
                 continue;
             }
 
@@ -79,6 +79,11 @@ final class Router
         }
 
         $response->html('<!doctype html><title>404</title><h1>404 - Halaman tidak ditemukan</h1>', 404);
+    }
+
+    private function methodMatches(string $routeMethod, string $requestMethod): bool
+    {
+        return $routeMethod === $requestMethod || ($requestMethod === 'HEAD' && $routeMethod === 'GET');
     }
 
     private function normalizePattern(string $pattern): string

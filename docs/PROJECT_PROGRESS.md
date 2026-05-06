@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after News Share Image Filename Resolution
+Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 
 ## Source Markdown Reviewed
 
@@ -38,6 +38,7 @@ Last updated: 2026-05-07 after News Share Image Filename Resolution
 - Existing package has build, serve, and test scripts.
 - Backend target from plan is pure PHP MVC with routes such as `/news`, `/news/{slug}`, `/news/{slug}/comment`, `/prestasi`, `/team`, and admin routes.
 - News share image metadata now resolves legacy relative upload filenames against existing files in `public/uploads`, including same-basename extension fallback such as `news-98.jpeg` -> `news-98.jpg`.
+- Clean public routes now support `HEAD` requests by dispatching them through matching `GET` routes without a response body, so social/link validators do not receive false 404 results during preview checks.
 
 ## Integration Strategy
 
@@ -76,6 +77,7 @@ Last updated: 2026-05-07 after News Share Image Filename Resolution
 - [x] P3: Admin logout button in topbar.
 - [x] P3: CLI password reset tool.
 - [x] P3: Resolve legacy news share image upload filename mismatches for Open Graph/Twitter Card URLs.
+- [x] P3: Support `HEAD` requests for clean public routes used by link preview crawlers and validators.
 
 ## Working Checklist
 
@@ -329,6 +331,8 @@ Last updated: 2026-05-07 after News Share Image Filename Resolution
 - 2026-05-07: PHP News model mapping test passed after adding same-basename upload extension fallback for legacy news images.
 - 2026-05-07: All PHP regression tests passed after news image filename resolution.
 - 2026-05-07: `npm test` passed after news image filename resolution. Result: 20 passing tests.
+- 2026-05-07: PHP router HEAD request test passed; `/news/{slug}` HEAD requests now match GET routes and return an empty 200 response instead of route-level 404.
+- 2026-05-07: All PHP regression tests and `npm test` passed after HEAD request handling. JS result: 20 passing tests.
 
 ## Progress Log
 
@@ -351,3 +355,4 @@ Last updated: 2026-05-07 after News Share Image Filename Resolution
 - 2026-05-06: Fixed login: case-insensitive role/status matching, `id` column support, graceful `hasColumn()` check for pre-migration DB, password reset to bcrypt.
 - 2026-05-06: Phase B CSRF hardening: CsrfMiddleware added to admin route group, CSRF meta tag injected into admin pages, frontend JS auto-includes X-CSRF-TOKEN header, security headers on all responses, logout button in admin topbar, CLI password reset tool.
 - 2026-05-07: Fixed news share image URL generation for legacy DB rows that reference an upload filename with the wrong extension by resolving the actual file in `public/uploads` before emitting `/uploads/...` URLs.
+- 2026-05-07: Added HEAD request support to the router/response layer so clean news URLs return successful headers for validators and crawlers without emitting HTML bodies.

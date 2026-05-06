@@ -13,6 +13,9 @@ final class Response
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        if ($this->isHeadRequest()) {
+            return;
+        }
         echo $content;
     }
 
@@ -30,6 +33,9 @@ final class Response
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        if ($this->isHeadRequest()) {
+            return;
+        }
         echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
@@ -40,6 +46,14 @@ final class Response
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        if ($this->isHeadRequest()) {
+            return;
+        }
         echo $content;
+    }
+
+    private function isHeadRequest(): bool
+    {
+        return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) === 'HEAD';
     }
 }
