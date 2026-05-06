@@ -68,12 +68,12 @@ try {
     $tokenModel = new PrestasiToken($db);
     $eventModel = new Event($db);
     $teamModel = new TeamMember($db);
-} catch (\Throwable) {
+} catch (\Throwable $exception) {
+    error_log('[GenBI DB] ' . $exception->getMessage());
     $newsModel = null;
     $commentModel = null;
     $prestasiModel = null;
     $tokenModel = null;
-$eventModel = null;
     $eventModel = null;
     $teamModel = null;
 }

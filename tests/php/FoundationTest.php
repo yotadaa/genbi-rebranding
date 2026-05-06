@@ -18,7 +18,7 @@ assert($app['url'] === 'http://example.test');
 $db = Database::config();
 assert($db['host'] === 'db.example.test');
 assert($db['port'] === '3307');
-assert($db['name'] === 'genc1357_genbijambi');
+assert($db['name'] === 'genbi_test');
 assert($db['user'] === 'tester');
 assert($db['pass'] === 'secret value');
 assert($db['charset'] === 'utf8mb4');
