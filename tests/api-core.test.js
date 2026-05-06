@@ -43,6 +43,10 @@ test('canonicalNewsUrl returns absolute canonical slug URL', () => {
     Core.canonicalNewsUrl({ news_title: 'Hello World', news_id: 99 }),
     'https://genbijambi.com/news/hello-world-99'
   );
+  assert.strictEqual(
+    Core.canonicalNewsUrl({ slug: 'local-preview' }, { protocol: 'http:', host: '127.0.0.1:8000' }),
+    'http://127.0.0.1:8000/news/local-preview'
+  );
 });
 
 test('buildEndpoint appends only meaningful query parameters', () => {
@@ -104,6 +108,7 @@ test('normalizeNews maps backend-shaped news into frontend shape', () => {
   assert.equal(item.id, 100);
   assert.equal(item.slug, 'talkshow-siginjai-fest-2026-dorong-generasi-muda-berkarya-100');
   assert.equal(item.title, 'Talkshow Siginjai Fest 2026 Dorong Generasi Muda Berkarya');
+  assert.equal(item.date, 'Kamis, 30 April 2026');
   assert.equal(item.excerpt, 'Ringkasan berita');
   assert.deepEqual(item.body, ['Paragraf satu.', 'Paragraf dua.']);
   assert.equal(item.author, 'Pewarta');

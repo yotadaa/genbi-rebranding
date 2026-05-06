@@ -576,6 +576,15 @@ body.page-leaving {
   color: #fffbeb;
 }
 
+.news-detail-hero-content .news-detail-meta,
+.news-detail-hero-content .news-detail-meta span {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.news-detail-hero-content .news-detail-meta span:first-child {
+  color: #ffffff;
+}
+
 .chip-light {
   background: rgb(255 255 255 / 0.15) !important;
   color: white !important;
@@ -603,6 +612,16 @@ body.page-leaving {
 .news-detail-content {
   max-width: 720px;
   margin-inline: auto;
+}
+
+.news-detail-inline-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 1.5rem;
+  margin: 0 0 2rem;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.14);
 }
 
 .news-detail-content :where(p, li, div) {

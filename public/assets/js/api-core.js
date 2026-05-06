@@ -36,9 +36,26 @@
     return id ? `${slugify(title)}-${id}` : slugify(title);
   }
 
+  function formatDisplayDate(value = '') {
+    if (!value) return '';
+
+    const text = String(value).trim();
+    const mysqlDate = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const parsed = mysqlDate
+      ? new Date(Number(mysqlDate[1]), Number(mysqlDate[2]) - 1, Number(mysqlDate[3]))
+      : new Date(text);
+    if (Number.isNaN(parsed.getTime())) return String(value).split(' ')[0] || '';
+
+    const weekdays = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    return `${weekdays[parsed.getDay()]}, ${parsed.getDate()} ${months[parsed.getMonth()]} ${parsed.getFullYear()}`;
+  }
+
   function normalizeNews(item = {}) {
     const id = item.news_id || item.id || item.slug || makeNewsSlug(item);
     const title = item.news_title || item.title || 'Berita GenBI Jambi';
+    const sourceDate = item.published_at || item.news_date || item.date || item.created_at || '';
     const body = Array.isArray(item.body)
       ? item.body
       : String(item.news_content || item.content || '')
@@ -51,7 +68,7 @@
       slug: makeNewsSlug({ ...item, id, title }),
       title,
       category: item.category_name || item.category || 'Berita GenBI',
-      date: item.published_at || item.news_date || item.date || item.created_at || '',
+      date: formatDisplayDate(sourceDate),
       readTime: item.read_time || item.readTime || '4 menit baca',
       image: item.photo || item.banner || item.image || DEFAULT_IMAGE,
       excerpt: item.news_content_short || item.excerpt || item.meta_description || '',
@@ -298,9 +315,16 @@
     return isStaticProtocol(locationLike) ? `news-detail.html?slug=${encodeURIComponent(item.slug)}&id=${encodeURIComponent(item.id)}` : `/news/${encodeURIComponent(item.slug)}`;
   }
 
-  function canonicalNewsUrl(news) {
+  function canonicalNewsUrl(news, locationLike) {
     const item = normalizeNews(news || {});
-    return `https://genbijambi.com/news/${encodeURIComponent(item.slug)}`;
+    const path = `/news/${encodeURIComponent(item.slug)}`;
+    const source = locationLike || (typeof window !== 'undefined' ? window.location : null);
+
+    if (source && source.protocol && source.host && !isStaticProtocol(source)) {
+      return `${source.protocol}//${source.host}${path}`;
+    }
+
+    return `https://genbijambi.com${path}`;
   }
 
   function resolveStaticRoute(pathname = '/') {

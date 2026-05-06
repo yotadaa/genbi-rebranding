@@ -37,7 +37,7 @@ async function renderDetail() {
       <div class="news-detail-hero-overlay"></div>
       <div class="news-detail-hero-content article-container fade-up in-view">
         <a data-transition href="${pageUrl('news')}" class="chip chip-light mb-7">← Kembali ke News</a>
-        <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-white/80">
+        <div class="news-detail-meta flex flex-wrap items-center gap-3 text-xs font-semibold text-white/80">
           <span class="text-white">${item.category}</span><span>${item.date}</span><span>${item.readTime}</span>
         </div>
         <h1 class="page-title mt-5 text-amber-100">${item.title}</h1>
@@ -47,6 +47,7 @@ async function renderDetail() {
     <section class="bg-cream py-10 md:py-16">
       <article class="article-container fade-up in-view">
         <div class="prose-soft news-detail-content">
+          <img class="news-detail-inline-image" src="${item.image}" alt="${item.title}" onerror="this.remove()" />
           ${cleanNewsContent(item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join(''))}
         </div>
         <div class="mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
