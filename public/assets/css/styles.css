@@ -3440,7 +3440,7 @@ input[type="file"].config-input::file-selector-button:hover {
 }
 
 .team-detail-panel {
-  width: min(100%, max(300px, 360px));
+  width: min(100%, 450px);
   padding: clamp(0.85rem, 2vw, 1.1rem);
 }
 
