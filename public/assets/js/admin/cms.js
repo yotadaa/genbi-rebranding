@@ -58,6 +58,8 @@
     comment: () => { Admin.renderAdminShell('comment'); renderCommentSetup(); },
     news: () => { Admin.renderAdminShell('news-list'); mode === 'editor' ? renderNewsEditor(false) : renderNewsList(); },
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
+    prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
+    'prestasi-edit': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(true); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
@@ -1025,4 +1027,512 @@
   }
 
   function escape(value = '') { return Admin.escapeHtml(value); }
+
+  // ─── Prestasi CMS ───────────────────────────────────────────────────────────
+
+  const prestasiCategories = ['QRIS', 'KTI', 'Essay', 'Inovasi Desa', 'Kreativitas', 'Ekonomi Syariah'];
+  const prestasiCampuses = ['Universitas Jambi', 'UIN Sultan Thaha', 'Alumni'];
+
+  async function renderPrestasiList() {
+    const body = renderShell(
+      'View Prestasi',
+      'Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.',
+      `<a href="${adminUrl('prestasi-add')}" class="btn btn-primary">Add Prestasi</a>`
+    );
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data prestasi...</div>';
+
+    let items = [];
+    try {
+      const res = await fetch('/admin/prestasi', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = json.data || [];
+      }
+    } catch (e) { /* use empty fallback */ }
+
+    // Fallback to static data if backend unavailable
+    if (items.length === 0 && window.GenBIData && window.GenBIData.prestasi) {
+      items = window.GenBIData.prestasi;
+    }
+
+    body.innerHTML = `
+      <section class="admin-card p-4 md:p-6">
+        <div class="cms-toolbar">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm text-neutral-600">Show <select id="prestasi-per-page" class="rounded-xl border border-neutral-900/10 bg-white px-3 py-2"><option value="10">10</option><option value="25">25</option><option value="50" selected>50</option></select> entries</label>
+            <select id="prestasi-filter-category" class="rounded-xl border border-neutral-900/10 bg-white px-3 py-2 text-sm">
+              <option value="">Semua Kategori</option>
+              ${prestasiCategories.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <select id="prestasi-filter-campus" class="rounded-xl border border-neutral-900/10 bg-white px-3 py-2 text-sm">
+              <option value="">Semua Komisariat</option>
+              ${prestasiCampuses.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>
+            <select id="prestasi-filter-status" class="rounded-xl border border-neutral-900/10 bg-white px-3 py-2 text-sm">
+              <option value="">Semua Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <label class="cms-search">${Admin.icon('search')}<input id="prestasi-search" placeholder="Search prestasi..." /></label>
+        </div>
+        <div class="admin-responsive-table mt-5">
+          <table class="cms-table" id="prestasi-table">
+            <thead>
+              <tr>
+                <th>SL</th>
+                <th>Judul</th>
+                <th>Nama Anggota</th>
+                <th>Kategori</th>
+                <th>Tahun</th>
+                <th>Komisariat</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="prestasi-tbody">
+              ${renderPrestasiRows(items)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `;
+
+    // Bind filters and search
+    const allItems = items;
+    const filterAndRender = () => {
+      const search = (document.querySelector('#prestasi-search')?.value || '').toLowerCase();
+      const category = document.querySelector('#prestasi-filter-category')?.value || '';
+      const campus = document.querySelector('#prestasi-filter-campus')?.value || '';
+      const status = document.querySelector('#prestasi-filter-status')?.value || '';
+
+      const filtered = allItems.filter(item => {
+        const title = (item.title || item.judul_prestasi || '').toLowerCase();
+        const name = (item.name || item.nama_anggota || '').toLowerCase();
+        const itemCategory = (item.category || item.kategori || '').toLowerCase();
+        const itemCampus = (item.campus || item.komisariat || '').toLowerCase();
+        const itemStatus = (item.status || '').toLowerCase();
+
+        if (search && !title.includes(search) && !name.includes(search) && !itemCategory.includes(search)) return false;
+        if (category && itemCategory !== category.toLowerCase()) return false;
+        if (campus && itemCampus !== campus.toLowerCase()) return false;
+        if (status && itemStatus !== status) return false;
+        return true;
+      });
+
+      const tbody = document.querySelector('#prestasi-tbody');
+      if (tbody) tbody.innerHTML = renderPrestasiRows(filtered);
+      bindPrestasiDeleteButtons();
+    };
+
+    document.querySelector('#prestasi-search')?.addEventListener('input', filterAndRender);
+    document.querySelector('#prestasi-filter-category')?.addEventListener('change', filterAndRender);
+    document.querySelector('#prestasi-filter-campus')?.addEventListener('change', filterAndRender);
+    document.querySelector('#prestasi-filter-status')?.addEventListener('change', filterAndRender);
+
+    bindPrestasiDeleteButtons();
+  }
+
+  function renderPrestasiRows(items) {
+    if (items.length === 0) {
+      return '<tr><td colspan="8" class="text-center text-neutral-500 py-8">Belum ada data prestasi.</td></tr>';
+    }
+    return items.map((item, index) => {
+      const id = item.id || item.prestasi_id || 0;
+      const title = item.title || item.judul_prestasi || '';
+      const name = item.name || item.nama_anggota || '';
+      const category = item.category || item.kategori || '';
+      const year = item.year || item.tahun || '';
+      const campus = item.campus || item.komisariat || '';
+      const status = item.status || 'draft';
+      const image = item.image || item.foto_prestasi || '';
+      const statusClass = status === 'published' ? 'cms-pill-green' : status === 'draft' ? 'cms-pill-yellow' : status === 'pending' ? 'cms-pill-blue' : '';
+
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>
+            <div class="flex items-center gap-3">
+              ${image ? `<img src="${image.startsWith('http') || image.startsWith('/') ? image : '/uploads/prestasi/' + image}" class="table-thumb rounded" alt="${escape(title)}" />` : ''}
+              <div>
+                <strong>${escape(title)}</strong>
+                <p class="mt-1 text-xs text-neutral-500">${escape(item.description || item.deskripsi_singkat || '').slice(0, 60)}</p>
+              </div>
+            </div>
+          </td>
+          <td>${escape(name)}</td>
+          <td><span class="cms-pill">${escape(category)}</span></td>
+          <td>${escape(year)}</td>
+          <td>${escape(campus)}</td>
+          <td><span class="cms-pill ${statusClass}">${status}</span></td>
+          <td>
+            <div class="flex gap-2">
+              <a href="${adminUrl('prestasi-edit')}?id=${id}" class="cms-action edit">Edit</a>
+              <button class="cms-action delete" data-delete data-prestasi-id="${id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function bindPrestasiDeleteButtons() {
+    document.querySelectorAll('[data-delete][data-prestasi-id]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.prestasiId;
+        const ok = await Admin.showConfirm({
+          title: 'Hapus prestasi?',
+          message: 'Prestasi akan dihapus (soft delete). Data masih bisa dipulihkan.',
+          confirmText: 'Hapus',
+          danger: true
+        });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(`/admin/prestasi/${id}/delete`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Prestasi berhasil dihapus.');
+            button.closest('tr')?.remove();
+          } else {
+            const json = await res.json().catch(() => ({}));
+            Admin.showToast(json.error || 'Gagal menghapus prestasi.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal menghapus prestasi.');
+        }
+      });
+    });
+  }
+
+  async function renderPrestasiEditor(isEdit) {
+    const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+    let item = {
+      title: '',
+      name: '',
+      campus: 'Universitas Jambi',
+      category: '',
+      year: new Date().getFullYear().toString(),
+      description: '',
+      content: '',
+      image: '',
+      institution: '',
+      status: 'draft',
+      meta_title: '',
+      meta_description: '',
+      meta_keyword: '',
+    };
+
+    // Load from backend if editing
+    if (isEdit && id > 0) {
+      try {
+        const res = await fetch(`/admin/prestasi/${id}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          const d = json.data || {};
+          item = {
+            ...item,
+            id: d.id || d.prestasi_id,
+            title: d.title || d.judul_prestasi || '',
+            name: d.name || d.nama_anggota || '',
+            campus: d.campus || d.komisariat || 'Universitas Jambi',
+            category: d.category || d.kategori || '',
+            year: d.year || d.tahun || '',
+            description: d.description || d.deskripsi_singkat || '',
+            content: d.content || d.deskripsi_detail || '',
+            image: d.image || d.foto_prestasi || '',
+            institution: d.institution || '',
+            status: d.status || 'draft',
+            meta_title: d.meta_title || '',
+            meta_description: d.meta_description || '',
+            meta_keyword: d.meta_keyword || '',
+          };
+        }
+      } catch (e) {
+        // Fallback: use empty form
+      }
+    }
+
+    const body = renderShell(
+      isEdit ? 'Edit Prestasi' : 'Add Prestasi',
+      'Kelola data prestasi anggota GenBI Jambi.',
+      `<a href="${adminUrl('prestasi')}" class="btn btn-secondary">View All</a>`
+    );
+
+    const currentYear = new Date().getFullYear();
+    const yearOptions = Array.from({ length: 10 }, (_, i) => currentYear - i);
+
+    body.innerHTML = `
+      <form class="medium-editor-layout" id="prestasi-editor-form">
+        <main class="medium-editor-canvas">
+          <div class="medium-editor-kicker">Prestasi editor</div>
+          <section class="story-main-block">
+            <label for="prestasi-title-field">Judul Prestasi</label>
+            <div id="prestasi-title-field" class="story-title-field" contenteditable="true" spellcheck="true" data-placeholder="Tulis judul prestasi...">${escape(item.title)}</div>
+          </section>
+          <section class="story-main-block">
+            <label for="prestasi-desc-field">Deskripsi Singkat</label>
+            <div id="prestasi-desc-field" class="story-excerpt-field" contenteditable="true" spellcheck="true" data-placeholder="Ringkasan singkat untuk list prestasi...">${escape(item.description)}</div>
+          </section>
+          <div class="medium-editor-divider">
+            <div class="medium-editor-kicker">Detail prestasi</div>
+          </div>
+          <div id="prestasi-editor" class="medium-editor-host"></div>
+          <div id="prestasi-editor-fallback" class="editor-fallback${window.EditorJS ? ' hidden' : ''}">
+            <article contenteditable="true" data-placeholder="Tulis detail prestasi...">${item.content || ''}</article>
+          </div>
+          <p class="medium-editor-help">Tekan <strong>Enter</strong> untuk membuat blok baru.</p>
+        </main>
+        <aside class="editor-config-sidebar medium-config-sidebar">
+          <section class="config-card medium-config-card">
+            <h2>Informasi Anggota</h2>
+            ${control('Nama Anggota', `<input class="config-input" id="prestasi-name" value="${escape(item.name)}" placeholder="Nama penerima prestasi" />`)}
+            ${control('Komisariat', `<select class="config-input" id="prestasi-campus">${prestasiCampuses.map(c => `<option ${c === item.campus ? 'selected' : ''}>${c}</option>`).join('')}</select>`)}
+            ${control('Institusi', `<input class="config-input" id="prestasi-institution" value="${escape(item.institution)}" placeholder="Nama institusi (opsional)" />`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Kategori & Tahun</h2>
+            ${control('Kategori', `<select class="config-input" id="prestasi-category"><option value="">Pilih kategori</option>${prestasiCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select>`)}
+            ${control('Tahun', `<select class="config-input" id="prestasi-year">${yearOptions.map(y => `<option ${String(y) === String(item.year) ? 'selected' : ''}>${y}</option>`).join('')}</select>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Foto Prestasi</h2>
+            ${item.image ? `<img src="${item.image}" class="config-preview rounded" alt="Foto prestasi" />` : '<div class="config-empty">Belum ada foto</div>'}
+            <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" />
+            <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full mt-2">Upload Foto</button>
+            <input class="config-input mt-2" id="prestasi-image-url" value="${escape(item.image)}" placeholder="URL gambar (opsional)" />
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>SEO Information</h2>
+            ${control('Meta Title', `<input class="config-input" id="prestasi-meta-title" value="${escape(item.meta_title || item.title)}" />`)}
+            ${control('Meta Keywords', `<textarea class="config-input" id="prestasi-meta-keyword" rows="3">${escape(item.meta_keyword || `${item.category}, GenBI Jambi, prestasi`)}</textarea>`)}
+            ${control('Meta Description', `<textarea class="config-input" id="prestasi-meta-desc" rows="4">${escape(item.meta_description || item.description)}</textarea>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Status</h2>
+            ${control('Publish Status', `<select class="config-input" id="prestasi-status">
+              <option value="draft" ${item.status === 'draft' ? 'selected' : ''}>Draft</option>
+              <option value="published" ${item.status === 'published' ? 'selected' : ''}>Published</option>
+              <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="archived" ${item.status === 'archived' ? 'selected' : ''}>Archived</option>
+            </select>`)}
+          </section>
+          <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Prestasi' : 'Submit Prestasi'}</button>
+        </aside>
+      </form>
+    `;
+
+    // Initialize Editor.js for content
+    const prestasiEditorInstance = initPrestasiEditor(item);
+
+    // Image upload handler
+    document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
+      document.querySelector('#prestasi-image-file')?.click();
+    });
+    document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await fetch('/admin/prestasi/upload', {
+          method: 'POST',
+          headers: { 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: formData
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const url = json.data?.url || '';
+          document.querySelector('#prestasi-image-url').value = url;
+          const preview = document.querySelector('.config-preview');
+          if (preview) { preview.src = url; }
+          else {
+            const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
+            const empty = container?.querySelector('.config-empty');
+            if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
+          }
+          Admin.showToast('Foto berhasil diupload.');
+        } else {
+          Admin.showToast('Gagal upload foto.');
+        }
+      } catch (err) {
+        Admin.showToast('Gagal upload foto.');
+      }
+    });
+
+    // Form submission
+    document.querySelector('#prestasi-editor-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      // Get editor content
+      let editorContent = '';
+      if (prestasiEditorInstance?.save) {
+        try {
+          const outputData = await prestasiEditorInstance.save();
+          editorContent = outputData.blocks.map(block => {
+            if (block.type === 'paragraph') return `<p>${block.data.text}</p>`;
+            if (block.type === 'header') return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
+            if (block.type === 'list') {
+              const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
+              return `<${tag}>${block.data.items.map(i => `<li>${i}</li>`).join('')}</${tag}>`;
+            }
+            if (block.type === 'quote') return `<blockquote><p>${block.data.text}</p></blockquote>`;
+            if (block.type === 'image') return `<figure><img src="${block.data.file?.url || block.data.url || ''}" alt="${block.data.caption || ''}" /></figure>`;
+            return `<p>${block.data.text || ''}</p>`;
+          }).join('\n');
+        } catch (err) {
+          const fallbackEl = document.querySelector('#prestasi-editor-fallback article');
+          if (fallbackEl) editorContent = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#prestasi-editor-fallback article');
+        if (fallbackEl) editorContent = fallbackEl.innerHTML;
+      }
+
+      const ok = await Admin.showConfirm({
+        title: isEdit ? 'Update prestasi?' : 'Submit prestasi?',
+        message: isEdit ? 'Data prestasi akan diperbarui di database.' : 'Prestasi baru akan disimpan ke database.',
+        confirmText: isEdit ? 'Update' : 'Submit'
+      });
+      if (!ok) return;
+
+      const payload = {
+        title: document.querySelector('#prestasi-title-field')?.textContent?.trim() || '',
+        name: document.querySelector('#prestasi-name')?.value?.trim() || '',
+        campus: document.querySelector('#prestasi-campus')?.value || '',
+        category: document.querySelector('#prestasi-category')?.value || '',
+        year: document.querySelector('#prestasi-year')?.value || '',
+        description: document.querySelector('#prestasi-desc-field')?.textContent?.trim() || '',
+        content: editorContent || item.content || '',
+        image: document.querySelector('#prestasi-image-url')?.value?.trim() || '',
+        institution: document.querySelector('#prestasi-institution')?.value?.trim() || '',
+        status: document.querySelector('#prestasi-status')?.value || 'draft',
+        meta_title: document.querySelector('#prestasi-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#prestasi-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#prestasi-meta-desc')?.value?.trim() || '',
+      };
+
+      const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const url = isEdit ? `/admin/prestasi/${id}/update` : '/admin/prestasi';
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Prestasi berhasil diperbarui.' : 'Prestasi berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
+            setTimeout(() => { window.location.href = `${adminUrl('prestasi-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          const details = result.details ? result.details.join(', ') : '';
+          Admin.showToast(result.error || 'Gagal menyimpan prestasi.' + (details ? ' ' + details : ''));
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan prestasi. Periksa koneksi.');
+      }
+    });
+  }
+
+  function initPrestasiEditor(item) {
+    const holder = document.querySelector('#prestasi-editor');
+    const fallback = document.querySelector('#prestasi-editor-fallback');
+    if (!holder) return null;
+
+    if (!window.EditorJS) {
+      holder.classList.add('hidden');
+      fallback?.classList.remove('hidden');
+      return null;
+    }
+
+    // Parse existing content into blocks
+    const initialBlocks = [];
+    if (item.content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = item.content;
+      tempDiv.childNodes.forEach(node => {
+        if (node.nodeType === 3 && node.textContent.trim()) {
+          initialBlocks.push({ type: 'paragraph', data: { text: node.textContent.trim() } });
+        } else if (node.nodeType === 1) {
+          const tag = node.tagName.toLowerCase();
+          if (['h1', 'h2', 'h3', 'h4'].includes(tag)) {
+            initialBlocks.push({ type: 'header', data: { text: node.innerHTML, level: parseInt(tag[1]) } });
+          } else if (tag === 'blockquote') {
+            initialBlocks.push({ type: 'quote', data: { text: node.textContent } });
+          } else if (tag === 'figure' || tag === 'img') {
+            const img = tag === 'img' ? node : node.querySelector('img');
+            if (img) initialBlocks.push({ type: 'image', data: { file: { url: img.src }, caption: img.alt || '' } });
+          } else if (['ul', 'ol'].includes(tag)) {
+            const listItems = Array.from(node.querySelectorAll('li')).map(li => li.innerHTML);
+            initialBlocks.push({ type: 'list', data: { style: tag === 'ol' ? 'ordered' : 'unordered', items: listItems } });
+          } else {
+            initialBlocks.push({ type: 'paragraph', data: { text: node.innerHTML || node.textContent } });
+          }
+        }
+      });
+    }
+    if (initialBlocks.length === 0) {
+      initialBlocks.push({ type: 'paragraph', data: { text: '' } });
+    }
+
+    const tools = {};
+    if (window.Header) tools.header = { class: window.Header, inlineToolbar: true, config: { levels: [2, 3, 4], defaultLevel: 3 } };
+    const ListTool = window.EditorjsList || window.List;
+    if (ListTool) tools.list = { class: ListTool, inlineToolbar: true };
+    if (window.Quote) tools.quote = { class: window.Quote, inlineToolbar: true };
+    if (window.ImageTool) {
+      tools.image = {
+        class: window.ImageTool,
+        config: {
+          uploader: {
+            async uploadByFile(file) {
+              const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+              const formData = new FormData();
+              formData.append('image', file);
+              try {
+                const res = await fetch('/admin/prestasi/upload', {
+                  method: 'POST',
+                  headers: { 'X-CSRF-TOKEN': token },
+                  credentials: 'same-origin',
+                  body: formData
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  return { success: 1, file: { url: json.data.url } };
+                }
+              } catch (e) { /* fallback */ }
+              return { success: 0 };
+            },
+            async uploadByUrl(url) {
+              return { success: 1, file: { url } };
+            }
+          }
+        }
+      };
+    }
+
+    try {
+      return new window.EditorJS({
+        holder: 'prestasi-editor',
+        tools,
+        data: { blocks: initialBlocks },
+        placeholder: 'Tulis detail prestasi...',
+      });
+    } catch (e) {
+      holder.classList.add('hidden');
+      fallback?.classList.remove('hidden');
+      return null;
+    }
+  }
 })();

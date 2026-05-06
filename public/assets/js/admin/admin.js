@@ -51,6 +51,10 @@
       { key: 'news-list', label: 'News', href: adminUrl('news') },
       { key: 'comment', label: 'Comment', href: adminUrl('comment') }
     ] },
+    { key: 'prestasi', label: 'Prestasi', href: adminUrl('prestasi'), icon: 'feature', children: [
+      { key: 'prestasi-list', label: 'Prestasi', href: adminUrl('prestasi') },
+      { key: 'prestasi-token', label: 'Token Form', href: adminUrl('prestasi-token') }
+    ] },
     { key: 'event', label: 'Event', href: adminUrl('event'), icon: 'event' },
     { key: 'subscriber', label: 'Subscriber', href: '#', icon: 'subscriber' },
     { key: 'team', label: 'Team Member', href: adminUrl('team-member'), icon: 'users' },

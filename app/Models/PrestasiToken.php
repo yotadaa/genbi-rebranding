@@ -64,6 +64,33 @@ class PrestasiToken
         return $row ? self::mapRow($row) : null;
     }
 
+    /**
+     * Validate token with row-level lock (FOR UPDATE) to prevent TOCTOU race conditions.
+     * Must be called within a transaction.
+     */
+    public function validateTokenForUpdate(string $plainToken): ?array
+    {
+        if (!$this->db) {
+            return null;
+        }
+
+        $hash = hash('sha256', $plainToken);
+        $stmt = $this->db->prepare(
+            'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND status = :status AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1 FOR UPDATE'
+        );
+        $stmt->bindValue(':hash', $hash, \PDO::PARAM_STR);
+        $stmt->bindValue(':status', 'active', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row ? self::mapRow($row) : null;
+    }
+
+    public function getDb(): ?\PDO
+    {
+        return $this->db;
+    }
+
     public function markUsed(int $tokenId): bool
     {
         if (!$this->db) {

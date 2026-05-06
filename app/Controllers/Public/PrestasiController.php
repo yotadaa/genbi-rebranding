@@ -79,13 +79,8 @@ class PrestasiController
     public function submitWithToken(Request $request, Response $response, array $params): void
     {
         $token = $params['token'] ?? '';
-        $valid = $this->tokenModel?->validateToken($token);
 
-        if (!$valid) {
-            $response->json(['error' => 'Token tidak valid atau sudah digunakan'], 403);
-            return;
-        }
-
+        // Validate body first (no DB needed)
         $body = $request->json();
         $errors = $this->validateSubmission($body);
         if (!empty($errors)) {
@@ -93,25 +88,50 @@ class PrestasiController
             return;
         }
 
-        $slug = $this->generateUniqueSlug($body['title'] ?? 'prestasi');
+        // Use transaction + FOR UPDATE to prevent TOCTOU race condition
+        $db = $this->tokenModel?->getDb();
+        if (!$db) {
+            $response->json(['error' => 'Service unavailable'], 503);
+            return;
+        }
 
-        $id = $this->prestasi?->create([
-            'title' => strip_tags(mb_substr(trim($body['title'] ?? ''), 0, 255)),
-            'slug' => $slug,
-            'name' => strip_tags(mb_substr(trim($body['name'] ?? ''), 0, 255)),
-            'campus' => strip_tags(mb_substr(trim($body['campus'] ?? ''), 0, 255)),
-            'category' => strip_tags(mb_substr(trim($body['category'] ?? ''), 0, 100)),
-            'year' => strip_tags(mb_substr(trim($body['year'] ?? ''), 0, 10)),
-            'description' => strip_tags(mb_substr(trim($body['description'] ?? ''), 0, 5000)),
-            'content' => mb_substr(trim($body['content'] ?? ''), 0, 50000),
-            'institution' => strip_tags(mb_substr(trim($body['institution'] ?? ''), 0, 255)),
-            'status' => 'pending',
-        ]);
+        $db->beginTransaction();
+        try {
+            $valid = $this->tokenModel->validateTokenForUpdate($token);
 
-        if ($id) {
-            $this->tokenModel?->markUsed($valid['id']);
-            $response->json(['data' => ['id' => $id, 'status' => 'pending']], 201);
-        } else {
+            if (!$valid) {
+                $db->rollBack();
+                $response->json(['error' => 'Token tidak valid atau sudah digunakan'], 403);
+                return;
+            }
+
+            // Mark token used immediately within the same transaction
+            $this->tokenModel->markUsed($valid['id']);
+
+            $slug = $this->generateUniqueSlug($body['title'] ?? 'prestasi');
+
+            $id = $this->prestasi?->create([
+                'title' => strip_tags(mb_substr(trim($body['title'] ?? ''), 0, 255)),
+                'slug' => $slug,
+                'name' => strip_tags(mb_substr(trim($body['name'] ?? ''), 0, 255)),
+                'campus' => strip_tags(mb_substr(trim($body['campus'] ?? ''), 0, 255)),
+                'category' => strip_tags(mb_substr(trim($body['category'] ?? ''), 0, 100)),
+                'year' => strip_tags(mb_substr(trim($body['year'] ?? ''), 0, 4)),
+                'description' => strip_tags(mb_substr(trim($body['description'] ?? ''), 0, 5000)),
+                'content' => strip_tags(mb_substr(trim($body['content'] ?? ''), 0, 50000)),
+                'institution' => strip_tags(mb_substr(trim($body['institution'] ?? ''), 0, 255)),
+                'status' => 'pending',
+            ]);
+
+            if ($id) {
+                $db->commit();
+                $response->json(['data' => ['id' => $id, 'status' => 'pending']], 201);
+            } else {
+                $db->rollBack();
+                $response->json(['error' => 'Gagal menyimpan data'], 500);
+            }
+        } catch (\Throwable $e) {
+            $db->rollBack();
             $response->json(['error' => 'Gagal menyimpan data'], 500);
         }
     }
@@ -122,8 +142,14 @@ class PrestasiController
         if (empty(trim($body['title'] ?? ''))) {
             $errors[] = 'Judul prestasi wajib diisi';
         }
+        if (mb_strlen(trim($body['title'] ?? '')) > 255) {
+            $errors[] = 'Judul prestasi maksimal 255 karakter';
+        }
         if (empty(trim($body['name'] ?? ''))) {
             $errors[] = 'Nama anggota wajib diisi';
+        }
+        if (mb_strlen(trim($body['name'] ?? '')) > 255) {
+            $errors[] = 'Nama anggota maksimal 255 karakter';
         }
         if (empty(trim($body['campus'] ?? ''))) {
             $errors[] = 'Komisariat wajib diisi';
@@ -131,8 +157,17 @@ class PrestasiController
         if (empty(trim($body['category'] ?? ''))) {
             $errors[] = 'Kategori wajib diisi';
         }
-        if (empty(trim($body['year'] ?? ''))) {
+        $year = trim($body['year'] ?? '');
+        if ($year === '') {
             $errors[] = 'Tahun wajib diisi';
+        } elseif (!preg_match('/^(19|20)\d{2}$/', $year)) {
+            $errors[] = 'Tahun harus berformat tahun yang valid (1900-2099)';
+        }
+        if (mb_strlen(trim($body['content'] ?? '')) > 50000) {
+            $errors[] = 'Konten terlalu panjang (maks 50.000 karakter)';
+        }
+        if (mb_strlen(trim($body['description'] ?? '')) > 5000) {
+            $errors[] = 'Deskripsi terlalu panjang (maks 5.000 karakter)';
         }
         return $errors;
     }

@@ -11,6 +11,9 @@ use App\Models\Prestasi;
 class PrestasiController
 {
     private const ALLOWED_STATUSES = ['draft', 'published', 'pending', 'archived'];
+    private const UPLOAD_DIR = '/uploads/prestasi/';
+    private const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
+    private const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
     public function __construct(private ?Prestasi $prestasi = null) {}
 
@@ -101,6 +104,67 @@ class PrestasiController
         } else {
             $response->json(['error' => 'Gagal menghapus atau data tidak ditemukan'], 404);
         }
+    }
+
+    public function upload(Request $request, Response $response): void
+    {
+        if (empty($_FILES['image'])) {
+            $response->json(['error' => 'Tidak ada file yang diunggah'], 422);
+            return;
+        }
+
+        $file = $_FILES['image'];
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $response->json(['error' => 'Upload gagal: error code ' . $file['error']], 422);
+            return;
+        }
+
+        if ($file['size'] > self::MAX_UPLOAD_SIZE) {
+            $response->json(['error' => 'Ukuran file melebihi batas 5MB'], 422);
+            return;
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+        if (!in_array($mimeType, self::ALLOWED_IMAGE_TYPES, true)) {
+            $response->json(['error' => 'Tipe file tidak diizinkan. Hanya JPEG, PNG, WebP, dan GIF.'], 422);
+            return;
+        }
+
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            $response->json(['error' => 'File bukan gambar yang valid'], 422);
+            return;
+        }
+
+        $ext = match ($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => 'jpg',
+        };
+        $filename = 'prestasi-' . bin2hex(random_bytes(8)) . '.' . $ext;
+
+        $uploadDir = dirname(__DIR__, 3) . '/public' . self::UPLOAD_DIR;
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $htaccess = $uploadDir . '.htaccess';
+        if (!is_file($htaccess)) {
+            file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\n");
+        }
+
+        $destination = $uploadDir . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            $response->json(['error' => 'Gagal menyimpan file'], 500);
+            return;
+        }
+
+        $url = self::UPLOAD_DIR . $filename;
+        $response->json(['data' => ['url' => $url, 'filename' => $filename]], 201);
     }
 
     private function validate(array $body): array
