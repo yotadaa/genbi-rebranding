@@ -40,8 +40,8 @@ async function renderDetail() {
         <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-white/80">
           <span class="text-white">${item.category}</span><span>${item.date}</span><span>${item.readTime}</span>
         </div>
-        <h1 class="page-title mt-5 text-white">${item.title}</h1>
-        <p class="lead mt-7 text-white/85">${item.excerpt}</p>
+        <h1 class="page-title mt-5 text-yellow-50">${item.title}</h1>
+        <p class="lead mt-7 text-yellow-50/90">${item.excerpt}</p>
       </div>
     </section>
     <section class="bg-cream py-10 md:py-16">
