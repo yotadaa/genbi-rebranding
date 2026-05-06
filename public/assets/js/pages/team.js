@@ -172,17 +172,19 @@ function openMember(id) {
       <div class="team-detail-photo">
         ${member.photo ? `<img src="${safeImage(member.photo)}" alt="${member.name}" />` : `<span>${formatInitials(member.name)}</span>`}
       </div>
-      <div class="team-detail-heading">
-        <p class="eyebrow">Detail anggota</p>
-        <h3 id="member-title" class="serif mt-1 text-3xl font-semibold tracking-tight text-neutral-950">${member.name}</h3>
+      <div class="team-detail-content">
+        <div class="team-detail-heading">
+          <p class="eyebrow">Detail anggota</p>
+          <h3 id="member-title" class="serif mt-1 text-3xl font-semibold tracking-tight text-neutral-950">${member.name}</h3>
+        </div>
+        <div class="team-detail-info-grid">
+          <div class="team-detail-info-card"><span>Jabatan</span><strong>${member.role}</strong></div>
+          <div class="team-detail-info-card"><span>Divisi</span><strong>${member.division}</strong></div>
+          <div class="team-detail-info-card"><span>Komisariat/Kampus</span><strong>${member.campus}</strong></div>
+          <div class="team-detail-info-card"><span>Tahun</span><strong>${member.year}</strong></div>
+        </div>
+        ${member.bio ? `<div class="team-detail-bio">${member.bio}</div>` : ''}
       </div>
-      <div class="team-detail-info-grid">
-        <div class="team-detail-info-card"><span>Jabatan</span><strong>${member.role}</strong></div>
-        <div class="team-detail-info-card"><span>Divisi</span><strong>${member.division}</strong></div>
-        <div class="team-detail-info-card"><span>Komisariat/Kampus</span><strong>${member.campus}</strong></div>
-        <div class="team-detail-info-card"><span>Tahun</span><strong>${member.year}</strong></div>
-      </div>
-      ${member.bio ? `<div class="team-detail-bio">${member.bio}</div>` : ''}
     </div>
   ` });
 }
