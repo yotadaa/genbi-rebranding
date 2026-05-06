@@ -560,10 +560,7 @@ body.page-leaving {
   background: linear-gradient(to right, var(--blue-900) 0%, rgba(12, 53, 114, 0.85) 40%, rgba(12, 53, 114, 0.4) 70%, transparent 100%);
 }
 
-.news-detail-hero-content h1,
-.news-detail-hero-content .lead {
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
-}
+
 
 .news-detail-hero-content {
   position: relative;
