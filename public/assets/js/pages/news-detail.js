@@ -12,10 +12,20 @@ observeFadeUp();
 async function renderDetail() {
   const root = document.querySelector('#news-detail-root');
   root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Memuat detail berita...</div></section>`;
-  const identifier = getParam('slug') || getParam('id');
-  const item = await API.getNewsDetail(identifier);
-  const related = await API.getRelatedNews(item.id, item.category);
-  const comments = await API.getNewsComments(item);
+  const identifier = getParam('slug') || getParam('id') || document.body.dataset.routeSlug || '';
+  if (!identifier) {
+    root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Berita tidak ditemukan.</div></section>`;
+    return;
+  }
+  let item, related, comments;
+  try {
+    item = await API.getNewsDetail(identifier);
+    related = await API.getRelatedNews(item.id, item.category);
+    comments = await API.getNewsComments(item);
+  } catch (err) {
+    root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Gagal memuat berita. Silakan coba lagi.</div></section>`;
+    return;
+  }
   document.title = `${item.title} | GenBI Provinsi Jambi`;
   root.innerHTML = `
     <section class="bg-stone py-14 md:py-20">
@@ -34,7 +44,7 @@ async function renderDetail() {
           <img src="${item.image}" alt="${item.title}" class="h-auto w-full object-cover" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" />
         </div>
         <div class="prose-soft">
-          ${item.body.map((paragraph) => `<p>${paragraph}</p>`).join('')}
+          ${item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join('')}
         </div>
         <div class="mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
           <p><strong>Pewarta:</strong> ${item.author}</p>

@@ -294,9 +294,9 @@ final class News
             'news_content_short' => (string) ($row['news_content_short'] ?? $row['meta_description'] ?? ''),
             'date' => (string) ($row['published_at'] ?? $row['news_date'] ?? $row['created_at'] ?? ''),
             'published_at' => $row['published_at'] ?? $row['news_date'] ?? $row['created_at'] ?? null,
-            'image' => (string) ($row['photo'] ?? $row['banner'] ?? ''),
-            'photo' => (string) ($row['photo'] ?? ''),
-            'banner' => (string) ($row['banner'] ?? ''),
+            'image' => self::resolveImageUrl((string) ($row['photo'] ?? $row['banner'] ?? '')),
+            'photo' => self::resolveImageUrl((string) ($row['photo'] ?? '')),
+            'banner' => self::resolveImageUrl((string) ($row['banner'] ?? '')),
             'category' => (string) ($row['category_name'] ?? $row['category'] ?? 'Berita GenBI'),
             'category_name' => (string) ($row['category_name'] ?? $row['category'] ?? 'Berita GenBI'),
             'category_id' => isset($row['category_id']) ? (int) $row['category_id'] : null,
@@ -310,5 +310,17 @@ final class News
             'meta_description' => (string) ($row['meta_description'] ?? ''),
             'status' => (string) ($row['status'] ?? 'published'),
         ];
+    }
+
+    private static function resolveImageUrl(string $filename): string
+    {
+        if ($filename === '') {
+            return '';
+        }
+        // Already a full URL or absolute path
+        if (str_starts_with($filename, 'http') || str_starts_with($filename, '/')) {
+            return $filename;
+        }
+        return 'https://genbijambi.com/public/uploads/' . $filename;
     }
 }
