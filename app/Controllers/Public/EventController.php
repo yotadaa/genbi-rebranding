@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Models\Event;
 use App\Services\SeoService;
+use App\Services\StructuredData;
 use Throwable;
 
 final class EventController
@@ -34,7 +35,11 @@ final class EventController
 
         $seo = SeoService::forPage('event.html');
         $meta = SeoService::renderMetaBlock($seo);
-        $response->html($this->renderer->render('event.html', ['meta' => $meta]));
+        $jsonld = StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+            ['name' => 'Beranda', 'url' => '/'],
+            ['name' => 'Event', 'url' => '/event'],
+        ]);
+        $response->html($this->renderer->render('event.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 
     public function show(Request $request, Response $response, array $params): void
@@ -51,8 +56,16 @@ final class EventController
             return;
         }
 
+        $item = $id > 0 ? $this->eventModel?->findById($id) : null;
         $seo = SeoService::forPage('event.html');
         $meta = SeoService::renderMetaBlock($seo);
-        $response->html($this->renderer->render('event.html', ['meta' => $meta]));
+        $jsonld = is_array($item)
+            ? StructuredData::event($item) . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+                ['name' => 'Beranda', 'url' => '/'],
+                ['name' => 'Event', 'url' => '/event'],
+                ['name' => $item['title'] ?? 'Detail', 'url' => '/event/' . $id],
+            ])
+            : '';
+        $response->html($this->renderer->render('event.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 }

@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Models\News;
 use App\Services\SeoService;
+use App\Services\StructuredData;
 use Throwable;
 
 final class NewsController
@@ -44,7 +45,11 @@ final class NewsController
 
         $seo = SeoService::forPage('news.html');
         $meta = SeoService::renderMetaBlock($seo);
-        $response->html($this->renderer->render('news.html', ['meta' => $meta]));
+        $jsonld = StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+            ['name' => 'Beranda', 'url' => '/'],
+            ['name' => 'Berita', 'url' => '/news'],
+        ]);
+        $response->html($this->renderer->render('news.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 
     /** @param array{slug?: string} $params */
@@ -78,7 +83,14 @@ final class NewsController
             $seo = SeoService::forPage('news.html');
         }
         $meta = SeoService::renderMetaBlock($seo);
-        $response->html($this->renderer->render('news-detail.html', ['slug' => $slug, 'meta' => $meta]));
+        $jsonld = is_array($item)
+            ? StructuredData::newsArticle($item) . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+                ['name' => 'Beranda', 'url' => '/'],
+                ['name' => 'Berita', 'url' => '/news'],
+                ['name' => $item['title'] ?? 'Detail', 'url' => '/news/' . ($item['slug'] ?? $slug)],
+            ])
+            : '';
+        $response->html($this->renderer->render('news-detail.html', ['slug' => $slug, 'meta' => $meta, 'jsonld' => $jsonld]));
     }
 
     /** @param array{id?: string} $params */

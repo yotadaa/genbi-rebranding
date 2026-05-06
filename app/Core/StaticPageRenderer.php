@@ -44,6 +44,10 @@ final class StaticPageRenderer
             $html = str_replace('</head>', '  <meta name="csrf-token" content="' . $token . '" />' . PHP_EOL . '</head>', $html);
         }
 
+        if (!empty($options['jsonld']) && is_string($options['jsonld'])) {
+            $html = str_replace('</head>', '  ' . $options['jsonld'] . PHP_EOL . '</head>', $html);
+        }
+
         if (!empty($options['slug'])) {
             $slug = htmlspecialchars((string) $options['slug'], ENT_QUOTES, 'UTF-8');
             $html = str_replace('<body>', '<body data-route-slug="' . $slug . '">', $html);
