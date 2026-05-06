@@ -7,7 +7,7 @@ use App\Core\Response;
 
 $router->get('/', static fn (Request $request, Response $response) => $pageController->show($request, $response, 'index.html'));
 $router->get('/about', static fn (Request $request, Response $response) => $pageController->show($request, $response, 'about.html'));
-$router->get('/team', static fn (Request $request, Response $response) => $pageController->show($request, $response, 'team.html'));
+$router->get('/team', static fn (Request $request, Response $response) => $teamController->index($request, $response));
 $router->get('/prestasi', static fn (Request $request, Response $response) => $prestasiController->index($request, $response));
 $router->get('/prestasi/submit/{token}', static fn (Request $request, Response $response, array $params) => $prestasiController->submissionForm($request, $response, $params));
 $router->get('/prestasi/{slug}', static fn (Request $request, Response $response, array $params) => $prestasiController->show($request, $response, $params));

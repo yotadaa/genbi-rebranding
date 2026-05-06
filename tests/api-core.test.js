@@ -4,6 +4,29 @@ const assert = require('node:assert/strict');
 const Core = require('../public/assets/js/api-core.js');
 const UI = require('../public/assets/js/lib/ui.js');
 
+test('normalizeTeamMember maps backend-shaped team member into frontend shape', () => {
+  // Backend-shaped item (from tbl_team_member via TeamMember::mapRow)
+  const backend = { id: 37, name: 'Ilham Jaya Kusuma', role: 'Ketua Umum', division: 'Badan Pengurus Inti', campus: 'UIN STS Jambi', commission: 'Badan Pengurus Inti', year: '2025', status: 'Pengurus', bio: 'Mengawal arah kerja organisasi.', photo: 'https://genbijambi.com/public/uploads/team-member-37.jpg' };
+  const result = Core.normalizeTeamMember(backend);
+  assert.strictEqual(result.id, 37);
+  assert.strictEqual(result.name, 'Ilham Jaya Kusuma');
+  assert.strictEqual(result.role, 'Ketua Umum');
+  assert.strictEqual(result.division, 'Badan Pengurus Inti');
+  assert.strictEqual(result.campus, 'UIN STS Jambi');
+  assert.strictEqual(result.photo, 'https://genbijambi.com/public/uploads/team-member-37.jpg');
+
+  // Fallback for empty item
+  const empty = Core.normalizeTeamMember({});
+  assert.strictEqual(empty.name, '');
+  assert.strictEqual(empty.division, 'Umum');
+  assert.strictEqual(empty.year, '2025');
+
+  // normalizeTeamList handles { data: [...] } wrapper
+  const list = Core.normalizeTeamList({ data: [backend] });
+  assert.strictEqual(list.length, 1);
+  assert.strictEqual(list[0].name, 'Ilham Jaya Kusuma');
+});
+
 test('canonicalNewsUrl returns absolute canonical slug URL', () => {
   // Backend-shaped item
   assert.strictEqual(

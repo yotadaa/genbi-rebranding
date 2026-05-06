@@ -101,6 +101,16 @@
     );
   }
 
+  async function getTeamList() {
+    return withFallback(
+      async () => {
+        const json = await requestJson('/team');
+        return { members: Core.normalizeTeamList(json), bpi: Core.normalizeTeamList(json.bpi || []) };
+      },
+      () => ({ members: Data.teamMembers || [], bpi: Data.bpiMembers || [] })
+    );
+  }
+
   async function getAdminComments(filters = {}) {
     return withFallback(
       async () => Core.normalizeAdminComments(await requestJson(Core.buildEndpoint('/admin/news-comments', filters))),
@@ -124,6 +134,7 @@
     getNewsList,
     getPrestasiList,
     getRelatedNews,
+    getTeamList,
     moderateComment,
     submitNewsComment,
   };

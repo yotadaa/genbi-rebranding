@@ -24,10 +24,9 @@ final class NewsController
                 'category' => $request->query('category'),
             ]));
 
-            if ($items !== null) {
-                $response->json(['data' => $items]);
-                return;
-            }
+            // Always return JSON when client expects JSON, even if DB is unavailable
+            $response->json(['data' => $items ?? []]);
+            return;
         }
 
         $seo = SeoService::forPage('news.html');

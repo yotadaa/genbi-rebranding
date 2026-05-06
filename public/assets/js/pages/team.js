@@ -2,11 +2,12 @@
 'use strict';
 const { formatInitials, renderShell } = window.GenBIApp;
 const { createCustomSelect, createModalController, observeFadeUp, unique } = window.GenBIUI;
-const { teamMembers } = window.GenBIData;
+const API = window.GenBIAPI;
 
 renderShell('team');
 observeFadeUp();
 
+let teamMembers = [];
 let state = {
   query: '',
   division: 'Semua',
@@ -19,32 +20,40 @@ const count = document.querySelector('#team-count');
 const list = document.querySelector('#team-list');
 const memberModal = createModalController(document.querySelector('#member-modal'));
 
-createCustomSelect(document.querySelector('#team-division'), {
-  label: 'Divisi',
-  options: unique(teamMembers.map((member) => member.division)),
-  onChange: (value) => { state.division = value; renderTeam(); }
-});
-createCustomSelect(document.querySelector('#team-campus'), {
-  label: 'Kampus',
-  options: unique(teamMembers.map((member) => member.campus)),
-  onChange: (value) => { state.campus = value; renderTeam(); }
-});
-createCustomSelect(document.querySelector('#team-year'), {
-  label: 'Tahun',
-  options: unique(teamMembers.map((member) => member.year)),
-  onChange: (value) => { state.year = value; renderTeam(); }
-});
+init();
 
-search.addEventListener('input', (event) => {
-  state.query = event.target.value;
+async function init() {
+  count.textContent = 'Memuat data anggota...';
+  const result = await API.getTeamList();
+  teamMembers = result.members;
+
+  createCustomSelect(document.querySelector('#team-division'), {
+    label: 'Divisi',
+    options: unique(teamMembers.map((member) => member.division)),
+    onChange: (value) => { state.division = value; renderTeam(); }
+  });
+  createCustomSelect(document.querySelector('#team-campus'), {
+    label: 'Kampus',
+    options: unique(teamMembers.map((member) => member.campus)),
+    onChange: (value) => { state.campus = value; renderTeam(); }
+  });
+  createCustomSelect(document.querySelector('#team-year'), {
+    label: 'Tahun',
+    options: unique(teamMembers.map((member) => member.year)),
+    onChange: (value) => { state.year = value; renderTeam(); }
+  });
+
+  search.addEventListener('input', (event) => {
+    state.query = event.target.value;
+    renderTeam();
+  });
+
+  document.querySelector('#team-reset').addEventListener('click', () => {
+    window.location.reload();
+  });
+
   renderTeam();
-});
-
-document.querySelector('#team-reset').addEventListener('click', () => {
-  window.location.reload();
-});
-
-renderTeam();
+}
 
 function renderTeam() {
   const query = state.query.toLowerCase().trim();
@@ -55,7 +64,7 @@ function renderTeam() {
       && (state.campus === 'Semua' || member.campus === state.campus)
       && (state.year === 'Semua' || member.year === state.year);
   });
-  count.textContent = `Menampilkan ${filtered.length} anggota dari ${teamMembers.length} data dummy.`;
+  count.textContent = `Menampilkan ${filtered.length} anggota dari ${teamMembers.length} data.`;
   list.innerHTML = filtered.length ? filtered.map((member) => `
     <article class="soft-row grid gap-4 p-5 md:grid-cols-[70px_1fr_170px_110px] md:items-center md:p-6">
       <button class="avatar open-member" data-id="${member.id}" aria-label="Detail ${member.name}">${formatInitials(member.name)}</button>

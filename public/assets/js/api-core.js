@@ -177,6 +177,27 @@
     return normalizeListPayload(payload).map(normalizePrestasi);
   }
 
+  function normalizeTeamMember(item = {}) {
+    return {
+      id: item.id || 0,
+      name: item.name || '',
+      role: item.role || item.designation || '',
+      division: item.division || 'Umum',
+      campus: item.campus || '',
+      commission: item.commission || '',
+      year: item.year || '2025',
+      status: item.status || 'Pengurus',
+      bio: item.bio || item.detail || '',
+      photo: item.photo || '',
+      email: item.email || '',
+      instagram: item.instagram || '',
+    };
+  }
+
+  function normalizeTeamList(payload) {
+    return normalizeListPayload(payload).map(normalizeTeamMember);
+  }
+
   function buildEndpoint(basePath, params = {}) {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -277,6 +298,8 @@
     normalizeNewsList,
     normalizePrestasi,
     normalizePrestasiList,
+    normalizeTeamMember,
+    normalizeTeamList,
     adminUrl,
     canonicalNewsUrl,
     newsDetailUrl,
