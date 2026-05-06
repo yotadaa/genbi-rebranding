@@ -350,6 +350,31 @@ final class News
             return $filename;
         }
 
-        return rtrim(App::config()['url'], '/') . '/uploads/' . ltrim($filename, '/');
+        return rtrim(App::config()['url'], '/') . '/uploads/' . self::resolveUploadFilename($filename);
+    }
+
+    private static function resolveUploadFilename(string $filename): string
+    {
+        $normalized = ltrim(str_replace('public/uploads/', '', $filename), '/');
+        $uploadRoot = dirname(__DIR__, 2) . '/public/uploads';
+
+        if (is_file($uploadRoot . '/' . $normalized)) {
+            return $normalized;
+        }
+
+        $extension = pathinfo($normalized, PATHINFO_EXTENSION);
+        if ($extension === '') {
+            return $normalized;
+        }
+
+        $base = substr($normalized, 0, -(strlen($extension) + 1));
+        foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $candidateExtension) {
+            $candidate = $base . '.' . $candidateExtension;
+            if (is_file($uploadRoot . '/' . $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $normalized;
     }
 }

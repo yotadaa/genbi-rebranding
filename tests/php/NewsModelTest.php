@@ -44,7 +44,7 @@ $relativeImageRow = News::mapRow([
     'news_title' => 'Talkshow Ekonomi Syariah Siginjai Fest',
     'photo' => 'news-98.jpeg',
 ]);
-assert($relativeImageRow['photo'] === 'http://example.test/uploads/news-98.jpeg');
+assert($relativeImageRow['photo'] === 'http://example.test/uploads/news-98.jpg');
 
 assert(Slugger::slugify('Talkshow Siginjai Fest 2026!') === 'talkshow-siginjai-fest-2026');
 
