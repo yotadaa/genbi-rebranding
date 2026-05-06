@@ -33,7 +33,7 @@ async function renderDetail() {
   root.dataset.loaded = 'true';
   root.innerHTML = `
     <section class="bg-stone py-14 md:py-20">
-      <div class="article-container fade-up">
+      <div class="article-container fade-up in-view">
         <a data-transition href="${pageUrl('news')}" class="chip mb-7">← Kembali ke News</a>
         <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-neutral-500">
           <span class="text-blue-800">${item.category}</span><span>${item.date}</span><span>${item.readTime}</span>
@@ -43,7 +43,7 @@ async function renderDetail() {
       </div>
     </section>
     <section class="bg-cream py-10 md:py-16">
-      <article class="article-container fade-up">
+      <article class="article-container fade-up in-view">
         <div class="mb-10 overflow-hidden rounded-[2rem] border border-neutral-900/10 bg-blue-50">
           <img src="${item.image}" alt="${item.title}" class="h-auto w-full object-cover" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" />
         </div>
@@ -58,7 +58,7 @@ async function renderDetail() {
       </article>
     </section>
     <section class="bg-[#f6f3ec] py-12 md:py-16">
-      <div class="article-container fade-up">
+      <div class="article-container fade-up in-view">
         <div class="news-engagement-grid">
           <section class="share-card">
             <p class="eyebrow">Bagikan artikel</p>
@@ -104,7 +104,7 @@ async function renderDetail() {
       </div>
     </section>
     <section class="bg-[#f6f3ec] pb-14 md:pb-20">
-      <div class="article-container fade-up">
+      <div class="article-container fade-up in-view">
         <p class="eyebrow">Artikel terkait</p>
         <div class="mt-6 related-news-list">
           ${related.map((post) => `
@@ -149,16 +149,7 @@ async function renderDetail() {
 function cleanNewsContent(content) {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = String(content || '');
-  wrapper.querySelectorAll('[style]').forEach((node) => {
-    const current = node.getAttribute('style') || '';
-    const cleaned = current
-      .split(';')
-      .map((rule) => rule.trim())
-      .filter((rule) => rule && !/^color\s*:/i.test(rule) && !/^background(?:-color)?\s*:/i.test(rule) && !/^font(?:-family|-size)?\s*:/i.test(rule))
-      .join('; ');
-    if (cleaned) node.setAttribute('style', cleaned);
-    else node.removeAttribute('style');
-  });
+  wrapper.querySelectorAll('[style]').forEach((node) => node.removeAttribute('style'));
   return wrapper.innerHTML;
 }
 

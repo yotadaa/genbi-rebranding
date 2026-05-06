@@ -25,7 +25,7 @@ body {
 
 body.page-ready {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 body.page-leaving {
@@ -535,12 +535,16 @@ body.page-leaving {
 }
 
 .news-detail-content,
-.news-detail-content :where(p, span, div, li, a, strong, em, h1, h2, h3, h4, h5, h6) {
+.news-detail-content * {
   color: #262626 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  -webkit-text-fill-color: #262626 !important;
 }
 
-.news-detail-content :where(a) {
+.news-detail-content a {
   color: var(--blue-800) !important;
+  -webkit-text-fill-color: var(--blue-800) !important;
 }
 
 .news-detail-content :where(p, li, div) {
@@ -2989,10 +2993,14 @@ input[type="file"].config-input::file-selector-button:hover {
 .public-fixed-modal {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   z-index: 90;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   overflow-y: auto;
   background: rgb(15 23 42 / 0.56);
   padding: clamp(1rem, 3vw, 2rem);
