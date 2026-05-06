@@ -3253,10 +3253,26 @@ input[type="file"].config-input::file-selector-button:hover {
   padding: 0;
 }
 
+@media (min-width: 900px) {
+  .prestasi-detail-panel {
+    display: grid;
+    width: min(100%, 1040px);
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    align-items: stretch;
+  }
+}
+
 .prestasi-detail-image {
   overflow: hidden;
   border-radius: 1.8rem 1.8rem 0 0;
   background: var(--blue-50);
+}
+
+@media (min-width: 900px) {
+  .prestasi-detail-image {
+    min-height: 100%;
+    border-radius: 1.8rem 0 0 1.8rem;
+  }
 }
 
 .prestasi-detail-image img {
@@ -3265,8 +3281,26 @@ input[type="file"].config-input::file-selector-button:hover {
   object-fit: cover;
 }
 
+@media (min-width: 900px) {
+  .prestasi-detail-image img {
+    height: 100%;
+    max-height: none;
+    min-height: 520px;
+  }
+}
+
 .prestasi-detail-copy {
   padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+@media (min-width: 900px) {
+  .prestasi-detail-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(1.75rem, 3vw, 2.5rem);
+  }
 }
 
 .prestasi-detail-meta {
