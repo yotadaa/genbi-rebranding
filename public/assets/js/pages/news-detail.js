@@ -53,7 +53,6 @@ async function renderDetail() {
         <div class="mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
           <p><strong>Pewarta:</strong> ${item.author}</p>
           <p><strong>Editor:</strong> ${item.editor}</p>
-          <p class="mt-3 text-neutral-500">Konten dummy disusun dari data halaman berita publik GenBI Jambi dan dipadatkan untuk kebutuhan prototipe.</p>
         </div>
       </article>
     </section>
@@ -103,25 +102,7 @@ async function renderDetail() {
         </div>
       </div>
     </section>
-    <section class="bg-[#f6f3ec] pb-14 md:pb-20">
-      <div class="article-container fade-up in-view">
-        <p class="eyebrow">Artikel terkait</p>
-        <div class="mt-6 related-news-list">
-          ${related.map((post) => `
-            <a data-transition href="${newsDetailUrl(post)}" class="related-news-card">
-              <figure><img src="${post.image}" alt="${post.title}" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>
-              <div>
-                <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-neutral-500">
-                  <span class="text-blue-800">${post.category}</span><span>${post.date}</span>
-                </div>
-                <h3 class="serif mt-2 text-2xl font-semibold tracking-tight text-neutral-950">${post.title}</h3>
-                <p class="mt-2 text-sm leading-6 text-neutral-600">${post.excerpt}</p>
-              </div>
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    </section>
+    ${hasPreservedRelated(item) ? renderRelatedSection(related) : ''}
   `;
 
   root.querySelectorAll('[data-share-url]').forEach((button) => {
@@ -144,6 +125,35 @@ async function renderDetail() {
     form.reset();
     showMiniToast('Komentar masuk antrean moderasi');
   });
+}
+
+function hasPreservedRelated(item) {
+  return String(item?.related || item?.raw?.related || '').trim() !== '';
+}
+
+function renderRelatedSection(related) {
+  if (!related.length) return '';
+  return `
+    <section class="bg-[#f6f3ec] pb-14 md:pb-20">
+      <div class="article-container fade-up in-view">
+        <p class="eyebrow">Artikel terkait</p>
+        <div class="mt-6 related-news-list">
+          ${related.map((post) => `
+            <a data-transition href="${newsDetailUrl(post)}" class="related-news-card">
+              <figure><img src="${post.image}" alt="${post.title}" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>
+              <div>
+                <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-neutral-500">
+                  <span class="text-blue-800">${post.category}</span><span>${post.date}</span>
+                </div>
+                <h3 class="serif mt-2 text-2xl font-semibold tracking-tight text-neutral-950">${post.title}</h3>
+                <p class="mt-2 text-sm leading-6 text-neutral-600">${post.excerpt}</p>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function cleanNewsContent(content) {

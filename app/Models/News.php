@@ -335,6 +335,7 @@ final class News
             'meta_title' => (string) ($row['meta_title'] ?? ''),
             'meta_keyword' => (string) ($row['meta_keyword'] ?? ''),
             'meta_description' => (string) ($row['meta_description'] ?? ''),
+            'related' => (string) ($row['related'] ?? ''),
             'status' => (string) ($row['status'] ?? 'published'),
         ];
     }

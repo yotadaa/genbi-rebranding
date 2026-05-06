@@ -58,6 +58,7 @@
       body: body.length ? body : [item.news_content_short || item.excerpt || 'Konten berita belum tersedia.'],
       author: item.contributor_pewarta || item.author || 'Redaksi GenBI Jambi',
       editor: item.contributor_editor || item.editor || 'Redaksi GenBI Jambi',
+      related: item.related || '',
       raw: item,
     };
   }

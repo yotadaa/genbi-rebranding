@@ -3445,8 +3445,8 @@ input[type="file"].config-input::file-selector-button:hover {
 
 .team-detail-photo {
   display: grid;
-  width: min(100%, 320px);
-  aspect-ratio: 1;
+  width: min(100%, 300px);
+  aspect-ratio: 3 / 4;
   margin: 0 auto 1.5rem;
   place-items: center;
   overflow: hidden;
