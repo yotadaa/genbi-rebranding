@@ -14,6 +14,7 @@ use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
 use App\Controllers\Public\PrestasiController;
 use App\Controllers\Public\SitemapController;
+use App\Controllers\Public\EventController;
 use App\Controllers\Public\TeamController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
@@ -26,6 +27,7 @@ use App\Models\News;
 use App\Models\NewsComment;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
+use App\Models\Event;
 use App\Models\TeamMember;
 
 spl_autoload_register(static function (string $class): void {
@@ -63,12 +65,15 @@ try {
     $commentModel = new NewsComment($db);
     $prestasiModel = new Prestasi($db);
     $tokenModel = new PrestasiToken($db);
+    $eventModel = new Event($db);
     $teamModel = new TeamMember($db);
 } catch (\Throwable) {
     $newsModel = null;
     $commentModel = null;
     $prestasiModel = null;
     $tokenModel = null;
+$eventModel = null;
+    $eventModel = null;
     $teamModel = null;
 }
 
@@ -76,6 +81,7 @@ $pageController = new PageController($renderer);
 $newsController = new NewsController($renderer, $newsModel);
 $commentController = new CommentController($newsModel, $commentModel);
 $prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel);
+$eventController = new EventController($renderer, $eventModel);
 $teamController = new TeamController($renderer, $teamModel);
 $sitemapController = new SitemapController($newsModel, $prestasiModel);
 $feedController = new FeedController($newsModel);

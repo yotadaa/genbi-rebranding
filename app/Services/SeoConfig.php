@@ -35,6 +35,11 @@ final class SeoConfig
                 'description' => 'Daftar prestasi dan pencapaian anggota GenBI Provinsi Jambi di tingkat regional dan nasional.',
                 'path' => '/prestasi',
             ],
+            'event.html' => [
+                'title' => 'Event dan Agenda GenBI Provinsi Jambi',
+                'description' => 'Daftar kegiatan dan agenda komunitas GenBI Provinsi Jambi.',
+                'path' => '/event',
+            ],
             'news.html' => [
                 'title' => 'Berita GenBI Provinsi Jambi',
                 'description' => 'Berita terbaru seputar kegiatan dan program GenBI Provinsi Jambi.',

@@ -123,6 +123,20 @@
     );
   }
 
+  async function getEventList(filters = {}) {
+    return withFallback(
+      async () => Core.normalizeEventList(await requestJson(Core.buildEndpoint('/event', filters))),
+      () => Core.normalizeEventList(Data.publicEvents || [])
+    );
+  }
+
+  async function getEventDetail(id) {
+    return withFallback(
+      async () => Core.normalizeEvent((await requestJson(`/event/${encodeURIComponent(id)}`)).data || {}),
+      () => Core.normalizeEventList(Data.publicEvents || []).find((e) => String(e.id) === String(id)) || null
+    );
+  }
+
   async function getAdminComments(filters = {}) {
     return withFallback(
       async () => Core.normalizeAdminComments(await requestJson(Core.buildEndpoint('/admin/news-comments', filters))),
@@ -141,6 +155,8 @@
   window.GenBIAPI = {
     getCsrfToken,
     getAdminComments,
+    getEventDetail,
+    getEventList,
     getNewsComments,
     getNewsDetail,
     getNewsList,

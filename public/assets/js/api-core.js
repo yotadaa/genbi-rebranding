@@ -156,6 +156,31 @@
     };
   }
 
+  function normalizeEvent(item = {}) {
+    const title = item.event_title || item.title || 'Event GenBI Jambi';
+    const id = item.event_id || item.id || 0;
+    return {
+      id,
+      title,
+      content: item.event_content || item.content || '',
+      excerpt: item.event_content_short || item.excerpt || '',
+      start_date: item.event_start_date || item.start_date || '',
+      end_date: item.event_end_date || item.end_date || '',
+      location: item.event_location || item.location || '',
+      map: item.event_map || item.map || '',
+      image: item.photo || item.image || DEFAULT_IMAGE,
+      photo: item.photo || '',
+      banner: item.banner || '',
+      status: item.status || 'Upcoming',
+      meta_title: item.meta_title || '',
+      meta_description: item.meta_description || '',
+    };
+  }
+
+  function normalizeEventList(payload) {
+    return normalizeListPayload(payload).map(normalizeEvent);
+  }
+
   function normalizePrestasi(item = {}) {
     const title = item.judul_prestasi || item.title || 'Prestasi GenBI Jambi';
     const id = item.prestasi_id || item.id || item.slug || slugify(title);
@@ -244,6 +269,7 @@
       about: '/about',
       team: '/team',
       teams: '/teams',
+      event: '/event',
       prestasi: '/prestasi',
       news: '/news',
       contact: '/contact',
@@ -254,6 +280,7 @@
       about: 'about.html',
       team: 'team.html',
       teams: 'team.html',
+      event: 'event.html',
       prestasi: 'prestasi.html',
       news: 'news.html',
       contact: 'contact.html',
@@ -283,11 +310,13 @@
       '/about': '/about.html',
       '/team': '/team.html',
       '/teams': '/team.html',
+      '/event': '/event.html',
       '/prestasi': '/prestasi.html',
       '/news': '/news.html',
       '/contact': '/contact.html',
     };
     if (publicRoutes[cleanPath]) return publicRoutes[cleanPath];
+    if (/^\/event\/\d+$/.test(cleanPath)) return '/event.html';
     if (/^\/news\/[^/]+$/.test(cleanPath)) return '/news-detail.html';
     if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/prestasi-submit.html';
     if (cleanPath === '/admin') return '/admin/dashboard.html';
@@ -320,6 +349,8 @@
     normalizeNews,
     normalizeNewsList,
     normalizePrestasi,
+    normalizeEvent,
+    normalizeEventList,
     normalizePrestasiList,
     normalizeTeamMember,
     normalizeTeamList,
