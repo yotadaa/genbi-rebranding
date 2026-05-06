@@ -21,10 +21,15 @@ if (in_array($basename, $staticFiles, true) && is_file(__DIR__ . '/' . $basename
 }
 
 if (str_starts_with($path, '/assets/')) {
-    $assetPath = realpath(__DIR__ . $path);
+    $assetPath = realpath(__DIR__ . $path) ?: realpath(dirname(__DIR__) . $path);
     $assetRoot = realpath(__DIR__ . '/assets');
+    $legacyAssetRoot = realpath(dirname(__DIR__) . '/assets');
 
-    if ($assetPath !== false && $assetRoot !== false && str_starts_with($assetPath, $assetRoot) && is_file($assetPath)) {
+    if (
+        $assetPath !== false
+        && is_file($assetPath)
+        && (($assetRoot !== false && str_starts_with($assetPath, $assetRoot)) || ($legacyAssetRoot !== false && str_starts_with($assetPath, $legacyAssetRoot)))
+    ) {
         $types = [
             'css' => 'text/css; charset=UTF-8',
             'gif' => 'image/gif',
@@ -44,6 +49,30 @@ if (str_starts_with($path, '/assets/')) {
 
     http_response_code(404);
     echo 'Asset not found';
+    return;
+}
+
+if (str_starts_with($path, '/uploads/')) {
+    $uploadPath = realpath(__DIR__ . $path) ?: realpath(__DIR__ . '/public' . $path);
+    $uploadRoot = realpath(__DIR__ . '/uploads');
+
+    if ($uploadPath !== false && $uploadRoot !== false && str_starts_with($uploadPath, $uploadRoot) && is_file($uploadPath)) {
+        $types = [
+            'gif' => 'image/gif',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+        ];
+        $extension = strtolower(pathinfo($uploadPath, PATHINFO_EXTENSION));
+        header('Content-Type: ' . ($types[$extension] ?? 'application/octet-stream'));
+        header('Cache-Control: public, max-age=86400');
+        readfile($uploadPath);
+        return;
+    }
+
+    http_response_code(404);
+    echo 'Upload not found';
     return;
 }
 

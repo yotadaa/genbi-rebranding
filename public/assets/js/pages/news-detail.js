@@ -9,6 +9,9 @@ renderShell('news');
 renderDetail();
 observeFadeUp();
 
+window.addEventListener('error', showDetailError);
+window.addEventListener('unhandledrejection', showDetailError);
+
 async function renderDetail() {
   const root = document.querySelector('#news-detail-root');
   root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Memuat detail berita...</div></section>`;
@@ -27,6 +30,7 @@ async function renderDetail() {
     return;
   }
   document.title = `${item.title} | GenBI Provinsi Jambi`;
+  root.dataset.loaded = 'true';
   root.innerHTML = `
     <section class="bg-stone py-14 md:py-20">
       <div class="article-container fade-up">
@@ -140,6 +144,13 @@ async function renderDetail() {
     form.reset();
     showMiniToast('Komentar masuk antrean moderasi');
   });
+}
+
+function showDetailError() {
+  const root = document.querySelector('#news-detail-root');
+  if (!root || root.dataset.loaded === 'true') return;
+  root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Gagal memuat berita. Silakan muat ulang halaman.</div></section>`;
+  document.body.classList.add('page-ready');
 }
 
 function showMiniToast(message) {

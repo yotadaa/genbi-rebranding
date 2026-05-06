@@ -203,6 +203,6 @@ class TeamMember
             return $filename;
         }
 
-        return 'https://genbijambi.com/public/uploads/' . $filename;
+        return '/uploads/' . ltrim($filename, '/');
     }
 }

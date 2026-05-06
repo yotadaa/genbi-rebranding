@@ -2971,8 +2971,9 @@ input[type="file"].config-input::file-selector-button:hover {
   position: fixed;
   inset: 0;
   z-index: 90;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow-y: auto;
   background: rgb(15 23 42 / 0.56);
   padding: clamp(1rem, 3vw, 2rem);
@@ -2986,6 +2987,7 @@ input[type="file"].config-input::file-selector-button:hover {
 .public-modal-panel {
   position: relative;
   width: min(100%, 760px);
+  margin: auto;
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
   border-radius: 1.8rem;
