@@ -229,6 +229,11 @@
     return isStaticProtocol(locationLike) ? `news-detail.html?slug=${encodeURIComponent(item.slug)}&id=${encodeURIComponent(item.id)}` : `/news/${encodeURIComponent(item.slug)}`;
   }
 
+  function canonicalNewsUrl(news) {
+    const item = normalizeNews(news || {});
+    return `https://genbijambi.com/news/${encodeURIComponent(item.slug)}`;
+  }
+
   function resolveStaticRoute(pathname = '/') {
     const cleanPath = String(pathname || '/').replace(/\/+$|^\s+|\s+$/g, '') || '/';
     const publicRoutes = {
@@ -273,6 +278,7 @@
     normalizePrestasi,
     normalizePrestasiList,
     adminUrl,
+    canonicalNewsUrl,
     newsDetailUrl,
     pageUrl,
     resolveStaticRoute,

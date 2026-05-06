@@ -4,6 +4,24 @@ const assert = require('node:assert/strict');
 const Core = require('../public/assets/js/api-core.js');
 const UI = require('../public/assets/js/lib/ui.js');
 
+test('canonicalNewsUrl returns absolute canonical slug URL', () => {
+  // Backend-shaped item
+  assert.strictEqual(
+    Core.canonicalNewsUrl({ slug: 'talkshow-siginjai-fest', news_id: 5 }),
+    'https://genbijambi.com/news/talkshow-siginjai-fest'
+  );
+  // Frontend-shaped item (already normalized)
+  assert.strictEqual(
+    Core.canonicalNewsUrl({ slug: 'genbi-peka-2025-3', id: 3 }),
+    'https://genbijambi.com/news/genbi-peka-2025-3'
+  );
+  // Fallback when no slug - generates from title + id
+  assert.strictEqual(
+    Core.canonicalNewsUrl({ news_title: 'Hello World', news_id: 99 }),
+    'https://genbijambi.com/news/hello-world-99'
+  );
+});
+
 test('buildEndpoint appends only meaningful query parameters', () => {
   assert.equal(Core.buildEndpoint('/news', { q: 'siginjai', category: 'BI', empty: '', page: null }), '/news?q=siginjai&category=BI');
 });

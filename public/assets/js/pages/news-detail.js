@@ -3,6 +3,7 @@
 const { getParam, newsDetailUrl, pageUrl, renderShell } = window.GenBIApp;
 const { observeFadeUp } = window.GenBIUI;
 const API = window.GenBIAPI;
+const Core = window.GenBIAPICore;
 
 renderShell('news');
 renderDetail();
@@ -49,10 +50,10 @@ async function renderDetail() {
             <p class="eyebrow">Bagikan artikel</p>
             <h2 class="serif mt-3 text-3xl font-semibold tracking-tight text-neutral-950">Bantu sebarkan kabar baik GenBI Jambi.</h2>
             <div class="mt-6 flex flex-wrap gap-2">
-              <button class="share-button" data-share-url="https://wa.me/?text=${encodeURIComponent(item.title)}%20${encodeURIComponent(location.href)}">WhatsApp</button>
-              <button class="share-button" data-share-url="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}">Facebook</button>
-              <button class="share-button" data-share-url="https://twitter.com/intent/tweet?text=${encodeURIComponent(item.title)}&url=${encodeURIComponent(location.href)}">X</button>
-              <button class="share-button" data-copy>Copy Link</button>
+              <button class="share-button" data-share-url="https://wa.me/?text=${encodeURIComponent(item.title)}%20${encodeURIComponent(Core.canonicalNewsUrl(item))}">WhatsApp</button>
+              <button class="share-button" data-share-url="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(Core.canonicalNewsUrl(item))}">Facebook</button>
+              <button class="share-button" data-share-url="https://twitter.com/intent/tweet?text=${encodeURIComponent(item.title)}&url=${encodeURIComponent(Core.canonicalNewsUrl(item))}">X</button>
+              <button class="share-button" data-copy data-canonical="${Core.canonicalNewsUrl(item)}">Copy Link</button>
             </div>
           </section>
           <section class="comment-card">
@@ -112,8 +113,9 @@ async function renderDetail() {
   root.querySelectorAll('[data-share-url]').forEach((button) => {
     button.addEventListener('click', () => window.open(button.dataset.shareUrl, '_blank', 'noopener,noreferrer'));
   });
-  root.querySelector('[data-copy]')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(location.href); showMiniToast('Link artikel disalin'); }
+  root.querySelector('[data-copy]')?.addEventListener('click', async (event) => {
+    const canonical = event.currentTarget.dataset.canonical || location.href;
+    try { await navigator.clipboard.writeText(canonical); showMiniToast('Link artikel disalin'); }
     catch { showMiniToast('Copy link disimulasikan'); }
   });
   root.querySelector('#comment-form')?.addEventListener('submit', async (event) => {

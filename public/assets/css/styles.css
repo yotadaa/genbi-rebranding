@@ -2998,13 +2998,8 @@ input[type="file"].config-input::file-selector-button:hover {
 
 .news-engagement-grid {
   display: grid;
-  gap: 1rem;
-}
-
-@media (min-width: 980px) {
-  .news-engagement-grid {
-    grid-template-columns: 0.9fr 1.1fr;
-  }
+  gap: 1.5rem;
+  max-width: 48rem;
 }
 
 .share-card,
