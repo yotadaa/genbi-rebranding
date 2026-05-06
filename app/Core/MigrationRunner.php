@@ -40,7 +40,6 @@ final class MigrationRunner
                 throw new RuntimeException('Invalid migration file: ' . basename($file));
             }
 
-            $this->db->beginTransaction();
             try {
                 $migration['up']($this->db);
                 $statement = $this->db->prepare('INSERT INTO migrations (migration, batch) VALUES (:migration, :batch)');
@@ -48,11 +47,7 @@ final class MigrationRunner
                     'migration' => basename($file),
                     'batch' => $batch,
                 ]);
-                $this->db->commit();
             } catch (\Throwable $error) {
-                if ($this->db->inTransaction()) {
-                    $this->db->rollBack();
-                }
                 throw $error;
             }
 
