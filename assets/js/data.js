@@ -13,14 +13,14 @@ const site = {
     {
       image: 'https://genbijambi.com/public/uploads/slider-1.png',
       eyebrow: 'GenBI Provinsi Jambi',
-      title: 'Sedikit kartu, lebih banyak alur baca.',
-      caption: 'Program tampil sebagai daftar editorial. Pengunjung bisa menangkap nama program, fokus, dan manfaat tanpa visual yang terlalu ramai.'
+      title: 'Bersama GenBI, tumbuh dan berdampak untuk Jambi.',
+      caption: 'Kami adalah komunitas penerima beasiswa Bank Indonesia di Jambi yang bergerak lewat edukasi, pengabdian, kepemimpinan, dan kolaborasi anak muda.'
     },
     {
       image: 'https://genbijambi.com/public/uploads/slider-4.png',
       eyebrow: 'Energi untuk Negeri',
-      title: 'Sedikit kartu, lebih banyak alur baca.',
-      caption: 'Program tampil sebagai daftar editorial. Pengunjung bisa menangkap nama program, fokus, dan manfaat tanpa visual yang terlalu ramai.'
+      title: 'Ruang belajar, berkarya, dan mengabdi bersama.',
+      caption: 'Dari kampus ke masyarakat, GenBI Jambi hadir membawa semangat literasi kebanksentralan, kepedulian sosial, dan kontribusi nyata untuk daerah.'
     }
   ],
   videoResourceUrl: 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq'
@@ -62,31 +62,31 @@ const programs = [
   {
     title: 'KKG',
     name: 'Kegiatan Kenal GenBI',
-    description: 'Membangun jaringan awal, memperkenalkan budaya organisasi, dan memperkuat dasar komunikasi anggota baru.',
+    description: 'Pintu awal bagi anggota baru untuk mengenal nilai GenBI, membangun kedekatan, dan memahami cara organisasi bergerak.',
     focus: 'Internal komunitas'
   },
   {
     title: 'SIGINJAI',
     name: 'Semarak Ekonomi dan Keuangan Syariah Negeri Jambi',
-    description: 'Ruang edukasi ekonomi syariah, halal value chain, dan kolaborasi publik bersama mitra strategis.',
+    description: 'Forum kolaboratif untuk memperluas pemahaman ekonomi syariah, halal value chain, dan peran generasi muda dalam ekosistem keuangan.',
     focus: 'Literasi syariah'
   },
   {
     title: 'GENTALA ARASY',
     name: 'Gebyar Ekonomi Digital dan Literasi Jambi',
-    description: 'Edukasi ekonomi digital, QRIS, keamanan transaksi, dan kesiapan pemuda menghadapi ruang digital.',
+    description: 'Gerakan literasi digital yang mendekatkan QRIS, transaksi aman, dan peluang ekonomi digital kepada mahasiswa serta masyarakat.',
     focus: 'Literasi digital'
   },
   {
     title: 'GGTC',
     name: 'GenBI Goes To Campus',
-    description: 'Sosialisasi beasiswa Bank Indonesia, kebanksentralan, Cinta Bangga Paham Rupiah, dan iBI Library.',
+    description: 'Kunjungan edukatif ke kampus untuk mengenalkan beasiswa Bank Indonesia, kebanksentralan, CBP Rupiah, QRIS, dan iBI Library.',
     focus: 'Kampus'
   },
   {
     title: 'Leadership Camp',
     name: 'Pembinaan Kepemimpinan',
-    description: 'Membentuk karakter, kerja tim, tanggung jawab sosial, dan kesiapan menjadi future leaders.',
+    description: 'Ruang pembentukan karakter, keberanian memimpin, kerja tim, dan tanggung jawab sosial bagi anggota GenBI Jambi.',
     focus: 'Kepemimpinan'
   }
 ];
@@ -94,10 +94,10 @@ const programs = [
 
 
 const publicEvents = [
-  { id: 1, title: 'GenBI PEKA', date: '23 Januari 2025', type: 'Sosial', icon: 'heart', description: 'Aksi kepedulian dan edukasi komunitas untuk memperkuat kepekaan sosial anggota.' },
-  { id: 2, title: 'GenBI Ceria', date: '21 Desember 2024', type: 'Komunitas', icon: 'users', description: 'Agenda kebersamaan, edukasi, dan relawan yang membuka ruang interaksi lintas anggota.' },
-  { id: 3, title: 'GenBI for UMKM', date: '20 Desember 2024', type: 'Literasi UMKM', icon: 'chart', description: 'Pendampingan literasi digital dan pencatatan keuangan sederhana bagi pelaku usaha.' },
-  { id: 4, title: 'PTBI 2024', date: '29 November 2024', type: 'Kebanksentralan', icon: 'calendar', description: 'Partisipasi anggota pada agenda Bank Indonesia untuk memperluas pemahaman ekonomi.' }
+  { id: 1, title: 'GenBI PEKA', date: '23 Januari 2025', type: 'Sosial', icon: 'heart', description: 'Gerakan kepedulian anggota GenBI Jambi untuk hadir lebih dekat dengan masyarakat dan membangun empati melalui aksi nyata.' },
+  { id: 2, title: 'GenBI Ceria', date: '21 Desember 2024', type: 'Komunitas', icon: 'users', description: 'Agenda kebersamaan yang merawat solidaritas anggota, membuka ruang interaksi, dan menjaga semangat organisasi tetap hidup.' },
+  { id: 3, title: 'GenBI for UMKM', date: '20 Desember 2024', type: 'Literasi UMKM', icon: 'chart', description: 'Pendampingan sederhana untuk membantu pelaku usaha memahami pencatatan, promosi digital, dan peluang pembayaran non-tunai.' },
+  { id: 4, title: 'PTBI 2024', date: '29 November 2024', type: 'Kebanksentralan', icon: 'calendar', description: 'Kesempatan anggota GenBI Jambi memperluas wawasan tentang arah kebijakan Bank Indonesia dan dinamika ekonomi terkini.' }
 ];
 
 const teamMembers = [
