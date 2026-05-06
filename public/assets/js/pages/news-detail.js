@@ -32,21 +32,20 @@ async function renderDetail() {
   document.title = `${item.title} | GenBI Provinsi Jambi`;
   root.dataset.loaded = 'true';
   root.innerHTML = `
-    <section class="bg-stone py-14 md:py-20">
-      <div class="article-container fade-up in-view">
-        <a data-transition href="${pageUrl('news')}" class="chip mb-7">← Kembali ke News</a>
-        <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-neutral-500">
-          <span class="text-blue-800">${item.category}</span><span>${item.date}</span><span>${item.readTime}</span>
+    <section class="news-detail-hero">
+      <img class="news-detail-hero-img" src="${item.image}" alt="${item.title}" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" />
+      <div class="news-detail-hero-overlay"></div>
+      <div class="news-detail-hero-content article-container fade-up in-view">
+        <a data-transition href="${pageUrl('news')}" class="chip chip-light mb-7">← Kembali ke News</a>
+        <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-white/80">
+          <span class="text-white">${item.category}</span><span>${item.date}</span><span>${item.readTime}</span>
         </div>
-        <h1 class="page-title mt-5">${item.title}</h1>
-        <p class="lead mt-7">${item.excerpt}</p>
+        <h1 class="page-title mt-5 text-white">${item.title}</h1>
+        <p class="lead mt-7 text-white/85">${item.excerpt}</p>
       </div>
     </section>
     <section class="bg-cream py-10 md:py-16">
       <article class="article-container fade-up in-view">
-        <div class="mb-10 overflow-hidden rounded-[2rem] border border-neutral-900/10 bg-blue-50">
-          <img src="${item.image}" alt="${item.title}" class="h-auto w-full object-cover" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" />
-        </div>
         <div class="prose-soft news-detail-content">
           ${cleanNewsContent(item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join(''))}
         </div>
