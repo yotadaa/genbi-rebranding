@@ -168,26 +168,21 @@ function openMember(id) {
   if (!member) return;
   memberModal.open({ content: `
     <div class="public-modal-panel team-detail-panel modal-panel is-open" role="dialog" aria-modal="true" aria-labelledby="member-title">
+      <button class="btn-icon modal-close" aria-label="Tutup detail anggota">×</button>
       <div class="team-detail-photo">
         ${member.photo ? `<img src="${safeImage(member.photo)}" alt="${member.name}" />` : `<span>${formatInitials(member.name)}</span>`}
       </div>
-      <div class="flex items-start justify-between gap-5">
-        <div class="flex items-center gap-4">
-          <div>
-            <p class="eyebrow">Detail anggota</p>
-            <h3 id="member-title" class="serif mt-1 text-3xl font-semibold tracking-tight text-neutral-950">${member.name}</h3>
-          </div>
-        </div>
-        <button class="btn-icon modal-close" aria-label="Tutup detail anggota">×</button>
+      <div class="team-detail-heading">
+        <p class="eyebrow">Detail anggota</p>
+        <h3 id="member-title" class="serif mt-1 text-3xl font-semibold tracking-tight text-neutral-950">${member.name}</h3>
       </div>
-      <div class="mt-6 grid gap-3 text-sm leading-7 text-neutral-700">
-        <p><strong>Jabatan:</strong> ${member.role}</p>
-        <p><strong>Divisi:</strong> ${member.division}</p>
-        <p><strong>Komisariat/Kampus:</strong> ${member.campus}</p>
-        <p><strong>Tahun:</strong> ${member.year}</p>
-        <p><strong>Status:</strong> ${member.status}</p>
-        <p class="rounded-2xl bg-white p-4">${member.bio}</p>
+      <div class="team-detail-info-grid">
+        <div class="team-detail-info-card"><span>Jabatan</span><strong>${member.role}</strong></div>
+        <div class="team-detail-info-card"><span>Divisi</span><strong>${member.division}</strong></div>
+        <div class="team-detail-info-card"><span>Komisariat/Kampus</span><strong>${member.campus}</strong></div>
+        <div class="team-detail-info-card"><span>Tahun</span><strong>${member.year}</strong></div>
       </div>
+      ${member.bio ? `<div class="team-detail-bio">${member.bio}</div>` : ''}
     </div>
   ` });
 }

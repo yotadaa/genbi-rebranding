@@ -3440,17 +3440,18 @@ input[type="file"].config-input::file-selector-button:hover {
 }
 
 .team-detail-panel {
-  width: min(100%, 760px);
+  width: min(100%, max(300px, 360px));
+  padding: clamp(0.85rem, 2vw, 1.1rem);
 }
 
 .team-detail-photo {
   display: grid;
-  width: min(100%, 300px);
+  width: 100%;
   aspect-ratio: 3 / 4;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1rem;
   place-items: center;
   overflow: hidden;
-  border-radius: 1.8rem;
+  border-radius: 1.5rem;
   background: var(--blue-50);
   color: var(--blue-800);
   font-size: 3rem;
@@ -3461,6 +3462,52 @@ input[type="file"].config-input::file-selector-button:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.team-detail-heading {
+  border-radius: 1.35rem;
+  border: 1px solid rgb(23 23 23 / 0.08);
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 16px 45px rgb(17 75 154 / 0.08);
+}
+
+.team-detail-info-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.team-detail-info-card,
+.team-detail-bio {
+  border-radius: 1.1rem;
+  border: 1px solid rgb(23 23 23 / 0.08);
+  background: rgb(255 255 255 / 0.84);
+  padding: 0.85rem 0.95rem;
+}
+
+.team-detail-info-card span {
+  display: block;
+  color: var(--blue-800);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.team-detail-info-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: #171717;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.team-detail-bio {
+  margin-top: 0.85rem;
+  color: #404040;
+  font-size: 14px;
+  line-height: 1.7;
 }
 .bpi-slide-photo { position: relative; }
 .bpi-slide-photo img { position: relative; z-index: 1; }
