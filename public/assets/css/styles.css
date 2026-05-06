@@ -557,7 +557,7 @@ body.page-leaving {
 .news-detail-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, var(--blue-900) 0%, rgba(12, 53, 114, 0.85) 40%, rgba(12, 53, 114, 0.4) 70%, transparent 100%);
+  background: linear-gradient(to right, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.78) 45%, rgba(10, 10, 10, 0.35) 75%, transparent 100%);
 }
 
 .news-detail-hero-content {
