@@ -183,6 +183,7 @@
       id: item.id || 0,
       name: item.name || '',
       role: item.role || item.designation || '',
+      divisionId: item.division_id || item.divisionId || item.divisi_id || 0,
       division: item.division || 'Umum',
       campus: item.campus || '',
       commission: item.commission || '',

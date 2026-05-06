@@ -18,13 +18,14 @@ class TeamMember
         $role = (string) ($row['designation'] ?? $row['jabatan_wilayah'] ?? $row['jabatan_komsat'] ?? 'Anggota');
         $detail = (string) ($row['detail'] ?? '');
         $photo = (string) ($row['photo'] ?? '');
-        $division = (string) ($row['division_name'] ?? $row['divisi_wilayah'] ?? $row['divisi_komsat'] ?? 'Umum');
+        $division = (string) ($row['division_name'] ?? 'Belum ada divisi');
         $commission = (string) ($row['commission_name'] ?? $row['komsat'] ?? 'GenBI Jambi');
 
         return [
             'id' => (int) ($row['id'] ?? 0),
             'name' => $name,
             'role' => $role,
+            'division_id' => isset($row['division_id']) ? (int) $row['division_id'] : (int) ($row['divisi_id'] ?? 0),
             'division' => $division,
             'campus' => $commission,
             'commission' => $commission,
@@ -50,12 +51,12 @@ class TeamMember
         try {
             [$where, $params] = $this->buildPublicFilterSql($filters);
             $stmt = $this->db->prepare(
-                'SELECT t.*, d.nama AS division_name, k.nama AS commission_name
+                'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
                  WHERE ' . $where . '
-                 ORDER BY t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, COALESCE(d.nama, t.divisi_wilayah, t.divisi_komsat) ASC, t.id ASC
+                 ORDER BY t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
                  LIMIT :limit OFFSET :offset'
             );
             foreach ($params as $key => $value) {
@@ -103,7 +104,7 @@ class TeamMember
 
         try {
             $stmt = $this->db->prepare(
-                'SELECT t.*, d.nama AS division_name, k.nama AS commission_name
+                'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
@@ -128,11 +129,11 @@ class TeamMember
 
         try {
             $stmt = $this->db->prepare(
-                "SELECT t.*, d.nama AS division_name, k.nama AS commission_name
+                "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                 WHERE LOWER(COALESCE(d.nama, t.divisi_wilayah, t.divisi_komsat, t.designation, '')) LIKE '%badan pengurus inti%'
+                 WHERE LOWER(COALESCE(d.nama, t.designation, '')) LIKE '%badan pengurus inti%'
                     OR LOWER(COALESCE(t.designation, '')) REGEXP 'ketua|sekretaris|bendahara|koordinator'
                  ORDER BY t.tahun DESC, t.id ASC
                  LIMIT :limit"
@@ -171,7 +172,7 @@ class TeamMember
         $params = [];
 
         if (!empty($filters['division'])) {
-            $where[] = 'COALESCE(d.nama, t.divisi_wilayah, t.divisi_komsat) = :division';
+            $where[] = 'd.nama = :division';
             $params['division'] = (string) $filters['division'];
         }
 
@@ -186,8 +187,12 @@ class TeamMember
         }
 
         if (!empty($filters['q'])) {
-            $where[] = '(t.name LIKE :q OR t.designation LIKE :q OR COALESCE(d.nama, t.divisi_wilayah, t.divisi_komsat) LIKE :q OR COALESCE(k.nama, t.komsat) LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $where[] = '(t.name LIKE :q_name OR t.designation LIKE :q_designation OR d.nama LIKE :q_division OR COALESCE(k.nama, t.komsat) LIKE :q_campus)';
+            $search = '%' . $filters['q'] . '%';
+            $params['q_name'] = $search;
+            $params['q_designation'] = $search;
+            $params['q_division'] = $search;
+            $params['q_campus'] = $search;
         }
 
         return [implode(' AND ', $where), $params];
