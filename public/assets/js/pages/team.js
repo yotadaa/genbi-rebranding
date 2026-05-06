@@ -18,6 +18,7 @@ let state = {
   perPage: 12,
   layout: 'grid'
 };
+hydrateStateFromUrl();
 
 const search = document.querySelector('#team-search');
 const count = document.querySelector('#team-count');
@@ -31,6 +32,9 @@ init();
 
 async function init() {
   count.textContent = 'Memuat data anggota...';
+  search.value = state.query;
+  setLayoutButtons();
+
   const result = await API.getTeamList();
   teamMembers = result.members;
   filterOptions = result.filters || filterOptions;
@@ -38,22 +42,26 @@ async function init() {
   createCustomSelect(document.querySelector('#team-division'), {
     label: 'Divisi',
     options: unique(filterOptions.divisions.length ? filterOptions.divisions : teamMembers.map((member) => member.division)),
-    onChange: (value) => { state.division = value; state.page = 1; renderTeam(); }
+    value: state.division,
+    onChange: (value) => { state.division = value; state.page = 1; updateUrlState(); renderTeam(); }
   });
   createCustomSelect(document.querySelector('#team-campus'), {
     label: 'Komisariat/Kampus',
     options: unique(filterOptions.campuses.length ? filterOptions.campuses : teamMembers.map((member) => member.campus)),
-    onChange: (value) => { state.campus = value; state.page = 1; renderTeam(); }
+    value: state.campus,
+    onChange: (value) => { state.campus = value; state.page = 1; updateUrlState(); renderTeam(); }
   });
   createCustomSelect(document.querySelector('#team-year'), {
     label: 'Tahun',
     options: unique(filterOptions.years.length ? filterOptions.years : teamMembers.map((member) => member.year)),
-    onChange: (value) => { state.year = value; state.page = 1; renderTeam(); }
+    value: state.year,
+    onChange: (value) => { state.year = value; state.page = 1; updateUrlState(); renderTeam(); }
   });
 
   search.addEventListener('input', (event) => {
     state.query = event.target.value;
     state.page = 1;
+    updateUrlState();
     renderTeam();
   });
 
@@ -61,7 +69,7 @@ async function init() {
   listButton?.addEventListener('click', () => setLayout('list'));
 
   document.querySelector('#team-reset').addEventListener('click', () => {
-    window.location.reload();
+    window.location.href = window.location.pathname;
   });
 
   renderTeam();
@@ -69,9 +77,39 @@ async function init() {
 
 function setLayout(layout) {
   state.layout = layout;
-  gridButton?.classList.toggle('is-active', layout === 'grid');
-  listButton?.classList.toggle('is-active', layout === 'list');
+  updateUrlState();
+  setLayoutButtons();
   renderTeam();
+}
+
+function setLayoutButtons() {
+  gridButton?.classList.toggle('is-active', state.layout === 'grid');
+  listButton?.classList.toggle('is-active', state.layout === 'list');
+}
+
+function hydrateStateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const layout = params.get('view') || params.get('layout');
+  if (layout === 'grid' || layout === 'list') state.layout = layout;
+  state.query = params.get('q') || '';
+  state.division = params.get('division') || 'Semua';
+  state.campus = params.get('campus') || 'Semua';
+  state.year = params.get('year') || 'Semua';
+  state.page = Math.max(1, Number(params.get('page')) || 1);
+}
+
+function updateUrlState() {
+  const params = new URLSearchParams();
+  if (state.layout !== 'grid') params.set('view', state.layout);
+  if (state.query.trim()) params.set('q', state.query.trim());
+  if (state.division !== 'Semua') params.set('division', state.division);
+  if (state.campus !== 'Semua') params.set('campus', state.campus);
+  if (state.year !== 'Semua') params.set('year', state.year);
+  if (state.page > 1) params.set('page', String(state.page));
+
+  const query = params.toString();
+  const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+  window.history.replaceState({}, '', url);
 }
 
 function getFilteredMembers() {
@@ -89,6 +127,7 @@ function renderTeam() {
   const filtered = getFilteredMembers();
   const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
   state.page = Math.min(state.page, totalPages);
+  updateUrlState();
   const start = (state.page - 1) * state.perPage;
   const paged = filtered.slice(start, start + state.perPage);
 
@@ -157,6 +196,7 @@ function renderPagination(totalPages) {
   pagination.querySelectorAll('[data-page]').forEach((button) => {
     button.addEventListener('click', () => {
       state.page = Number(button.dataset.page) || 1;
+      updateUrlState();
       renderTeam();
       list.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });

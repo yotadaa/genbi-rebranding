@@ -327,7 +327,7 @@ final class News
             'category' => (string) ($row['category_name'] ?? $row['category'] ?? 'Berita GenBI'),
             'category_name' => (string) ($row['category_name'] ?? $row['category'] ?? 'Berita GenBI'),
             'category_id' => isset($row['category_id']) ? (int) $row['category_id'] : null,
-            'author' => (string) ($row['contributor_pewarta'] ?? 'Redaksi GenBI Jambi'),
+            'author' => (string) ($row['contributor_pewarta'] ?? ''),
             'contributor_redaksi' => (string) ($row['contributor_redaksi'] ?? ''),
             'contributor_pewarta' => (string) ($row['contributor_pewarta'] ?? ''),
             'contributor_editor' => (string) ($row['contributor_editor'] ?? ''),

@@ -114,7 +114,6 @@ class PrestasiController
                 'title' => strip_tags(mb_substr(trim($body['title'] ?? ''), 0, 255)),
                 'slug' => $slug,
                 'name' => strip_tags(mb_substr(trim($body['name'] ?? ''), 0, 255)),
-                'campus' => strip_tags(mb_substr(trim($body['campus'] ?? ''), 0, 255)),
                 'category' => strip_tags(mb_substr(trim($body['category'] ?? ''), 0, 100)),
                 'year' => strip_tags(mb_substr(trim($body['year'] ?? ''), 0, 4)),
                 'description' => strip_tags(mb_substr(trim($body['description'] ?? ''), 0, 5000)),

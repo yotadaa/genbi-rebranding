@@ -224,6 +224,10 @@ function adminUrl(page) {
   return Core?.adminUrl ? Core.adminUrl(page, window.location) : `/admin/${page}`;
 }
 
+function routeUrl(name, params = {}) {
+  return Core?.routeUrl ? Core.routeUrl(name, params, window.location) : '';
+}
+
 function newsDetailUrl(news) {
   return Core?.newsDetailUrl ? Core.newsDetailUrl(news, window.location) : `/news/${news.slug || news.id}`;
 }
@@ -236,6 +240,7 @@ window.GenBIApp = {
   icon,
   newsDetailUrl,
   pageUrl,
+  routeUrl,
 };
 
 })();

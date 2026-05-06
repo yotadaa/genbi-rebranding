@@ -26,7 +26,7 @@
 
   async function validateAndRender(token) {
     try {
-      const res = await fetch(`/prestasi/submit/${encodeURIComponent(token)}`, {
+      const res = await fetch(Core.routeUrl('public.prestasiSubmit', { token }), {
         headers: { Accept: 'application/json' },
         credentials: 'same-origin'
       });
@@ -178,7 +178,7 @@
 
       try {
         const csrfToken = API.getCsrfToken ? API.getCsrfToken() : '';
-        const res = await fetch(`/prestasi/submit/${encodeURIComponent(token)}`, {
+        const res = await fetch(Core.routeUrl('public.prestasiSubmit', { token }), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

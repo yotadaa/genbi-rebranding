@@ -10,7 +10,7 @@ use App\Models\Prestasi;
 
 class PrestasiController
 {
-    private const ALLOWED_STATUSES = ['draft', 'published', 'pending', 'archived'];
+    private const ALLOWED_STATUSES = ['draft', 'published', 'archived'];
     private const UPLOAD_DIR = '/uploads/prestasi/';
     private const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
     private const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -49,21 +49,24 @@ class PrestasiController
             return;
         }
 
-        $slug = $this->generateUniqueSlug($body['title'] ?? 'prestasi');
+        $sanitized = $this->sanitizePayload($body);
+        $slug = $this->generateUniqueSlug($sanitized['title'] ?: 'prestasi');
         $status = $this->sanitizeStatus($body['status'] ?? 'draft');
 
         $id = $this->prestasi?->create([
-            'title' => strip_tags(mb_substr(trim($body['title'] ?? ''), 0, 255)),
+            'title' => $sanitized['title'],
             'slug' => $slug,
-            'name' => strip_tags(mb_substr(trim($body['name'] ?? ''), 0, 255)),
-            'campus' => strip_tags(mb_substr(trim($body['campus'] ?? ''), 0, 255)),
-            'category' => strip_tags(mb_substr(trim($body['category'] ?? ''), 0, 100)),
-            'year' => strip_tags(mb_substr(trim($body['year'] ?? ''), 0, 10)),
-            'description' => strip_tags(mb_substr(trim($body['description'] ?? ''), 0, 5000)),
-            'content' => mb_substr(trim($body['content'] ?? ''), 0, 50000),
-            'image' => strip_tags(mb_substr(trim($body['image'] ?? ''), 0, 500)),
-            'institution' => strip_tags(mb_substr(trim($body['institution'] ?? ''), 0, 255)),
+            'name' => $sanitized['name'],
+            'category' => $sanitized['category'],
+            'year' => $sanitized['year'],
+            'description' => $sanitized['description'],
+            'content' => $sanitized['content'],
+            'image' => $sanitized['image'],
+            'institution' => $sanitized['institution'],
             'status' => $status,
+            'meta_title' => $sanitized['meta_title'],
+            'meta_keyword' => $sanitized['meta_keyword'],
+            'meta_description' => $sanitized['meta_description'],
         ]);
 
         if ($id) {
@@ -170,14 +173,21 @@ class PrestasiController
     private function validate(array $body): array
     {
         $errors = [];
-        if (empty(trim($body['title'] ?? ''))) {
-            $errors[] = 'Judul prestasi wajib diisi';
-        }
         if (empty(trim($body['name'] ?? ''))) {
-            $errors[] = 'Nama anggota wajib diisi';
+            $errors[] = 'Nama wajib dipilih';
         }
-        if (empty(trim($body['campus'] ?? ''))) {
-            $errors[] = 'Komisariat wajib diisi';
+        if (empty(trim($body['institution'] ?? ''))) {
+            $errors[] = 'Penyelenggara wajib diisi';
+        }
+        if (empty(trim($body['category'] ?? ''))) {
+            $errors[] = 'Peringkat wajib diisi';
+        }
+        $year = trim((string) ($body['year'] ?? ''));
+        if ($year === '' || !preg_match('/^(19|20)\d{2}$/', $year)) {
+            $errors[] = 'Tahun harus berformat tahun yang valid';
+        }
+        if (mb_strlen(trim((string) ($body['description'] ?? ''))) > 5000) {
+            $errors[] = 'Deskripsi maksimal 5.000 karakter';
         }
         return $errors;
     }
@@ -191,40 +201,49 @@ class PrestasiController
     /** @return array<string, string> */
     private function sanitizeUpdateBody(array $body): array
     {
+        $sanitized = $this->sanitizePayload($body, false);
+
+        if (isset($body['status'])) {
+            $sanitized['status'] = $this->sanitizeStatus((string) $body['status']);
+        }
+
+        if (isset($body['slug'])) {
+            $sanitized['slug'] = $this->generateSlug((string) $body['slug']);
+        }
+
+        return array_filter($sanitized, static fn($value) => $value !== null);
+    }
+
+    /** @return array<string, string|null> */
+    private function sanitizePayload(array $body, bool $includeDefaults = true): array
+    {
         $fieldLimits = [
             'title' => 255,
             'name' => 255,
-            'campus' => 255,
             'category' => 100,
-            'year' => 10,
+            'year' => 4,
             'description' => 5000,
             'content' => 50000,
-            'image' => 500,
+            'image' => 1000,
             'institution' => 255,
-            'slug' => 255,
+            'meta_title' => 255,
+            'meta_keyword' => 1000,
+            'meta_description' => 1000,
         ];
 
         $sanitized = [];
         foreach ($fieldLimits as $field => $limit) {
             if (!isset($body[$field])) {
+                if ($includeDefaults) {
+                    $sanitized[$field] = $field === 'category' ? 'Prestasi' : '';
+                }
                 continue;
             }
             $value = mb_substr(trim((string) $body[$field]), 0, $limit);
-            // Strip HTML from all fields except content (which may contain editor HTML)
             if ($field !== 'content') {
                 $value = strip_tags($value);
             }
             $sanitized[$field] = $value;
-        }
-
-        // Validate status if provided
-        if (isset($body['status'])) {
-            $sanitized['status'] = $this->sanitizeStatus((string) $body['status']);
-        }
-
-        // Validate slug format if provided
-        if (isset($sanitized['slug'])) {
-            $sanitized['slug'] = $this->generateSlug($sanitized['slug']);
         }
 
         return $sanitized;
@@ -245,7 +264,7 @@ class PrestasiController
         $suffix = 1;
 
         // Check for existing slugs and append suffix if needed
-        while ($this->prestasi?->findBySlug($slug)) {
+        while ($this->prestasi?->findAnyBySlug($slug)) {
             $slug = $base . '-' . $suffix;
             $suffix++;
             if ($suffix > 100) {

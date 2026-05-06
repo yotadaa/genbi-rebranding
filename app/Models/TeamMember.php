@@ -25,14 +25,22 @@ class TeamMember
             'id' => (int) ($row['id'] ?? 0),
             'name' => $name,
             'role' => $role,
+            'designation' => $role,
             'division_id' => isset($row['division_id']) ? (int) $row['division_id'] : (int) ($row['divisi_id'] ?? 0),
             'division' => $division,
+            'divisi_id' => isset($row['divisi_id']) ? (int) $row['divisi_id'] : (int) ($row['division_id'] ?? 0),
             'campus' => $commission,
             'commission' => $commission,
+            'komsat_id' => isset($row['komsat_id']) ? (int) $row['komsat_id'] : 0,
             'year' => (string) ($row['tahun'] ?? ''),
+            'tahun' => (string) ($row['tahun'] ?? ''),
             'status' => 'Pengurus',
             'bio' => trim(strip_tags($detail)) ?: $role,
+            'detail' => $detail,
             'photo' => self::resolveImageUrl($photo),
+            'photo_raw' => $photo,
+            'show_on_home' => (int) ($row['show_on_home'] ?? 0) === 1,
+            'home_sort_order' => (int) ($row['home_sort_order'] ?? 0),
             'email' => (string) ($row['email'] ?? ''),
             'instagram' => (string) ($row['instagram'] ?? ''),
             'facebook' => (string) ($row['facebook'] ?? ''),
@@ -108,7 +116,7 @@ class TeamMember
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                 WHERE t.id = :id LIMIT 1'
+                  WHERE t.id = :id AND t.deleted_at IS NULL LIMIT 1'
             );
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
@@ -133,10 +141,12 @@ class TeamMember
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                 WHERE LOWER(COALESCE(d.nama, t.designation, '')) LIKE '%badan pengurus inti%'
-                    OR LOWER(COALESCE(t.designation, '')) REGEXP 'ketua|sekretaris|bendahara|koordinator'
-                 ORDER BY t.tahun DESC, t.id ASC
-                 LIMIT :limit"
+                  WHERE t.deleted_at IS NULL
+                    AND (t.show_on_home = 1
+                      OR LOWER(COALESCE(d.nama, t.designation, '')) LIKE '%badan pengurus inti%'
+                      OR LOWER(COALESCE(t.designation, '')) REGEXP 'ketua|sekretaris|bendahara|koordinator')
+                  ORDER BY t.show_on_home DESC, t.home_sort_order ASC, t.tahun DESC, t.id ASC
+                  LIMIT :limit"
             );
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
@@ -158,17 +168,34 @@ class TeamMember
             return [
                 'divisions' => $this->db->query('SELECT nama FROM divisis ORDER BY nama')->fetchAll(PDO::FETCH_COLUMN),
                 'campuses' => $this->db->query('SELECT nama FROM komsats ORDER BY nama')->fetchAll(PDO::FETCH_COLUMN),
-                'years' => array_map('strval', $this->db->query('SELECT DISTINCT tahun FROM teams ORDER BY tahun DESC')->fetchAll(PDO::FETCH_COLUMN)),
+                'years' => array_map('strval', $this->db->query('SELECT DISTINCT tahun FROM teams WHERE deleted_at IS NULL ORDER BY tahun DESC')->fetchAll(PDO::FETCH_COLUMN)),
             ];
         } catch (Throwable) {
             return ['divisions' => [], 'campuses' => [], 'years' => []];
         }
     }
 
+    /** @return array{divisions: array<int, array<string, mixed>>, commissions: array<int, array<string, mixed>>} */
+    public function formOptions(): array
+    {
+        if (!$this->db) {
+            return ['divisions' => [], 'commissions' => []];
+        }
+
+        try {
+            return [
+                'divisions' => $this->db->query('SELECT id, nama, komsat_id FROM divisis ORDER BY nama')->fetchAll(PDO::FETCH_ASSOC),
+                'commissions' => $this->db->query('SELECT id, nama FROM komsats ORDER BY nama')->fetchAll(PDO::FETCH_ASSOC),
+            ];
+        } catch (Throwable) {
+            return ['divisions' => [], 'commissions' => []];
+        }
+    }
+
     /** @param array<string, string|null> $filters @return array{0: string, 1: array<string, string|int>} */
     private function buildPublicFilterSql(array $filters): array
     {
-        $where = ['1 = 1'];
+        $where = ['t.deleted_at IS NULL'];
         $params = [];
 
         if (!empty($filters['division'])) {
@@ -196,6 +223,151 @@ class TeamMember
         }
 
         return [implode(' AND ', $where), $params];
+    }
+
+    /** @param array<string, string|null> $filters @return array<int, array<string, mixed>> */
+    public function allForAdmin(array $filters = [], int $limit = 24, int $offset = 0): array
+    {
+        if (!$this->db) return [];
+
+        try {
+            [$where, $params] = $this->buildPublicFilterSql($filters);
+            $stmt = $this->db->prepare(
+                'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM teams t
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE ' . $where . '
+                 ORDER BY t.show_on_home DESC, t.tahun DESC, t.id DESC
+                 LIMIT :limit OFFSET :offset'
+            );
+            foreach ($params as $key => $value) {
+                $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map([self::class, 'mapRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    public function create(array $data): ?int
+    {
+        if (!$this->db) return null;
+
+        try {
+            $stmt = $this->db->prepare(
+                'INSERT INTO teams (name, designation, photo, detail, instagram, facebook, linkedin, phone, email, website, komsat_id, divisi_id, komsat, tahun, show_on_home, home_sort_order, created_at, updated_at)
+                 VALUES (:name, :designation, :photo, :detail, :instagram, :facebook, :linkedin, :phone, :email, :website, :komsat_id, :divisi_id, :komsat, :tahun, :show_on_home, :home_sort_order, NOW(), NOW())'
+            );
+            $stmt->execute($this->bindablePayload($data));
+
+            return (int) $this->db->lastInsertId();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        if (!$this->db || $id <= 0) return false;
+
+        try {
+            $payload = $this->bindablePayload($data);
+            $payload['id'] = $id;
+            $stmt = $this->db->prepare(
+                'UPDATE teams SET name = :name, designation = :designation, photo = :photo, detail = :detail, instagram = :instagram, facebook = :facebook, linkedin = :linkedin, phone = :phone, email = :email, website = :website, komsat_id = :komsat_id, divisi_id = :divisi_id, komsat = :komsat, tahun = :tahun, show_on_home = :show_on_home, home_sort_order = :home_sort_order, updated_at = NOW() WHERE id = :id AND deleted_at IS NULL'
+            );
+            $stmt->execute($payload);
+
+            return $stmt->rowCount() > 0;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public function softDelete(int $id): bool
+    {
+        if (!$this->db || $id <= 0) return false;
+
+        try {
+            $stmt = $this->db->prepare('UPDATE teams SET deleted_at = NOW(), show_on_home = 0, updated_at = NOW() WHERE id = :id AND deleted_at IS NULL');
+            $stmt->execute(['id' => $id]);
+
+            return $stmt->rowCount() > 0;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDelete(array $ids): int
+    {
+        return $this->bulkSetDeleted($ids);
+    }
+
+    /** @param array<int, int> $ids */
+    public function setHomeVisibility(array $ids, bool $visible): int
+    {
+        if (!$this->db || empty($ids)) return 0;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        if (empty($ids)) return 0;
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->db->prepare("UPDATE teams SET show_on_home = ?, updated_at = NOW() WHERE id IN ($placeholders) AND deleted_at IS NULL");
+            $stmt->execute(array_merge([$visible ? 1 : 0], $ids));
+
+            return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /** @param array<int, int> $ids */
+    private function bulkSetDeleted(array $ids): int
+    {
+        if (!$this->db || empty($ids)) return 0;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        if (empty($ids)) return 0;
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->db->prepare("UPDATE teams SET deleted_at = NOW(), show_on_home = 0, updated_at = NOW() WHERE id IN ($placeholders) AND deleted_at IS NULL");
+            $stmt->execute($ids);
+
+            return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function bindablePayload(array $data): array
+    {
+        return [
+            'name' => (string) ($data['name'] ?? ''),
+            'designation' => (string) ($data['designation'] ?? $data['role'] ?? ''),
+            'photo' => (string) ($data['photo'] ?? ''),
+            'detail' => (string) ($data['detail'] ?? $data['bio'] ?? ''),
+            'instagram' => (string) ($data['instagram'] ?? ''),
+            'facebook' => (string) ($data['facebook'] ?? ''),
+            'linkedin' => (string) ($data['linkedin'] ?? ''),
+            'phone' => (string) ($data['phone'] ?? ''),
+            'email' => (string) ($data['email'] ?? ''),
+            'website' => (string) ($data['website'] ?? ''),
+            'komsat_id' => !empty($data['komsat_id']) ? (int) $data['komsat_id'] : null,
+            'divisi_id' => !empty($data['divisi_id']) ? (int) $data['divisi_id'] : null,
+            'komsat' => (string) ($data['komsat'] ?? $data['commission'] ?? ''),
+            'tahun' => (int) ($data['tahun'] ?? $data['year'] ?? date('Y')),
+            'show_on_home' => !empty($data['show_on_home']) ? 1 : 0,
+            'home_sort_order' => (int) ($data['home_sort_order'] ?? 0),
+        ];
     }
 
     private static function resolveImageUrl(string $filename): string

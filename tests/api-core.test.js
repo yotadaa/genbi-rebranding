@@ -82,6 +82,15 @@ test('adminUrl removes extensions and returns professional admin paths', () => {
   assert.equal(Core.adminUrl('comment', { protocol: 'http:', hostname: '127.0.0.1', port: '5173' }), '/admin/comment');
 });
 
+test('routeUrl resolves named public and admin routes', () => {
+  assert.equal(Core.routeUrl('public.news'), '/news');
+  assert.equal(Core.routeUrl('public.newsDetail', { slug: 'genbi-peka', id: 7 }), '/news/genbi-peka');
+  assert.equal(Core.routeUrl('public.newsDetail', { slug: 'genbi-peka', id: 7 }, { protocol: 'file:' }), 'news-detail.html?slug=genbi-peka&id=7');
+  assert.equal(Core.routeUrl('public.prestasiSubmit', { token: 'abc123' }), '/prestasi/submit/abc123');
+  assert.equal(Core.routeUrl('admin.newsDelete', { id: 9 }), '/admin/news/9/delete');
+  assert.equal(Core.routeUrl('admin.prestasiTokenRevoke', { id: 3 }), '/admin/prestasi-tokens/3/revoke');
+});
+
 test('resolveStaticRoute maps clean routes to prototype HTML files', () => {
   assert.equal(Core.resolveStaticRoute('/'), '/index.html');
   assert.equal(Core.resolveStaticRoute('/news'), '/news.html');

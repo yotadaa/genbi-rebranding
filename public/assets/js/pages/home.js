@@ -3,6 +3,7 @@
 const { newsDetailUrl, pageUrl, renderShell } = window.GenBIApp;
 const { observeFadeUp } = window.GenBIUI;
 const { site, stats, programs, news, bpiMembers, publicEvents } = window.GenBIData;
+const API = window.GenBIAPI;
 
 renderShell('home');
 renderHero();
@@ -81,14 +82,19 @@ function renderPrograms() {
 }
 
 
-function renderBPIList() {
+async function renderBPIList() {
   const root = document.querySelector('#bpi-list');
   if (!root) return;
-  root.innerHTML = bpiMembers.map((member, index) => `
-    <article class="editorial-slide-card bpi-slide-card" role="group" aria-roledescription="slide" aria-label="Anggota BPI ${index + 1} dari ${bpiMembers.length}">
+  let members = bpiMembers;
+  try {
+    const payload = await API.getTeamList({ per_page: 200 });
+    members = Array.isArray(payload?.bpi) && payload.bpi.length ? payload.bpi : members;
+  } catch (e) { /* fallback */ }
+  root.innerHTML = members.map((member, index) => `
+    <article class="editorial-slide-card bpi-slide-card" role="group" aria-roledescription="slide" aria-label="Anggota BPI ${index + 1} dari ${members.length}">
       <figure class="bpi-slide-photo">
         <span class="member-photo-skeleton" aria-hidden="true"></span>
-        <img src="${member.image}" alt="Foto ${member.name}" loading="lazy" onload="this.previousElementSibling.classList.add('is-hidden')" onerror="this.classList.add('is-hidden'); this.previousElementSibling.classList.remove('is-hidden')" />
+        <img src="${member.photo || member.image}" alt="Foto ${member.name}" loading="lazy" onload="this.previousElementSibling.classList.add('is-hidden')" onerror="this.classList.add('is-hidden'); this.previousElementSibling.classList.remove('is-hidden')" />
       </figure>
       <div class="bpi-slide-content">
         <span class="bpi-number mx-auto">${String(index + 1).padStart(2, '0')}</span>

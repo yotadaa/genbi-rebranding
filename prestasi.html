@@ -11,7 +11,7 @@
   <div id="site-header"></div>
   <main>
     <section class="bg-stone py-16 md:py-24">
-      <div class="site-container fade-up">
+      <div class="site-container">
         <p class="eyebrow">Prestasi</p>
         <h1 class="page-title mt-5 max-w-4xl">Rekam capaian anggota GenBI Jambi.</h1>
         <p class="lead mt-7 max-w-3xl">Prestasi ditampilkan sebagai daftar reputasi. Lebih rapi, mudah dipindai, dan tidak bergantung pada gambar besar saja.</p>
@@ -19,8 +19,17 @@
     </section>
     <section class="bg-cream py-12 md:py-16">
       <div class="site-container">
-        <div class="fade-up mb-8 flex flex-wrap gap-2" id="prestasi-chips"></div>
-        <div class="fade-up soft-card overflow-hidden" id="prestasi-list"></div>
+        <div class="prestasi-layout-switch mb-8" aria-label="Pilihan layout prestasi">
+          <button type="button" class="prestasi-layout-toggle is-active" data-prestasi-layout="list" aria-label="Tampilkan sebagai list">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.008v.008H3.75V6.75Zm0 5.25h.008v.008H3.75V12Zm0 5.25h.008v.008H3.75v-.008Z" /></svg>
+            <span>List</span>
+          </button>
+          <button type="button" class="prestasi-layout-toggle" data-prestasi-layout="grid" aria-label="Tampilkan sebagai grid">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Zm9.75 0A2.25 2.25 0 0 1 15.75 3.75H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25Zm9.75 0a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+            <span>Grid</span>
+          </button>
+        </div>
+        <div class="soft-card overflow-hidden" id="prestasi-list"></div>
       </div>
     </section>
   </main>

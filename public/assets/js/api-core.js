@@ -11,6 +11,58 @@
   'use strict';
 
   const DEFAULT_IMAGE = 'https://genbijambi.com/public/uploads/slider-1.png';
+  const ROUTES = {
+    public: {
+      home: { clean: '/', static: 'index.html' },
+      index: { clean: '/', static: 'index.html' },
+      about: { clean: '/about', static: 'about.html' },
+      team: { clean: '/team', static: 'team.html' },
+      teams: { clean: '/teams', static: 'team.html' },
+      event: { clean: '/event', static: 'event.html' },
+      prestasi: { clean: '/prestasi', static: 'prestasi.html' },
+      news: { clean: '/news', static: 'news.html' },
+      contact: { clean: '/contact', static: 'contact.html' },
+      prestasiSubmit: { clean: '/prestasi/submit/{token}', static: 'prestasi-submit.html' },
+      newsDetail: { clean: '/news/{slug}', static: 'news-detail.html?slug={slug}&id={id}' },
+      newsComments: { clean: '/news/{slug}/comments' },
+      newsCommentStore: { clean: '/news/{slug}/comment' },
+      eventDetail: { clean: '/event/{id}' },
+    },
+    admin: {
+      dashboard: { clean: '/admin/dashboard', static: 'admin/dashboard.html' },
+      news: { clean: '/admin/news', static: 'admin/news.html' },
+      newsAdd: { clean: '/admin/news-add', static: 'admin/news-add.html' },
+      newsEdit: { clean: '/admin/news-edit', static: 'admin/news-edit.html' },
+      newsList: { clean: '/admin/news/list' },
+      newsCategories: { clean: '/admin/news/categories' },
+      newsComments: { clean: '/admin/news-comments' },
+      newsCommentAction: { clean: '/admin/news-comments/{id}/{action}' },
+      newsShow: { clean: '/admin/news/{id}' },
+      newsStore: { clean: '/admin/news' },
+      newsUpdate: { clean: '/admin/news/{id}/update' },
+      newsDelete: { clean: '/admin/news/{id}/delete' },
+      newsUpload: { clean: '/admin/news/upload' },
+      prestasi: { clean: '/admin/prestasi', static: 'admin/prestasi.html' },
+      prestasiAdd: { clean: '/admin/prestasi-add', static: 'admin/prestasi-add.html' },
+      prestasiEdit: { clean: '/admin/prestasi-edit', static: 'admin/prestasi-edit.html' },
+      prestasiList: { clean: '/admin/prestasi/list' },
+      prestasiShow: { clean: '/admin/prestasi/{id}' },
+      prestasiStore: { clean: '/admin/prestasi' },
+      prestasiUpdate: { clean: '/admin/prestasi/{id}/update' },
+      prestasiDelete: { clean: '/admin/prestasi/{id}/delete' },
+      prestasiUpload: { clean: '/admin/prestasi/upload' },
+      prestasiTokens: { clean: '/admin/prestasi-tokens' },
+      prestasiTokenRevoke: { clean: '/admin/prestasi-tokens/{id}/revoke' },
+      teamMembers: { clean: '/admin/team-members' },
+      teamMemberOptions: { clean: '/admin/team-members/options' },
+      teamMembersBulk: { clean: '/admin/team-members/bulk' },
+      teamMembersUpload: { clean: '/admin/team-members/upload' },
+      teamMemberShow: { clean: '/admin/team-members/{id}' },
+      teamMemberUpdate: { clean: '/admin/team-members/{id}/update' },
+      teamMemberDelete: { clean: '/admin/team-members/{id}/delete' },
+      teamMemberHome: { clean: '/admin/team-members/{id}/home' },
+    },
+  };
 
   function slugify(value = '') {
     return String(value)
@@ -73,8 +125,8 @@
       image: item.photo || item.banner || item.image || DEFAULT_IMAGE,
       excerpt: item.news_content_short || item.excerpt || item.meta_description || '',
       body: body.length ? body : [item.news_content_short || item.excerpt || 'Konten berita belum tersedia.'],
-      author: item.contributor_pewarta || item.author || 'Redaksi GenBI Jambi',
-      editor: item.contributor_editor || item.editor || 'Redaksi GenBI Jambi',
+      author: item.contributor_pewarta || item.author || '',
+      editor: item.contributor_editor || item.editor || '',
       related: item.related || '',
       raw: item,
     };
@@ -162,7 +214,7 @@
     const normalizedAction = String(action || '').toLowerCase();
     const allowed = ['approve', 'reject', 'delete'];
     if (!allowed.includes(normalizedAction)) throw new Error(`Unsupported comment action: ${action}`);
-    return `/admin/news-comments/${encodeURIComponent(id)}/${normalizedAction}`;
+    return routeUrl('admin.newsCommentAction', { id, action: normalizedAction });
   }
 
   function createCommentPayload({ name, email, comment }) {
@@ -204,16 +256,37 @@
     return {
       id,
       slug: item.slug || `${slugify(title)}-${id}`,
-      name: item.nama_anggota || item.name || '',
+      name: item.nama_anggota || item.member_name || item.name || '',
       title,
       campus: item.komisariat || item.campus || '',
       category: item.category || item.kategori || 'Prestasi',
       year: item.tahun || item.year || '',
-      image: item.foto_prestasi || item.image || DEFAULT_IMAGE,
+      image: resolvePrestasiImage(item.foto_prestasi || item.photo || item.image || ''),
       description: item.deskripsi_singkat || item.description || '',
-      detail: item.deskripsi_detail || item.detail || item.deskripsi_singkat || item.description || '',
+      detail: item.deskripsi_detail || item.detail || item.content || item.deskripsi_singkat || item.description || '',
+      institution: item.institusi_penyelenggara || item.institution || '',
       raw: item,
     };
+  }
+
+  function extractDriveId(value = '') {
+    const text = String(value || '');
+    if (!/(drive\.google\.com|docs\.google\.com)/i.test(text)) return '';
+    return text.match(/[?&]id=([-\w]{10,})/i)?.[1]
+      || text.match(/\/file\/d\/([-\w]{10,})/i)?.[1]
+      || text.match(/[-\w]{25,}/)?.[0]
+      || '';
+  }
+
+  function resolvePrestasiImage(value = '') {
+    const text = String(value || '').trim();
+    if (!text) return DEFAULT_IMAGE;
+
+    const driveId = extractDriveId(text);
+    if (driveId) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveId)}&sz=w1000`;
+
+    if (/^https?:\/\//i.test(text) || text.startsWith('/')) return text;
+    return `/uploads/prestasi/${text.replace(/^\/+/, '')}`;
   }
 
   function normalizePrestasiList(payload) {
@@ -279,45 +352,37 @@
     return port === '5173' || hostname === 'localhost' || hostname === '127.0.0.1';
   }
 
+  function fillRoutePattern(pattern, params = {}) {
+    return String(pattern || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (_, key) => encodeURIComponent(params[key] ?? ''));
+  }
+
+  function routeUrl(name, params = {}, locationLike) {
+    const [scope, routeName] = String(name || '').includes('.') ? String(name).split('.', 2) : ['public', name];
+    const route = ROUTES[scope]?.[routeName];
+    if (!route) return '';
+    const pattern = isStaticProtocol(locationLike) && route.static ? route.static : route.clean;
+    return fillRoutePattern(pattern, params);
+  }
+
   function pageUrl(page, locationLike) {
-    const cleanPages = {
-      home: '/',
-      index: '/',
-      about: '/about',
-      team: '/team',
-      teams: '/teams',
-      event: '/event',
-      prestasi: '/prestasi',
-      news: '/news',
-      contact: '/contact',
-    };
-    const staticPages = {
-      home: 'index.html',
-      index: 'index.html',
-      about: 'about.html',
-      team: 'team.html',
-      teams: 'team.html',
-      event: 'event.html',
-      prestasi: 'prestasi.html',
-      news: 'news.html',
-      contact: 'contact.html',
-    };
-    return isStaticProtocol(locationLike) ? staticPages[page] || `${page}.html` : cleanPages[page] || `/${page}`;
+    const url = routeUrl(`public.${page}`, {}, locationLike);
+    return url || (isStaticProtocol(locationLike) ? `${page}.html` : `/${page}`);
   }
 
   function adminUrl(page, locationLike) {
     const normalized = String(page || '').replace(/\.html$|\.php$/g, '').replace(/^\/+/, '');
-    return isStaticProtocol(locationLike) ? `admin/${normalized}.html` : `/admin/${normalized}`;
+    const routeName = normalized.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+    return routeUrl(`admin.${routeName}`, {}, locationLike) || (isStaticProtocol(locationLike) ? `admin/${normalized}.html` : `/admin/${normalized}`);
   }
 
   function newsDetailUrl(news, locationLike) {
     const item = normalizeNews(news || {});
-    return isStaticProtocol(locationLike) ? `news-detail.html?slug=${encodeURIComponent(item.slug)}&id=${encodeURIComponent(item.id)}` : `/news/${encodeURIComponent(item.slug)}`;
+    return routeUrl('public.newsDetail', { slug: item.slug, id: item.id }, locationLike);
   }
 
   function canonicalNewsUrl(news, locationLike) {
     const item = normalizeNews(news || {});
-    const path = `/news/${encodeURIComponent(item.slug)}`;
+    const path = routeUrl('public.newsDetail', { slug: item.slug, id: item.id }, { protocol: 'https:' });
     const source = locationLike || (typeof window !== 'undefined' ? window.location : null);
 
     if (source && source.protocol && source.host && !isStaticProtocol(source)) {
@@ -384,6 +449,8 @@
     newsDetailUrl,
     pageUrl,
     resolveStaticRoute,
+    routeUrl,
+    ROUTES,
     slugify,
   };
 });

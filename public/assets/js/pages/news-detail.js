@@ -50,10 +50,7 @@ async function renderDetail() {
           <img class="news-detail-inline-image" src="${item.image}" alt="${item.title}" onerror="this.remove()" />
           ${cleanNewsContent(item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join(''))}
         </div>
-        <div class="mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
-          <p><strong>Pewarta:</strong> ${item.author}</p>
-          <p><strong>Editor:</strong> ${item.editor}</p>
-        </div>
+        ${renderContributorBox(item)}
       </article>
     </section>
     <section class="bg-[#f6f3ec] py-12 md:py-16">
@@ -161,6 +158,20 @@ function cleanNewsContent(content) {
   wrapper.innerHTML = String(content || '');
   wrapper.querySelectorAll('[style]').forEach((node) => node.removeAttribute('style'));
   return wrapper.innerHTML;
+}
+
+function renderContributorBox(item) {
+  const pewarta = String(item.raw?.contributor_pewarta || item.author || '').trim();
+  const editor = String(item.raw?.contributor_editor || item.editor || '').trim();
+
+  if (!pewarta && !editor) return '';
+
+  return `
+    <div class="news-detail-contributors mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
+      ${pewarta ? `<p><strong>Pewarta:</strong> ${pewarta}</p>` : ''}
+      ${editor ? `<p><strong>Editor:</strong> ${editor}</p>` : ''}
+    </div>
+  `;
 }
 
 function showDetailError() {

@@ -8,6 +8,7 @@ use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
+use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\FeedController;
 use App\Controllers\Public\NewsController;
@@ -94,6 +95,7 @@ $adminNewsController = new AdminNewsController($newsModel);
 $adminNewsCommentController = new NewsCommentController($commentModel);
 $adminPrestasiController = new AdminPrestasiController($prestasiModel);
 $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
+$adminTeamMemberController = new AdminTeamMemberController($teamModel);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';

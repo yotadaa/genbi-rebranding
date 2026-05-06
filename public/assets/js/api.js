@@ -43,7 +43,7 @@
   }
 
   async function getNewsList(filters = {}) {
-    const endpoint = Core.buildEndpoint('/news', filters);
+    const endpoint = Core.buildEndpoint(Core.routeUrl('public.news'), filters);
     return withFallback(
       async () => Core.normalizeNewsList(await requestJson(endpoint)),
       () => Core.normalizeNewsList(Data.news || [])
@@ -55,7 +55,7 @@
     const fallbackItem = Core.findNewsByIdOrSlug(staticNews, identifier) || null;
     const slug = fallbackItem?.slug || identifier;
     return withFallback(
-      async () => Core.normalizeNews(await requestJson(`/news/${encodeURIComponent(slug)}`)),
+      async () => Core.normalizeNews(await requestJson(Core.routeUrl('public.newsDetail', { slug }))),
       () => fallbackItem || Promise.reject(new Error('News not found'))
     );
   }
@@ -63,7 +63,7 @@
   async function getRelatedNews(currentId, category) {
     const params = category ? { category } : {};
     return withFallback(
-      async () => Core.normalizeNewsList(await requestJson(Core.buildEndpoint('/news', params))).filter((item) => String(item.id) !== String(currentId)).slice(0, 3),
+      async () => Core.normalizeNewsList(await requestJson(Core.buildEndpoint(Core.routeUrl('public.news'), params))).filter((item) => String(item.id) !== String(currentId)).slice(0, 3),
       () => Core.normalizeNewsList(Data.news || []).filter((item) => String(item.id) !== String(currentId)).slice(0, 3)
     );
   }
@@ -76,7 +76,7 @@
       { id: 3, name: 'Aulia Rahman', role: 'Pembaca', status: 'Approved', text: 'Semoga agenda serupa makin sering hadir untuk mahasiswa Jambi.' },
     ];
     return withFallback(
-      async () => Core.normalizeApprovedComments(await requestJson(`/news/${encodeURIComponent(slug)}/comments`)),
+      async () => Core.normalizeApprovedComments(await requestJson(Core.routeUrl('public.newsComments', { slug }))),
       () => Core.normalizeApprovedComments(fallbackComments)
     );
   }
@@ -85,7 +85,7 @@
     const slug = news?.slug || news?.id;
     const body = Core.createCommentPayload(payload);
     return withFallback(
-      async () => requestJson(`/news/${encodeURIComponent(slug)}/comment`, {
+      async () => requestJson(Core.routeUrl('public.newsCommentStore', { slug }), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -96,7 +96,7 @@
 
   async function getPrestasiList(filters = {}) {
     return withFallback(
-      async () => Core.normalizePrestasiList(await requestJson(Core.buildEndpoint('/prestasi', filters))),
+      async () => Core.normalizePrestasiList(await requestJson(Core.buildEndpoint(Core.routeUrl('public.prestasi'), filters))),
       () => Core.normalizePrestasiList(Data.prestasi || [])
     );
   }
@@ -104,7 +104,7 @@
   async function getTeamList(filters = {}) {
     return withFallback(
       async () => {
-        const json = await requestJson(Core.buildEndpoint('/team', filters));
+        const json = await requestJson(Core.buildEndpoint(Core.routeUrl('public.team'), filters));
         return Core.normalizeTeamPayload(json);
       },
       () => {
@@ -125,21 +125,21 @@
 
   async function getEventList(filters = {}) {
     return withFallback(
-      async () => Core.normalizeEventList(await requestJson(Core.buildEndpoint('/event', filters))),
+      async () => Core.normalizeEventList(await requestJson(Core.buildEndpoint(Core.routeUrl('public.event'), filters))),
       () => Core.normalizeEventList(Data.publicEvents || [])
     );
   }
 
   async function getEventDetail(id) {
     return withFallback(
-      async () => Core.normalizeEvent((await requestJson(`/event/${encodeURIComponent(id)}`)).data || {}),
+      async () => Core.normalizeEvent((await requestJson(Core.routeUrl('public.eventDetail', { id }))).data || {}),
       () => Core.normalizeEventList(Data.publicEvents || []).find((e) => String(e.id) === String(id)) || null
     );
   }
 
   async function getAdminComments(filters = {}) {
     return withFallback(
-      async () => Core.normalizeAdminComments(await requestJson(Core.buildEndpoint('/admin/news-comments', filters))),
+      async () => Core.normalizeAdminComments(await requestJson(Core.buildEndpoint(Core.routeUrl('admin.newsComments'), filters))),
       () => Core.normalizeAdminComments(fallbackAdminComments)
     );
   }

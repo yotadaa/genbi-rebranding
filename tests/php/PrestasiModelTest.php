@@ -45,19 +45,34 @@ assert($row['updated_at'] === '2026-05-06 12:00:00');
 $row2 = Prestasi::mapRow([
     'id' => 10,
     'title' => 'Juara Debat',
-    'name' => 'Budi',
-    'campus' => 'UIN STS Jambi',
+    'member_name' => 'Budi',
     'category' => 'Debat',
     'year' => '2025',
+    'detail' => 'Detail lomba debat',
+    'photo' => '/uploads/prestasi/debat.jpg',
 ]);
 
 assert($row2['id'] === 10);
 assert($row2['title'] === 'Juara Debat');
 assert($row2['name'] === 'Budi');
-assert($row2['campus'] === 'UIN STS Jambi');
+assert($row2['member_name'] === 'Budi');
 assert($row2['category'] === 'Debat');
 assert($row2['year'] === '2025');
+assert($row2['content'] === 'Detail lomba debat');
+assert($row2['detail'] === 'Detail lomba debat');
+assert($row2['image'] === '/uploads/prestasi/debat.jpg');
+assert($row2['photo'] === '/uploads/prestasi/debat.jpg');
 assert($row2['status'] === 'published'); // default
+
+// --- Prestasi::mapRow resolves Google Drive image links ---
+$row3 = Prestasi::mapRow([
+    'prestasi_id' => 11,
+    'title' => 'Juara QRIS',
+    'photo' => 'https://drive.google.com/open?id=1XNlgeReWNp-w9uqkT4pAfcsZWyx-fnWn',
+]);
+
+assert($row3['image'] === 'https://drive.google.com/thumbnail?id=1XNlgeReWNp-w9uqkT4pAfcsZWyx-fnWn&sz=w1000');
+assert($row3['photo'] === 'https://drive.google.com/thumbnail?id=1XNlgeReWNp-w9uqkT4pAfcsZWyx-fnWn&sz=w1000');
 
 // --- PrestasiToken::mapRow ---
 $token = PrestasiToken::mapRow([
