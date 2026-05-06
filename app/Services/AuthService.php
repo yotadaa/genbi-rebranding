@@ -18,7 +18,7 @@ final class AuthService
     public function attempt(string $email, string $password, string $ip = ''): array
     {
         if (!$this->db) {
-            return ['success' => false, 'error' => 'Database tidak tersedia'];
+            return ['success' => false, 'error' => 'Database tidak tersedia. Periksa koneksi database dan ekstensi pdo_mysql di cPanel.'];
         }
 
         $email = trim(strtolower($email));

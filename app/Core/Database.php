@@ -6,6 +6,7 @@ namespace App\Core;
 
 use App\Config\Database as DatabaseConfig;
 use PDO;
+use RuntimeException;
 
 final class Database
 {
@@ -15,6 +16,10 @@ final class Database
     {
         if (self::$connection instanceof PDO) {
             return self::$connection;
+        }
+
+        if (!extension_loaded('pdo_mysql')) {
+            throw new RuntimeException('PHP extension pdo_mysql is not enabled. Enable pdo_mysql in cPanel PHP extensions.');
         }
 
         $config = DatabaseConfig::config();

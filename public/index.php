@@ -9,6 +9,13 @@ if (PHP_VERSION_ID < 80200) {
     return;
 }
 
+if (!extension_loaded('pdo_mysql')) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'GenBI CMS requires the PHP pdo_mysql extension. Enable pdo_mysql in cPanel PHP extensions.';
+    return;
+}
+
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 // Serve static public files (robots.txt, favicon.ico, etc.)
