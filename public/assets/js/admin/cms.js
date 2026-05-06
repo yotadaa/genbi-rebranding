@@ -60,6 +60,7 @@
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
     prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
     'prestasi-edit': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(true); },
+    'prestasi-token': () => { Admin.renderAdminShell('prestasi'); renderPrestasiTokenList(); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
@@ -1443,6 +1444,175 @@
         Admin.showToast('Gagal menyimpan prestasi. Periksa koneksi.');
       }
     });
+  }
+
+  // ─── Prestasi Token Management ──────────────────────────────────────────────
+
+  async function renderPrestasiTokenList() {
+    const body = renderShell(
+      'Prestasi Token',
+      'Generate dan kelola token form prestasi sekali pakai.',
+      `<button id="generate-token-btn" class="btn btn-primary">Generate Token</button>`
+    );
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data token...</div>';
+
+    let items = [];
+    try {
+      const res = await fetch('/admin/prestasi-tokens', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = json.data || [];
+      }
+    } catch (e) { /* fallback empty */ }
+
+    body.innerHTML = `
+      <section class="admin-card p-4 md:p-6">
+        <div class="admin-responsive-table">
+          <table class="cms-table" id="token-table">
+            <thead>
+              <tr>
+                <th>SL</th>
+                <th>Label</th>
+                <th>Status</th>
+                <th>Dibuat</th>
+                <th>Kedaluwarsa</th>
+                <th>Digunakan</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="token-tbody">
+              ${renderTokenRows(items)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <div id="generated-token-display" class="mt-6 hidden">
+        <section class="admin-card p-6 border-2 border-green-200 bg-green-50">
+          <h3 class="text-lg font-bold text-green-900">Token Berhasil Dibuat</h3>
+          <p class="mt-2 text-sm text-green-800">Salin link di bawah. Token hanya ditampilkan sekali dan tidak bisa dilihat lagi.</p>
+          <div class="mt-4 flex items-center gap-3">
+            <input id="generated-token-url" class="config-input flex-1 font-mono text-sm" readonly />
+            <button id="copy-token-url" class="btn btn-primary">Copy</button>
+          </div>
+        </section>
+      </div>
+    `;
+
+    // Bind generate button
+    document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
+
+    // Bind revoke buttons
+    bindTokenRevokeButtons();
+  }
+
+  function renderTokenRows(items) {
+    if (items.length === 0) {
+      return '<tr><td colspan="7" class="text-center text-neutral-500 py-8">Belum ada token.</td></tr>';
+    }
+    return items.map((item, index) => {
+      const status = item.status || 'active';
+      const statusClass = status === 'active' ? 'cms-pill-green' : status === 'used' ? 'cms-pill-yellow' : 'cms-pill-red';
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td><strong>${escape(item.label || '')}</strong></td>
+          <td><span class="cms-pill ${statusClass}">${status}</span></td>
+          <td class="text-xs">${item.created_at || '-'}</td>
+          <td class="text-xs">${item.expires_at || 'Tidak ada'}</td>
+          <td class="text-xs">${item.used_at || '-'}</td>
+          <td>
+            ${status === 'active' ? `<button class="cms-action delete" data-revoke data-token-id="${item.id || item.token_id}">Revoke</button>` : '<span class="text-neutral-400 text-xs">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function bindTokenRevokeButtons() {
+    document.querySelectorAll('[data-revoke][data-token-id]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.tokenId;
+        const ok = await Admin.showConfirm({
+          title: 'Revoke token?',
+          message: 'Token akan dinonaktifkan dan tidak bisa digunakan lagi.',
+          confirmText: 'Revoke',
+          danger: true
+        });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(`/admin/prestasi-tokens/${id}/revoke`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Token berhasil direvoke.');
+            renderPrestasiTokenList(); // Refresh list
+          } else {
+            Admin.showToast('Gagal merevoke token.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal merevoke token.');
+        }
+      });
+    });
+  }
+
+  async function showGenerateModal() {
+    const ok = await Admin.showConfirm({
+      title: 'Generate Token Baru',
+      message: `<div class="text-left mt-3">
+        <label class="config-field"><span>Label / Keterangan</span><input id="token-label-input" class="config-input" placeholder="Contoh: Form prestasi KTI 2025" /></label>
+        <label class="config-field mt-3"><span>Kedaluwarsa (opsional)</span><input id="token-expires-input" class="config-input" type="datetime-local" /></label>
+      </div>`,
+      confirmText: 'Generate',
+      html: true
+    });
+    if (!ok) return;
+
+    const label = document.querySelector('#token-label-input')?.value?.trim() || '';
+    const expiresAt = document.querySelector('#token-expires-input')?.value || '';
+
+    if (!label) {
+      Admin.showToast('Label wajib diisi.');
+      return;
+    }
+
+    try {
+      const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const res = await fetch('/admin/prestasi-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        credentials: 'same-origin',
+        body: JSON.stringify({ label, expires_at: expiresAt || null })
+      });
+      const result = await res.json();
+      if (res.ok && result.data?.token) {
+        const baseUrl = window.location.origin;
+        const submitUrl = `${baseUrl}/prestasi/submit/${result.data.token}`;
+        const display = document.querySelector('#generated-token-display');
+        const urlInput = document.querySelector('#generated-token-url');
+        if (display && urlInput) {
+          urlInput.value = submitUrl;
+          display.classList.remove('hidden');
+        }
+        document.querySelector('#copy-token-url')?.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(submitUrl);
+            Admin.showToast('Link token disalin ke clipboard.');
+          } catch (e) {
+            Admin.showToast('Gagal menyalin. Salin manual dari input.');
+          }
+        });
+        Admin.showToast('Token berhasil dibuat. Salin link sekarang!');
+        renderPrestasiTokenList(); // Refresh table
+      } else {
+        Admin.showToast(result.error || 'Gagal membuat token.');
+      }
+    } catch (e) {
+      Admin.showToast('Gagal membuat token. Periksa koneksi.');
+    }
   }
 
   function initPrestasiEditor(item) {

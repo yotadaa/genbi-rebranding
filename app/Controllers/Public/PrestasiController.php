@@ -73,7 +73,7 @@ class PrestasiController
             return;
         }
 
-        $response->html($this->renderer->render('prestasi.html', ['noindex' => true]));
+        $response->html($this->renderer->render('prestasi-submit.html', ['noindex' => true]));
     }
 
     public function submitWithToken(Request $request, Response $response, array $params): void

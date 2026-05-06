@@ -52,16 +52,20 @@ class PrestasiToken
             return null;
         }
 
-        $hash = hash('sha256', $plainToken);
-        $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND status = :status AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1'
-        );
-        $stmt->bindValue(':hash', $hash, \PDO::PARAM_STR);
-        $stmt->bindValue(':status', 'active', \PDO::PARAM_STR);
-        $stmt->execute();
+        try {
+            $hash = hash('sha256', $plainToken);
+            $stmt = $this->db->prepare(
+                'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND status = :status AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1'
+            );
+            $stmt->bindValue(':hash', $hash, \PDO::PARAM_STR);
+            $stmt->bindValue(':status', 'active', \PDO::PARAM_STR);
+            $stmt->execute();
 
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ? self::mapRow($row) : null;
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $row ? self::mapRow($row) : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -129,13 +133,17 @@ class PrestasiToken
             return [];
         }
 
-        $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi_submission_token ORDER BY created_at DESC LIMIT :limit OFFSET :offset'
-        );
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->execute();
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT * FROM tbl_prestasi_submission_token ORDER BY created_at DESC LIMIT :limit OFFSET :offset'
+            );
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+            $stmt->execute();
 
-        return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+            return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

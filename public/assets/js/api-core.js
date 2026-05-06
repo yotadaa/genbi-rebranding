@@ -267,6 +267,7 @@
     };
     if (publicRoutes[cleanPath]) return publicRoutes[cleanPath];
     if (/^\/news\/[^/]+$/.test(cleanPath)) return '/news-detail.html';
+    if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/prestasi-submit.html';
     if (cleanPath === '/admin') return '/admin/dashboard.html';
     if (/^\/admin\/[^/]+$/.test(cleanPath)) return `/admin/${cleanPath.split('/').pop()}.html`;
     return null;
