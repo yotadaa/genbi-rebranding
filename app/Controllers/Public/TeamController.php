@@ -20,9 +20,29 @@ class TeamController
     public function index(Request $request, Response $response): void
     {
         if ($request->acceptsJson()) {
-            $members = $this->teamModel?->allActive() ?? [];
+            $page = max(1, (int) ($request->query('page') ?? '1'));
+            $perPage = min(200, max(1, (int) ($request->query('per_page') ?? '200')));
+            $filters = [
+                'q' => $request->query('q'),
+                'division' => $request->query('division'),
+                'campus' => $request->query('campus'),
+                'year' => $request->query('year'),
+            ];
+            $offset = ($page - 1) * $perPage;
+            $members = $this->teamModel?->allActive($filters, $perPage, $offset) ?? [];
+            $total = $this->teamModel?->countPublic($filters) ?? count($members);
+            $filters = $this->teamModel?->filterOptions() ?? ['divisions' => [], 'campuses' => [], 'years' => []];
             $bpi = $this->teamModel?->bpiCore() ?? [];
-            $response->json(['data' => $members, 'bpi' => $bpi]);
+            $response->json([
+                'data' => $members,
+                'bpi' => $bpi,
+                'filters' => $filters,
+                'meta' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                ],
+            ]);
             return;
         }
 

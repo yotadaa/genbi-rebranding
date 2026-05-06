@@ -19,17 +19,22 @@
     </section>
     <section class="bg-cream py-12 md:py-16">
       <div class="site-container">
-        <div class="fade-up mb-8 grid gap-3 rounded-[1.75rem] border border-neutral-900/10 bg-white/80 p-4 shadow-sm md:grid-cols-[1fr_220px_220px_160px]">
+        <div class="team-filter fade-up mb-8 grid gap-3 rounded-[1.75rem] border border-neutral-900/10 bg-white/80 p-4 shadow-sm md:grid-cols-[1fr_220px_220px_160px]">
           <input id="team-search" class="input-soft" placeholder="Cari nama, jabatan, divisi, atau kampus" />
           <div id="team-division"></div>
           <div id="team-campus"></div>
           <div id="team-year"></div>
         </div>
-        <div class="fade-up mb-5 flex items-center justify-between text-sm text-neutral-600">
+        <div class="fade-up mb-5 flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
           <p id="team-count"></p>
-          <button id="team-reset" class="chip">Reset filter</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="team-layout-grid" class="chip is-active" type="button">Grid</button>
+            <button id="team-layout-list" class="chip" type="button">List</button>
+            <button id="team-reset" class="chip" type="button">Reset filter</button>
+          </div>
         </div>
-        <div class="fade-up soft-card overflow-hidden" id="team-list"></div>
+        <div class="fade-up team-public-grid" id="team-list"></div>
+        <div class="public-pagination mt-8" id="team-pagination" aria-label="Pagination anggota"></div>
       </div>
     </section>
   </main>

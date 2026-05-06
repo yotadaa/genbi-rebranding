@@ -7,16 +7,18 @@ const API = window.GenBIAPI;
 renderShell('news');
 observeFadeUp();
 
-let state = { query: '', category: 'Semua' };
+let state = { query: '', category: 'Semua', page: 1, perPage: 12 };
 let news = [];
 const search = document.querySelector('#news-search');
 const list = document.querySelector('#news-list');
 const count = document.querySelector('#news-count');
+const pagination = document.querySelector('#news-pagination');
 
 init();
 
 search.addEventListener('input', (event) => {
   state.query = event.target.value;
+  state.page = 1;
   renderNews();
 });
 
@@ -26,7 +28,7 @@ async function init() {
   createCustomSelect(document.querySelector('#news-category'), {
     label: 'Kategori',
     options: unique(news.map((item) => item.category)),
-    onChange: (value) => { state.category = value; renderNews(); }
+    onChange: (value) => { state.category = value; state.page = 1; renderNews(); }
   });
   renderNews();
 }
@@ -37,8 +39,14 @@ function renderNews() {
     const haystack = `${item.title} ${item.category} ${item.excerpt}`.toLowerCase();
     return (!query || haystack.includes(query)) && (state.category === 'Semua' || item.category === state.category);
   });
-  count.textContent = `Menampilkan ${filtered.length} berita.`;
-  list.innerHTML = filtered.length ? filtered.map((item, index) => `
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
+  state.page = Math.min(state.page, totalPages);
+  const start = (state.page - 1) * state.perPage;
+  const paged = filtered.slice(start, start + state.perPage);
+  count.textContent = filtered.length
+    ? `Menampilkan ${start + 1}-${Math.min(start + state.perPage, filtered.length)} dari ${filtered.length} berita.`
+    : 'Tidak ada berita yang cocok.';
+  list.innerHTML = paged.length ? paged.map((item, index) => `
     <a data-transition href="${newsDetailUrl(item)}" class="article-link ${index === 0 ? 'pt-0 border-t-0' : ''}">
       <div class="grid gap-5 md:grid-cols-[170px_1fr] md:items-start">
         <div class="aspect-[4/3] overflow-hidden rounded-2xl bg-blue-50">
@@ -55,6 +63,28 @@ function renderNews() {
       </div>
     </a>
   `).join('') : `<div class="rounded-2xl border border-neutral-900/10 bg-white p-8 text-center text-sm text-neutral-600">Belum ada data berita yang cocok.</div>`;
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  if (!pagination) return;
+  if (totalPages <= 1) {
+    pagination.innerHTML = '';
+    return;
+  }
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  pagination.innerHTML = `
+    <button class="pager-button" type="button" data-page="${Math.max(1, state.page - 1)}" ${state.page === 1 ? 'disabled' : ''}>Sebelumnya</button>
+    ${pages.map((page) => `<button class="pager-button ${page === state.page ? 'is-active' : ''}" type="button" data-page="${page}">${page}</button>`).join('')}
+    <button class="pager-button" type="button" data-page="${Math.min(totalPages, state.page + 1)}" ${state.page === totalPages ? 'disabled' : ''}>Berikutnya</button>
+  `;
+  pagination.querySelectorAll('[data-page]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.page = Number(button.dataset.page) || 1;
+      renderNews();
+      list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
 
 })();

@@ -194,6 +194,23 @@
     };
   }
 
+  function normalizeTeamPayload(payload) {
+    return {
+      members: normalizeTeamList(payload),
+      bpi: normalizeTeamList(payload?.bpi || []),
+      filters: {
+        divisions: normalizeListPayload(payload?.filters?.divisions || payload?.divisions || []),
+        campuses: normalizeListPayload(payload?.filters?.campuses || payload?.campuses || []),
+        years: normalizeListPayload(payload?.filters?.years || payload?.years || []).map(String),
+      },
+      meta: {
+        page: Number(payload?.meta?.page || 1),
+        perPage: Number(payload?.meta?.per_page || payload?.meta?.perPage || 0),
+        total: Number(payload?.meta?.total || normalizeListPayload(payload).length),
+      },
+    };
+  }
+
   function normalizeTeamList(payload) {
     return normalizeListPayload(payload).map(normalizeTeamMember);
   }
@@ -224,6 +241,7 @@
       index: '/',
       about: '/about',
       team: '/team',
+      teams: '/teams',
       prestasi: '/prestasi',
       news: '/news',
       contact: '/contact',
@@ -233,6 +251,7 @@
       index: 'index.html',
       about: 'about.html',
       team: 'team.html',
+      teams: 'team.html',
       prestasi: 'prestasi.html',
       news: 'news.html',
       contact: 'contact.html',
@@ -261,6 +280,7 @@
       '/': '/index.html',
       '/about': '/about.html',
       '/team': '/team.html',
+      '/teams': '/team.html',
       '/prestasi': '/prestasi.html',
       '/news': '/news.html',
       '/contact': '/contact.html',
@@ -301,6 +321,7 @@
     normalizePrestasiList,
     normalizeTeamMember,
     normalizeTeamList,
+    normalizeTeamPayload,
     adminUrl,
     canonicalNewsUrl,
     newsDetailUrl,

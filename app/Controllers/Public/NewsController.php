@@ -20,12 +20,25 @@ final class NewsController
     public function index(Request $request, Response $response): void
     {
         if ($request->acceptsJson()) {
-            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate([
+            $page = max(1, (int) ($request->query('page') ?? '1'));
+            $perPage = min(100, max(1, (int) ($request->query('per_page') ?? '100')));
+            $filters = [
                 'category' => $request->query('category'),
-            ]));
+                'q' => $request->query('q'),
+            ];
+            $offset = ($page - 1) * $perPage;
+            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate($filters, $perPage, $offset));
+            $total = $this->readFromDatabase(static fn (News $news): int => $news->countPublic($filters));
 
             // Always return JSON when client expects JSON, even if DB is unavailable
-            $response->json(['data' => $items ?? []]);
+            $response->json([
+                'data' => $items ?? [],
+                'meta' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total ?? count($items ?? []),
+                ],
+            ]);
             return;
         }
 

@@ -15,7 +15,7 @@ final class News
     }
 
     /** @param array<string, string|null> $filters @return array<int, array<string, mixed>> */
-    public function paginate(array $filters = [], int $limit = 12, int $offset = 0): array
+    public function paginate(array $filters = [], int $limit = 100, int $offset = 0): array
     {
         $sql = 'SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status)';
         $params = ['status' => 'published'];
@@ -23,6 +23,11 @@ final class News
         if (!empty($filters['category'])) {
             $sql .= ' AND c.category_name = :category';
             $params['category'] = $filters['category'];
+        }
+
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . $filters['q'] . '%';
         }
 
         $sql .= ' ORDER BY COALESCE(n.published_at, n.news_date, n.created_at) DESC LIMIT :limit OFFSET :offset';
@@ -35,6 +40,28 @@ final class News
         $statement->execute();
 
         return array_map([self::class, 'mapRow'], $statement->fetchAll());
+    }
+
+    /** @param array<string, string|null> $filters */
+    public function countPublic(array $filters = []): int
+    {
+        $sql = 'SELECT COUNT(*) FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status)';
+        $params = ['status' => 'published'];
+
+        if (!empty($filters['category'])) {
+            $sql .= ' AND c.category_name = :category';
+            $params['category'] = $filters['category'];
+        }
+
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . $filters['q'] . '%';
+        }
+
+        $statement = $this->db->prepare($sql);
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn();
     }
 
     /** @return array<string, mixed>|null */

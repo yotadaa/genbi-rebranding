@@ -52,11 +52,11 @@
 
   async function getNewsDetail(identifier) {
     const staticNews = Core.normalizeNewsList(Data.news || []);
-    const fallbackItem = Core.findNewsByIdOrSlug(staticNews, identifier) || staticNews[0];
+    const fallbackItem = Core.findNewsByIdOrSlug(staticNews, identifier) || null;
     const slug = fallbackItem?.slug || identifier;
     return withFallback(
       async () => Core.normalizeNews(await requestJson(`/news/${encodeURIComponent(slug)}`)),
-      () => fallbackItem
+      () => fallbackItem || Promise.reject(new Error('News not found'))
     );
   }
 
@@ -101,13 +101,25 @@
     );
   }
 
-  async function getTeamList() {
+  async function getTeamList(filters = {}) {
     return withFallback(
       async () => {
-        const json = await requestJson('/team');
-        return { members: Core.normalizeTeamList(json), bpi: Core.normalizeTeamList(json.bpi || []) };
+        const json = await requestJson(Core.buildEndpoint('/team', filters));
+        return Core.normalizeTeamPayload(json);
       },
-      () => ({ members: Data.teamMembers || [], bpi: Data.bpiMembers || [] })
+      () => {
+        const members = Core.normalizeTeamList(Data.teamMembers || []);
+        return {
+          members,
+          bpi: Core.normalizeTeamList(Data.bpiMembers || []),
+          filters: {
+            divisions: Array.from(new Set(members.map((member) => member.division).filter(Boolean))),
+            campuses: Array.from(new Set(members.map((member) => member.campus).filter(Boolean))),
+            years: Array.from(new Set(members.map((member) => member.year).filter(Boolean))),
+          },
+          meta: { page: 1, perPage: members.length, total: members.length },
+        };
+      }
     );
   }
 
