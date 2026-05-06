@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+if (PHP_VERSION_ID < 80200) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'GenBI CMS requires PHP 8.2 or newer. Current PHP version: ' . PHP_VERSION;
+    return;
+}
+
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 // Serve static public files (robots.txt, favicon.ico, etc.)
