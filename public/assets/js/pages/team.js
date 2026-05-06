@@ -168,9 +168,11 @@ function openMember(id) {
   if (!member) return;
   memberModal.open({ content: `
     <div class="public-modal-panel team-detail-panel modal-panel is-open" role="dialog" aria-modal="true" aria-labelledby="member-title">
+      <div class="team-detail-photo">
+        ${member.photo ? `<img src="${safeImage(member.photo)}" alt="${member.name}" />` : `<span>${formatInitials(member.name)}</span>`}
+      </div>
       <div class="flex items-start justify-between gap-5">
         <div class="flex items-center gap-4">
-          <span class="team-public-row-photo h-16 w-16">${member.photo ? `<img src="${safeImage(member.photo)}" alt="${member.name}" />` : formatInitials(member.name)}</span>
           <div>
             <p class="eyebrow">Detail anggota</p>
             <h3 id="member-title" class="serif mt-1 text-3xl font-semibold tracking-tight text-neutral-950">${member.name}</h3>

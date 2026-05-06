@@ -534,6 +534,25 @@ body.page-leaving {
   object-fit: cover;
 }
 
+.news-detail-content,
+.news-detail-content :where(p, span, div, li, a, strong, em, h1, h2, h3, h4, h5, h6) {
+  color: #262626 !important;
+}
+
+.news-detail-content :where(a) {
+  color: var(--blue-800) !important;
+}
+
+.news-detail-content :where(p, li, div) {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-size: 1rem !important;
+  line-height: 1.8 !important;
+}
+
+.news-detail-content :where(h1, h2, h3, h4, h5, h6) {
+  font-family: 'Source Serif 4', Georgia, serif !important;
+}
+
 .avatar {
   display: inline-grid;
   width: 3.3rem;
@@ -3413,7 +3432,27 @@ input[type="file"].config-input::file-selector-button:hover {
 }
 
 .team-detail-panel {
-  width: min(100%, 620px);
+  width: min(100%, 760px);
+}
+
+.team-detail-photo {
+  display: grid;
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  margin: 0 auto 1.5rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 1.8rem;
+  background: var(--blue-50);
+  color: var(--blue-800);
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.team-detail-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .bpi-slide-photo { position: relative; }
 .bpi-slide-photo img { position: relative; z-index: 1; }

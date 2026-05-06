@@ -47,8 +47,8 @@ async function renderDetail() {
         <div class="mb-10 overflow-hidden rounded-[2rem] border border-neutral-900/10 bg-blue-50">
           <img src="${item.image}" alt="${item.title}" class="h-auto w-full object-cover" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" />
         </div>
-        <div class="prose-soft">
-          ${item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join('')}
+        <div class="prose-soft news-detail-content">
+          ${cleanNewsContent(item.raw && (item.raw.content || item.raw.news_content) ? (item.raw.content || item.raw.news_content) : item.body.map((paragraph) => `<p>${paragraph}</p>`).join(''))}
         </div>
         <div class="mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
           <p><strong>Pewarta:</strong> ${item.author}</p>
@@ -144,6 +144,22 @@ async function renderDetail() {
     form.reset();
     showMiniToast('Komentar masuk antrean moderasi');
   });
+}
+
+function cleanNewsContent(content) {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = String(content || '');
+  wrapper.querySelectorAll('[style]').forEach((node) => {
+    const current = node.getAttribute('style') || '';
+    const cleaned = current
+      .split(';')
+      .map((rule) => rule.trim())
+      .filter((rule) => rule && !/^color\s*:/i.test(rule) && !/^background(?:-color)?\s*:/i.test(rule) && !/^font(?:-family|-size)?\s*:/i.test(rule))
+      .join('; ');
+    if (cleaned) node.setAttribute('style', cleaned);
+    else node.removeAttribute('style');
+  });
+  return wrapper.innerHTML;
 }
 
 function showDetailError() {
