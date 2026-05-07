@@ -153,6 +153,68 @@ class Prestasi
         return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
+    /** @param array{q?: string|null, category?: string|null, year?: string|null, status?: string|null} $filters */
+    public function allForAdmin(array $filters = [], int $limit = 50, int $offset = 0): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        $sql = 'SELECT * FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        $sql = $this->applyAdminFilters($sql, $params, $filters);
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    /** @param array{q?: string|null, category?: string|null, year?: string|null, status?: string|null} $filters */
+    public function countForAdmin(array $filters = []): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        $sql = $this->applyAdminFilters($sql, $params, $filters);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /** @param array<string, mixed> $params passed by reference */
+    private function applyAdminFilters(string $sql, array &$params, array $filters): string
+    {
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (title LIKE :q OR member_name LIKE :q OR category LIKE :q OR institution LIKE :q OR description LIKE :q)';
+            $params[':q'] = '%' . $filters['q'] . '%';
+        }
+        if (!empty($filters['category'])) {
+            $sql .= ' AND category = :category';
+            $params[':category'] = $filters['category'];
+        }
+        if (!empty($filters['year'])) {
+            $sql .= ' AND year = :year';
+            $params[':year'] = $filters['year'];
+        }
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params[':status'] = $filters['status'];
+        }
+        return $sql;
+    }
+
     public function create(array $data): int
     {
         if (!$this->db) {

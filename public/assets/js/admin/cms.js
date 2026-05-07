@@ -67,6 +67,7 @@
     news: () => { Admin.renderAdminShell('news-list'); mode === 'editor' ? renderNewsEditor(false) : renderNewsList(); },
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
     prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
+    'prestasi-add': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(false); },
     'prestasi-edit': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(true); },
     'prestasi-token': () => { Admin.renderAdminShell('prestasi'); renderPrestasiTokenList(); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
@@ -1660,9 +1661,20 @@
   const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
 
   async function renderPrestasiList() {
-    // Check if SSR markup exists - if so, only bind delete behavior
+    // Check if SSR markup exists - if so, only bind delete/detail behavior
     if (document.querySelector('#admin-prestasi-list[data-ssr="true"]')) {
       bindPrestasiDeleteButtons();
+      bindPrestasiDetailButtons();
+      // Bind search form Enter key
+      const searchInput = document.querySelector('#prestasi-search');
+      if (searchInput) {
+        searchInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            document.querySelector('#prestasi-filter-form')?.submit();
+          }
+        });
+      }
       return;
     }
 
@@ -1911,6 +1923,69 @@
 
   async function renderPrestasiEditor(isEdit) {
     const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+
+    // Check if SSR form markup exists - if so, hydrate instead of rebuilding
+    const ssrForm = document.querySelector('#prestasi-editor-form[data-ssr="true"]');
+    if (ssrForm) {
+      const ssrIsEdit = ssrForm.dataset.edit === '1';
+      const ssrItemId = Number(ssrForm.dataset.itemId) || 0;
+
+      // Load member options for datalist
+      const memberOptions = await loadPrestasiMemberOptions(
+        document.querySelector('#prestasi-member-search')?.value?.trim() || ''
+      );
+      const datalist = document.querySelector('#prestasi-member-list');
+      if (datalist) {
+        datalist.innerHTML = memberOptions.map(member =>
+          `<option value="${escape(member.name)}">${escape(member.role || member.division || '')}</option>`
+        ).join('');
+      }
+
+      // Bind image upload
+      document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
+        document.querySelector('#prestasi-image-file')?.click();
+      });
+      document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+          const res = await fetch(route('admin.prestasiUpload'), {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: formData
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const url = json.data?.url || '';
+            document.querySelector('#prestasi-image-url').value = url;
+            const preview = document.querySelector('.config-preview');
+            if (preview) { preview.src = url; }
+            else {
+              const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
+              const empty = container?.querySelector('.config-empty');
+              if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
+            }
+            Admin.showToast('Foto berhasil diupload.');
+          } else {
+            Admin.showToast('Gagal upload foto.');
+          }
+        } catch (err) {
+          Admin.showToast('Gagal upload foto.');
+        }
+      });
+
+      // Enhance custom selects
+      enhanceAdminSelects(document.querySelector('#cms-body') || document);
+
+      // Bind form submission
+      bindPrestasiFormSubmit(ssrIsEdit, ssrItemId);
+      return;
+    }
+
     let item = {
       title: '',
       name: '',
@@ -2041,6 +2116,10 @@
     });
 
     // Form submission
+    bindPrestasiFormSubmit(isEdit, id);
+  }
+
+  function bindPrestasiFormSubmit(isEdit, itemId) {
     document.querySelector('#prestasi-editor-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();
 
@@ -2051,13 +2130,16 @@
       });
       if (!ok) return;
 
+      const contentField = document.querySelector('#prestasi-content-field');
+      const descField = document.querySelector('#prestasi-desc-field');
+
       const payload = {
         name: document.querySelector('#prestasi-member-search')?.value?.trim() || '',
         title: buildPrestasiTitle(),
         category: document.querySelector('#prestasi-category')?.value || '',
         year: document.querySelector('#prestasi-year')?.value || '',
-        description: document.querySelector('#prestasi-desc-field')?.value?.trim() || '',
-        content: document.querySelector('#prestasi-desc-field')?.value?.trim() || '',
+        description: descField?.value?.trim() || '',
+        content: contentField?.value?.trim() || descField?.value?.trim() || '',
         image: document.querySelector('#prestasi-image-url')?.value?.trim() || '',
         institution: document.querySelector('#prestasi-institution')?.value?.trim() || '',
         status: document.querySelector('#prestasi-status')?.value || 'draft',
@@ -2067,7 +2149,7 @@
       };
 
       const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
-      const url = isEdit ? route('admin.prestasiUpdate', { id }) : route('admin.prestasiStore');
+      const url = isEdit ? route('admin.prestasiUpdate', { id: itemId }) : route('admin.prestasiStore');
 
       try {
         const res = await fetch(url, {
@@ -2089,6 +2171,58 @@
       } catch (e) {
         Admin.showToast('Gagal menyimpan prestasi. Periksa koneksi.');
       }
+    });
+  }
+
+  function bindPrestasiDetailButtons() {
+    document.querySelectorAll('[data-detail-prestasi]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.detailPrestasi;
+        if (!id) return;
+        try {
+          const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.prestasiShow', { id }), {
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin'
+          });
+          if (!res.ok) {
+            Admin.showToast('Gagal memuat detail prestasi.');
+            return;
+          }
+          const json = await res.json();
+          const item = json.data;
+          if (!item) {
+            Admin.showToast('Data prestasi tidak ditemukan.');
+            return;
+          }
+          const statusClass = (item.status || 'draft') === 'published' ? 'cms-pill-green' : (item.status || 'draft') === 'draft' ? 'cms-pill-yellow' : '';
+          await Admin.showConfirm({
+            title: 'Detail Prestasi',
+            message: `<div class="text-left mt-3">
+              ${item.image ? `<img src="${escape(item.image)}" class="w-full max-h-48 object-cover rounded-xl mb-4" alt="${escape(item.title || '')}" />` : ''}
+              <h3 class="text-lg font-bold text-neutral-950">${escape(item.title || '')}</h3>
+              <div class="mt-3 grid gap-2 text-sm">
+                <div><strong>Nama:</strong> ${escape(item.name || '')}</div>
+                <div><strong>Peringkat:</strong> ${escape(item.category || '')}</div>
+                <div><strong>Tahun:</strong> ${escape(item.year || '')}</div>
+                <div><strong>Penyelenggara:</strong> ${escape(item.institution || '')}</div>
+                <div><strong>Komisariat:</strong> ${escape(item.campus || '')}</div>
+                <div><strong>Status:</strong> <span class="cms-pill ${statusClass}">${escape(item.status || 'draft')}</span></div>
+              </div>
+              <div class="mt-4 text-sm text-neutral-600">${escape(item.description || '')}</div>
+              ${item.content && item.content !== item.description ? `<div class="mt-3 text-sm text-neutral-500 border-t pt-3">${escape(item.content).slice(0, 500)}</div>` : ''}
+            </div>`,
+            confirmText: 'Edit',
+            cancelText: 'Tutup'
+          }).then((edit) => {
+            if (edit) {
+              window.location.href = `${adminUrl('prestasi-edit')}?id=${item.id || item.prestasi_id}`;
+            }
+          });
+        } catch (e) {
+          Admin.showToast('Gagal memuat detail prestasi.');
+        }
+      });
     });
   }
 

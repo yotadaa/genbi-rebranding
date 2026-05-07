@@ -5,10 +5,20 @@ $page = $page ?? 1;
 $perPage = $perPage ?? 25;
 $total = $total ?? 0;
 $totalPages = $totalPages ?? 1;
-$status = $status ?? null;
+$filters = $filters ?? [];
+$activeQ = $filters['q'] ?? '';
+$activeCategory = $filters['category'] ?? '';
+$activeYear = $filters['year'] ?? '';
+$activeStatus = $filters['status'] ?? '';
 $startItem = ($page - 1) * $perPage + 1;
 $endItem = min($page * $perPage, $total);
-$filterParams = array_filter(['status' => $status ?? ''], static fn($v) => $v !== '' && $v !== null);
+$filterParams = array_filter([
+    'q' => $activeQ,
+    'category' => $activeCategory,
+    'year' => $activeYear,
+    'status' => $activeStatus,
+], static fn($v) => $v !== '' && $v !== null);
+$prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -22,19 +32,37 @@ $filterParams = array_filter(['status' => $status ?? ''], static fn($v) => $v !=
     </div>
   </header>
   <div class="mt-6">
-    <?php if ($total > 0): ?>
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
-        <span>Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> prestasi.</span>
-        <form class="flex items-center gap-2" method="get" action="/admin/prestasi">
-          <?php if ($status): ?><input type="hidden" name="status" value="<?= $e($status) ?>" /><?php endif; ?>
-          <label for="admin-prestasi-per-page" class="text-sm text-neutral-600">Show</label>
-          <select id="admin-prestasi-per-page" name="per_page" class="config-input w-auto" onchange="this.form.submit()">
+    <form class="cms-toolbar mb-4" method="get" action="/admin/prestasi" id="prestasi-filter-form">
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-sm text-neutral-600">Show
+          <select name="per_page" class="admin-inline-select" onchange="this.form.submit()">
             <?php foreach ([10, 25, 50, 100] as $opt): ?>
               <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
             <?php endforeach; ?>
           </select>
-          <span class="text-sm text-neutral-600">entries</span>
-        </form>
+          entries
+        </label>
+        <select name="category" class="admin-toolbar-select" onchange="this.form.submit()">
+          <option value="">Semua Kategori</option>
+          <?php foreach ($prestasiCategories as $cat): ?>
+            <option value="<?= $e($cat) ?>" <?= $cat === $activeCategory ? 'selected' : '' ?>><?= $e($cat) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <select name="status" class="admin-toolbar-select" onchange="this.form.submit()">
+          <option value="">Semua Status</option>
+          <option value="published" <?= $activeStatus === 'published' ? 'selected' : '' ?>>Published</option>
+          <option value="draft" <?= $activeStatus === 'draft' ? 'selected' : '' ?>>Draft</option>
+          <option value="archived" <?= $activeStatus === 'archived' ? 'selected' : '' ?>>Archived</option>
+        </select>
+      </div>
+      <div class="cms-search">
+        <input name="q" id="prestasi-search" placeholder="Search prestasi..." value="<?= $e($activeQ) ?>" />
+        <noscript><button type="submit" class="btn btn-secondary btn-sm">Cari</button></noscript>
+      </div>
+    </form>
+    <?php if ($total > 0): ?>
+      <div class="mb-4 text-sm text-neutral-600">
+        Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> prestasi.
       </div>
     <?php endif; ?>
     <section class="admin-card overflow-hidden p-0">
@@ -60,7 +88,17 @@ $filterParams = array_filter(['status' => $status ?? ''], static fn($v) => $v !=
             <?php foreach ($items as $index => $item): ?>
               <tr>
                 <td><?= $startItem + $index ?></td>
-                <td><strong><?= $e($item['title'] ?? '') ?></strong></td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <?php if (!empty($item['image'])): ?>
+                      <img src="<?= $e($item['image']) ?>" class="table-thumb rounded" alt="<?= $e($item['title'] ?? '') ?>" />
+                    <?php endif; ?>
+                    <div>
+                      <strong><?= $e($item['title'] ?? '') ?></strong>
+                      <p class="mt-1 text-xs text-neutral-500"><?= $e(mb_substr($item['description'] ?? '', 0, 60)) ?></p>
+                    </div>
+                  </div>
+                </td>
                 <td><?= $e($item['name'] ?? '') ?></td>
                 <td><span class="cms-pill"><?= $e($item['category'] ?? '') ?></span></td>
                 <td><?= $e($item['year'] ?? '') ?></td>
@@ -73,6 +111,7 @@ $filterParams = array_filter(['status' => $status ?? ''], static fn($v) => $v !=
                 </td>
                 <td>
                   <div class="flex gap-2">
+                    <button class="btn btn-outline btn-sm" data-detail-prestasi="<?= (int) $item['id'] ?>">Detail</button>
                     <a class="btn btn-secondary btn-sm" href="/admin/prestasi-edit?id=<?= (int) $item['id'] ?>">Edit</a>
                     <button class="btn btn-danger btn-sm" data-delete-prestasi="<?= (int) $item['id'] ?>">Delete</button>
                   </div>

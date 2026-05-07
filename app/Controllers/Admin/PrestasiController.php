@@ -24,9 +24,14 @@ class PrestasiController
             'page' => $request->query('page'),
             'per_page' => $request->query('per_page'),
         ], 25, 100);
-        $status = $request->query('status');
-        $items = $this->prestasi?->all($pg['per_page'], $pg['offset']) ?? [];
-        $total = $this->prestasi?->countAll($status) ?? count($items);
+        $filters = [
+            'q' => $request->query('q'),
+            'category' => $request->query('category'),
+            'year' => $request->query('year'),
+            'status' => $request->query('status'),
+        ];
+        $items = $this->prestasi?->allForAdmin($filters, $pg['per_page'], $pg['offset']) ?? [];
+        $total = $this->prestasi?->countForAdmin($filters) ?? count($items);
         $response->json([
             'data' => $items,
             'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),

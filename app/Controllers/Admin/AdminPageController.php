@@ -140,34 +140,79 @@ HTML;
         ]);
     }
 
-    private function renderAdminPrestasiSsr(Request $request): ?string
+    private function renderAdminPrestasiSsr(string $page, Request $request): ?string
     {
         if (!$this->prestasiModel) {
             return null;
         }
 
-        $pg = Paginator::resolve([
-            'page' => $request->query('page'),
-            'per_page' => $request->query('per_page'),
-        ], 25, 100);
-        $status = $request->query('status');
-        $items = $this->prestasiModel->all($pg['per_page'], $pg['offset']);
-        $total = $this->prestasiModel->countAll($status);
-        $totalPages = Paginator::totalPages($total, $pg['per_page']);
+        $editorScripts = <<<'HTML'
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
+<script src="/assets/js/admin/cms.js"></script>
+HTML;
+        $cmsScript = '<script src="/assets/js/admin/cms.js"></script>';
 
-        return $this->viewRenderer->renderWithLayout('admin/prestasi/index.php', 'layouts/admin.php', [
-            'title' => 'View Prestasi | Admin GenBI',
-            'csrfToken' => CsrfService::token(),
-            'cmsPage' => 'prestasi',
-            'cmsMode' => 'list',
-            'items' => $items,
-            'page' => $pg['page'],
-            'perPage' => $pg['per_page'],
-            'total' => $total,
-            'totalPages' => $totalPages,
-            'status' => $status,
-            'scripts' => '<script src="/assets/js/admin/cms.js"></script>',
-        ]);
+        if ($page === 'prestasi') {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+            $filters = [
+                'q' => $request->query('q'),
+                'category' => $request->query('category'),
+                'year' => $request->query('year'),
+                'status' => $request->query('status'),
+            ];
+            $items = $this->prestasiModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
+            $total = $this->prestasiModel->countForAdmin($filters);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+            return $this->viewRenderer->renderWithLayout('admin/prestasi/index.php', 'layouts/admin.php', [
+                'title' => 'View Prestasi | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'prestasi',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
+                'scripts' => $cmsScript,
+            ]);
+        }
+
+        if ($page === 'prestasi-add') {
+            return $this->viewRenderer->renderWithLayout('admin/prestasi/form.php', 'layouts/admin.php', [
+                'title' => 'Add Prestasi | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'prestasi',
+                'cmsMode' => 'editor',
+                'isEdit' => false,
+                'item' => null,
+                'scripts' => $editorScripts,
+            ]);
+        }
+
+        if ($page === 'prestasi-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $id > 0 ? $this->prestasiModel->findById($id) : null;
+            return $this->viewRenderer->renderWithLayout('admin/prestasi/form.php', 'layouts/admin.php', [
+                'title' => ($item ? $item['title'] . ' - Edit' : 'Edit Prestasi') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'prestasi-edit',
+                'cmsMode' => 'editor',
+                'isEdit' => true,
+                'item' => $item,
+                'scripts' => $editorScripts,
+            ]);
+        }
+
+        return null;
     }
 
     /** @param array{page?: string} $params */
@@ -181,8 +226,8 @@ HTML;
             if ($ssrHtml === null && $page === 'team-member') {
                 $ssrHtml = $this->renderAdminTeamSsr($request);
             }
-            if ($ssrHtml === null && $page === 'prestasi') {
-                $ssrHtml = $this->renderAdminPrestasiSsr($request);
+            if ($ssrHtml === null && in_array($page, ['prestasi', 'prestasi-add', 'prestasi-edit'], true)) {
+                $ssrHtml = $this->renderAdminPrestasiSsr($page, $request);
             }
             if ($ssrHtml !== null) {
                 $response->html($ssrHtml, 200, ['X-Robots-Tag' => 'noindex, nofollow']);
