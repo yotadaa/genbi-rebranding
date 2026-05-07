@@ -4,20 +4,48 @@ declare(strict_types=1);
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Controllers\Admin\AdminPageController;
+use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\NewsController as AdminNewsController;
+use App\Controllers\Admin\NewsCommentController;
+use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
+use App\Controllers\Admin\PrestasiTokenController;
+use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\CsrfMiddleware;
+
+/** @var AuthController $authController */
+/** @var AdminPageController $adminPageController */
+/** @var AdminNewsController $adminNewsController */
+/** @var NewsCommentController $adminNewsCommentController */
+/** @var AdminPrestasiController $adminPrestasiController */
+/** @var PrestasiTokenController $adminPrestasiTokenController */
+/** @var AdminTeamMemberController $adminTeamMemberController */
+/** @var AuthMiddleware $authMiddleware */
+/** @var CsrfMiddleware $csrfMiddleware */
 
 // Auth routes (no auth middleware - accessible to guests)
 $router->get('/admin/login', static fn(Request $request, Response $response) => $authController->showLogin($request, $response));
 $router->post('/admin/login', static fn(Request $request, Response $response) => $authController->login($request, $response));
 
 // Logout requires CSRF validation (prevents cross-site logout attacks)
-$router->group([$csrfMiddleware], function ($router) use ($authController) {
+$router->group([$csrfMiddleware], static function ($router) use ($authController) {
     $router->post('/admin/logout', static fn(Request $request, Response $response) => $authController->logout($request, $response));
 });
 
 // Protected admin routes (require authentication + CSRF on POST)
-$router->group([$authMiddleware, $csrfMiddleware], function ($router) use ($adminPageController, $adminNewsController, $adminNewsCommentController, $adminPrestasiController, $adminPrestasiTokenController, $adminTeamMemberController) {
+$router->group([$authMiddleware, $csrfMiddleware], static function ($router) use (
+    $adminPageController,
+    $adminNewsController,
+    $adminNewsCommentController,
+    $adminPrestasiController,
+    $adminPrestasiTokenController,
+    $adminTeamMemberController,
+) {
+    // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
     $router->get('/admin/dashboard', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
+
     // News CMS
     $router->get('/admin/news/list', static fn(Request $request, Response $response) => $adminNewsController->index($request, $response));
     $router->get('/admin/news/categories', static fn(Request $request, Response $response) => $adminNewsController->categories($request, $response));
@@ -32,23 +60,31 @@ $router->group([$authMiddleware, $csrfMiddleware], function ($router) use ($admi
     $router->post('/admin/news-comments/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminNewsCommentController->action($request, $response, $params, 'approve'));
     $router->post('/admin/news-comments/{id}/reject', static fn(Request $request, Response $response, array $params) => $adminNewsCommentController->action($request, $response, $params, 'reject'));
     $router->post('/admin/news-comments/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminNewsCommentController->action($request, $response, $params, 'delete'));
+
+    // Prestasi CMS
     $router->get('/admin/prestasi/list', static fn(Request $request, Response $response) => $adminPrestasiController->index($request, $response));
-    $router->post('/admin/prestasi', static fn(Request $request, Response $response) => $adminPrestasiController->store($request, $response));
-    $router->post('/admin/prestasi/upload', static fn(Request $request, Response $response) => $adminPrestasiController->upload($request, $response));
     $router->get('/admin/prestasi/{id}', static fn(Request $request, Response $response, array $params) => $adminPrestasiController->show($request, $response, $params));
+    $router->post('/admin/prestasi', static fn(Request $request, Response $response) => $adminPrestasiController->store($request, $response));
     $router->post('/admin/prestasi/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPrestasiController->update($request, $response, $params));
     $router->post('/admin/prestasi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPrestasiController->delete($request, $response, $params));
+    $router->post('/admin/prestasi/upload', static fn(Request $request, Response $response) => $adminPrestasiController->upload($request, $response));
+
+    // Prestasi Tokens
     $router->get('/admin/prestasi-tokens', static fn(Request $request, Response $response) => $adminPrestasiTokenController->index($request, $response));
     $router->post('/admin/prestasi-tokens', static fn(Request $request, Response $response) => $adminPrestasiTokenController->generate($request, $response));
     $router->post('/admin/prestasi-tokens/{id}/revoke', static fn(Request $request, Response $response, array $params) => $adminPrestasiTokenController->revoke($request, $response, $params));
+
+    // Team Members
     $router->get('/admin/team-members', static fn(Request $request, Response $response) => $adminTeamMemberController->index($request, $response));
     $router->get('/admin/team-members/options', static fn(Request $request, Response $response) => $adminTeamMemberController->options($request, $response));
+    $router->get('/admin/team-members/{id}', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->show($request, $response, $params));
     $router->post('/admin/team-members', static fn(Request $request, Response $response) => $adminTeamMemberController->store($request, $response));
     $router->post('/admin/team-members/bulk', static fn(Request $request, Response $response) => $adminTeamMemberController->bulk($request, $response));
     $router->post('/admin/team-members/upload', static fn(Request $request, Response $response) => $adminTeamMemberController->upload($request, $response));
-    $router->get('/admin/team-members/{id}', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->show($request, $response, $params));
     $router->post('/admin/team-members/{id}/update', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->update($request, $response, $params));
     $router->post('/admin/team-members/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->delete($request, $response, $params));
     $router->post('/admin/team-members/{id}/home', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->setHome($request, $response, $params));
+
+    // Catch-all for static admin pages (must be last)
     $router->get('/admin/{page}', static fn(Request $request, Response $response, array $params) => $adminPageController->show($request, $response, $params));
 });
