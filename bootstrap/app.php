@@ -24,6 +24,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
 use App\Core\StaticPageRenderer;
+use App\Core\ViewRenderer;
 use App\Models\News;
 use App\Models\NewsComment;
 use App\Models\Prestasi;
@@ -53,6 +54,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $renderer = new StaticPageRenderer($rootPath);
+$viewRenderer = new ViewRenderer($rootPath . '/app/Views');
 $router = new Router();
 $newsModel = null;
 $commentModel = null;
@@ -79,7 +81,7 @@ try {
 }
 
 $pageController = new PageController($renderer);
-$newsController = new NewsController($renderer, $newsModel);
+$newsController = new NewsController($renderer, $newsModel, $viewRenderer);
 $commentController = new CommentController($newsModel, $commentModel);
 $prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel);
 $eventController = new EventController($renderer, $eventModel);
