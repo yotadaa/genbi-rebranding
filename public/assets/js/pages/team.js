@@ -7,6 +7,37 @@ const API = window.GenBIAPI;
 renderShell('team');
 observeFadeUp();
 
+// Check if SSR markup exists - if so, only bind layout toggle and search form
+const ssrTeamList = document.querySelector('#team-list[data-ssr="true"]');
+if (ssrTeamList) {
+  document.body.classList.add('page-ready');
+  // Bind layout toggle
+  const gridBtn = document.querySelector('#team-layout-grid');
+  const listBtn = document.querySelector('#team-layout-list');
+  gridBtn?.addEventListener('click', () => {
+    ssrTeamList.className = 'fade-up team-public-grid in-view';
+    gridBtn.classList.add('is-active');
+    listBtn?.classList.remove('is-active');
+  });
+  listBtn?.addEventListener('click', () => {
+    ssrTeamList.className = 'fade-up team-public-list in-view';
+    listBtn.classList.add('is-active');
+    gridBtn?.classList.remove('is-active');
+  });
+  // Bind search form Enter key
+  const filterForm = document.querySelector('#team-filter-form');
+  const searchInput = document.querySelector('#team-search');
+  if (searchInput && filterForm) {
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        filterForm.submit();
+      }
+    });
+  }
+  return;
+}
+
 let teamMembers = [];
 let filterOptions = { divisions: [], campuses: [], years: [] };
 let state = {
