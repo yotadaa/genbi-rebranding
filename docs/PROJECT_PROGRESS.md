@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
+Last updated: 2026-05-07 after Backend Pagination + SSR Phase 3 (Team/Prestasi/Admin)
 
 ## Source Markdown Reviewed
 
@@ -41,6 +41,8 @@ Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
 - Clean public routes now support `HEAD` requests by dispatching them through matching `GET` routes without a response body, so social/link validators do not receive false 404 results during preview checks.
 - **SSR Phase 1 complete**: Public news list and detail pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/public/news/`. Static HTML files remain as fallback. Client-side JS detects SSR markup and skips duplicate rendering (news list) or progressively binds behavior (news detail share/comment).
 - **SSR Phase 2 complete**: Admin news list, add, and edit pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/admin/news/`. Admin news list renders real rows from `tbl_news` with delete buttons. Admin news add/edit renders the full editor form shell with prefilled data for edit mode. JS hydrates Editor.js, image uploads, and form submission on SSR pages instead of rebuilding the DOM.
+- **Backend Pagination complete**: All item-listing pages now paginate from the backend via `?page=N` URL params. Shared `Paginator` helper parses page/per_page, computes offset, and builds query strings preserving filters. No page dumps all rows into a single response.
+- **SSR Phase 3 complete**: Public `/prestasi`, `/prestasi/{slug}`, `/team` and admin `/admin/team-member`, `/admin/prestasi` now render initial HTML server-side with paginated data. Pagination links work without JS. Filters preserved across page navigation.
 
 ## Integration Strategy
 
@@ -82,6 +84,8 @@ Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
 - [x] P3: Support `HEAD` requests for clean public routes used by link preview crawlers and validators.
 - [x] P3: SSR Phase 1 — Add ViewRenderer foundation, shared layouts/partials, and migrate public `/news` and `/news/{slug}` to server-side rendering.
 - [x] P3: SSR Phase 2 — Migrate admin `/admin/news`, `/admin/news-add`, and `/admin/news-edit` to server-side rendering with JS hydration.
+- [x] P3: Backend Pagination — All listing pages paginate from backend via `?page=N`. Shared `Paginator` helper. Public news, prestasi, team; admin news, team, prestasi.
+- [x] P3: SSR Phase 3 — Migrate public `/prestasi`, `/prestasi/{slug}`, `/team` and admin `/admin/team-member`, `/admin/prestasi` to server-side rendering with pagination.
 
 ## Working Checklist
 
@@ -380,6 +384,7 @@ Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
 - 2026-05-07: All PHP regression tests and `npm test` passed after HEAD request handling. JS result: 20 passing tests.
 - 2026-05-07: SSR Phase 1 complete: Added ViewRenderer foundation with tests, shared public/admin layouts and partials, migrated public `/news` and `/news/{slug}` to server-side rendering. All 9 PHP tests and 20 JS tests pass. Smoke tests confirm SSR marker, article cards, NewsArticle JSON-LD, and HEAD request support.
 - 2026-05-07: SSR Phase 2 complete: Migrated admin `/admin/news`, `/admin/news-add`, `/admin/news-edit` to server-side rendering. All 9 PHP tests and 20 JS tests pass. SSR verification confirms: news list with delete buttons, add form with empty fields, edit form with prefilled data, CSRF meta, noindex, Editor.js CDN scripts, and static fallback for non-news admin pages.
+- 2026-05-07: Backend Pagination complete: Added shared `Paginator` helper (10 PHP tests pass). Public `/news` paginated (12/page, max 24). Admin `/admin/news` paginated (25/page, max 100). Public `/prestasi` SSR with pagination (12/page). Public `/team` SSR with pagination (12/page, max 48). Admin team/prestasi URL pagination synced. Admin `/admin/team-member` and `/admin/prestasi` SSR with pagination. All 10 PHP tests and 20 JS tests pass.
 
 ## Progress Log
 
@@ -405,3 +410,4 @@ Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
 - 2026-05-07: Added HEAD request support to the router/response layer so clean news URLs return successful headers for validators and crawlers without emitting HTML bodies.
 - 2026-05-07: SSR Phase 1 implementation: Added `app/Core/ViewRenderer.php` for safe PHP template rendering with escaping helpers. Created shared layouts in `app/Views/layouts/` (public.php keeps shell placeholders for app.js, admin.php includes CSRF meta). Created news views in `app/Views/public/news/` for list and detail pages. Updated `NewsController` to render SSR when ViewRenderer exists, falling back to StaticPageRenderer otherwise. Updated `news.js` to detect SSR and skip duplicate rendering. Updated `news-detail.js` to progressively bind share/comment behavior on SSR pages. Static HTML files remain as fallback.
 - 2026-05-07: SSR Phase 2 implementation: Wired `AdminPageController` with `ViewRenderer` and `News` model. Created `app/Views/admin/news/index.php` for server-rendered news list with delete buttons. Created `app/Views/admin/news/form.php` for server-rendered editor form shell matching existing `cms.js` selectors. Added SSR branches in `AdminPageController::show()` for `news`, `news-add`, and `news-edit` pages. Refactored `cms.js` to detect SSR markup and hydrate (Editor.js, uploads, form submit) instead of rebuilding. Added `bindNewsFormSubmit()` for reusable form submission. Extended `bindNewsDeleteButtons()` to match both CSR and SSR selectors. Static HTML files remain as fallback for non-news admin pages.
+- 2026-05-07: Backend Pagination implementation: Created `app/Core/Paginator.php` with resolve/totalPages/meta/buildQuery helpers and `tests/php/PaginatorTest.php`. Updated `NewsController` SSR to paginate (12/page). Updated `AdminPageController` news SSR to paginate (25/page). Added `Prestasi::countPublished()` and `Prestasi::countAll()`. Created `app/Views/public/prestasi/index.php` and `show.php` for SSR. Created `app/Views/public/team/index.php` for SSR with filters. Injected `ViewRenderer` into `PrestasiController` and `TeamController`. Updated `prestasi.js` and `team.js` for SSR detection. Updated admin `cms.js` team list to hydrate/sync URL state. Updated admin prestasi list to fetch by page from backend. Created `app/Views/admin/team/index.php` and `app/Views/admin/prestasi/index.php` for SSR. Injected `TeamMember` and `Prestasi` into `AdminPageController`. Added `bindTeamDeleteButtons()` and extended `bindPrestasiDeleteButtons()` for SSR selectors.
