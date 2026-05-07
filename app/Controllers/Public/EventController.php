@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers\Public;
 
+use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\StaticPageRenderer;
+use App\Core\ViewRenderer;
 use App\Models\Event;
 use App\Services\SeoService;
 use App\Services\StructuredData;
@@ -17,18 +19,24 @@ final class EventController
     public function __construct(
         private StaticPageRenderer $renderer,
         private ?Event $eventModel = null,
+        private ?ViewRenderer $viewRenderer = null,
     ) {}
 
     public function index(Request $request, Response $response): void
     {
+        $filters = ['q' => $request->query('q')];
+
         if ($request->acceptsJson()) {
-            $filters = ['q' => $request->query('q')];
-            $items = $this->eventModel?->paginate($filters) ?? [];
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 9, 24);
+            $items = $this->eventModel?->paginate($filters, $pg['per_page'], $pg['offset']) ?? [];
             $total = $this->eventModel?->countPublic($filters) ?? count($items);
 
             $response->json([
                 'data' => $items,
-                'meta' => ['total' => $total],
+                'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),
             ]);
             return;
         }
@@ -39,6 +47,32 @@ final class EventController
             ['name' => 'Beranda', 'url' => '/'],
             ['name' => 'Event', 'url' => '/event'],
         ]);
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 9, 24);
+            $items = $this->eventModel?->paginate($filters, $pg['per_page'], $pg['offset']) ?? [];
+            $total = $this->eventModel?->countPublic($filters) ?? count($items);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+            $html = $this->viewRenderer->renderWithLayout('public/event/index.php', 'layouts/public.php', [
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-event',
+                'scripts' => '<script src="/assets/js/pages/event.js"></script>',
+            ]);
+            $response->html($html);
+            return;
+        }
+
         $response->html($this->renderer->render('event.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 
@@ -57,7 +91,17 @@ final class EventController
         }
 
         $item = $id > 0 ? $this->eventModel?->findById($id) : null;
-        $seo = SeoService::forPage('event.html');
+
+        if (is_array($item)) {
+            $seo = SeoService::forPage('event.html');
+            // Override with event-specific meta
+            $seo['title'] = ($item['title'] ?? 'Event') . ' | GenBI Provinsi Jambi';
+            $seo['description'] = mb_substr(strip_tags($item['excerpt'] ?? ''), 0, 160);
+            $seo['canonical'] = '/event/' . $id;
+        } else {
+            $seo = SeoService::forPage('event.html');
+        }
+
         $meta = SeoService::renderMetaBlock($seo);
         $jsonld = is_array($item)
             ? StructuredData::event($item) . PHP_EOL . '  ' . StructuredData::breadcrumbs([
@@ -66,6 +110,19 @@ final class EventController
                 ['name' => $item['title'] ?? 'Detail', 'url' => '/event/' . $id],
             ])
             : '';
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $html = $this->viewRenderer->renderWithLayout('public/event/show.php', 'layouts/public.php', [
+                'item' => $item,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-event-detail',
+                'scripts' => '<script src="/assets/js/pages/event.js"></script>',
+            ]);
+            $response->html($html, is_array($item) ? 200 : 404);
+            return;
+        }
+
         $response->html($this->renderer->render('event.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 }
