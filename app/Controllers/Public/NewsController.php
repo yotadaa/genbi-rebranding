@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Public;
 
+use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\StaticPageRenderer;
@@ -25,24 +26,20 @@ final class NewsController
     public function index(Request $request, Response $response): void
     {
         if ($request->acceptsJson()) {
-            $page = max(1, (int) ($request->query('page') ?? '1'));
-            $perPage = min(100, max(1, (int) ($request->query('per_page') ?? '100')));
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 12, 100);
             $filters = [
                 'category' => $request->query('category'),
                 'q' => $request->query('q'),
             ];
-            $offset = ($page - 1) * $perPage;
-            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate($filters, $perPage, $offset));
+            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate($filters, $pg['per_page'], $pg['offset']));
             $total = $this->readFromDatabase(static fn (News $news): int => $news->countPublic($filters));
 
-            // Always return JSON when client expects JSON, even if DB is unavailable
             $response->json([
                 'data' => $items ?? [],
-                'meta' => [
-                    'page' => $page,
-                    'per_page' => $perPage,
-                    'total' => $total ?? count($items ?? []),
-                ],
+                'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total ?? count($items ?? [])),
             ]);
             return;
         }
@@ -55,9 +52,25 @@ final class NewsController
         ]);
 
         if ($this->viewRenderer instanceof ViewRenderer) {
-            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate([], 100, 0)) ?? [];
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 12, 24);
+            $filters = [
+                'category' => $request->query('category'),
+                'q' => $request->query('q'),
+            ];
+            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate($filters, $pg['per_page'], $pg['offset'])) ?? [];
+            $total = $this->readFromDatabase(static fn (News $news): int => $news->countPublic($filters)) ?? count($items);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
             $html = $this->viewRenderer->renderWithLayout('public/news/index.php', 'layouts/public.php', [
                 'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news',

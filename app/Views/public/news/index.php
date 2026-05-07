@@ -1,3 +1,16 @@
+<?php
+use App\Core\Paginator;
+
+$page = $page ?? 1;
+$perPage = $perPage ?? 12;
+$total = $total ?? 0;
+$totalPages = $totalPages ?? 1;
+$filters = $filters ?? [];
+$activeQ = $filters['q'] ?? '';
+$activeCategory = $filters['category'] ?? '';
+$startItem = ($page - 1) * $perPage + 1;
+$endItem = min($page * $perPage, $total);
+?>
 <section class="bg-stone py-16 md:py-24">
   <div class="article-container fade-up">
     <p class="eyebrow">News</p>
@@ -7,13 +20,13 @@
 </section>
 <section class="bg-cream py-12 md:py-16">
   <div class="article-container">
-    <div class="news-filter fade-up mb-8 grid gap-3 md:grid-cols-[1fr_220px]">
-      <input id="news-search" class="input-soft" placeholder="Cari berita, kategori, atau topik" />
-      <div id="news-category"></div>
-    </div>
+    <form class="news-filter fade-up mb-8 grid gap-3 md:grid-cols-[1fr_220px]" method="get" action="/news" id="news-filter-form">
+      <input id="news-search" name="q" class="input-soft" placeholder="Cari berita, kategori, atau topik" value="<?= $e($activeQ) ?>" />
+      <div id="news-category"><?php if ($activeCategory !== ''): ?><input type="hidden" name="category" value="<?= $e($activeCategory) ?>" /><?php endif; ?></div>
+    </form>
     <div class="fade-up mb-4 text-sm text-neutral-600" id="news-count">
-      <?php if (!empty($items)): ?>
-        Menampilkan <?= count($items) ?> berita terbaru.
+      <?php if ($total > 0): ?>
+        Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> berita.
       <?php else: ?>
         Belum ada berita yang tersedia.
       <?php endif; ?>
@@ -46,6 +59,34 @@
         </div>
       <?php endif; ?>
     </div>
-    <div class="public-pagination mt-8" id="news-pagination" aria-label="Pagination berita"></div>
+    <?php if ($totalPages > 1): ?>
+      <nav class="public-pagination mt-8" id="news-pagination" aria-label="Pagination berita" data-ssr="true">
+        <?php
+          $filterParams = array_filter([
+            'q' => $activeQ,
+            'category' => $activeCategory,
+          ], static fn($v) => $v !== '' && $v !== null);
+        ?>
+        <?php if ($page > 1): ?>
+          <a class="pager-button" href="/news?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+        <?php else: ?>
+          <span class="pager-button" aria-disabled="true">Sebelumnya</span>
+        <?php endif; ?>
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+          <?php if ($i === $page): ?>
+            <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
+          <?php else: ?>
+            <a class="pager-button" href="/news?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+          <?php endif; ?>
+        <?php endfor; ?>
+        <?php if ($page < $totalPages): ?>
+          <a class="pager-button" href="/news?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+        <?php else: ?>
+          <span class="pager-button" aria-disabled="true">Berikutnya</span>
+        <?php endif; ?>
+      </nav>
+    <?php else: ?>
+      <div class="public-pagination mt-8" id="news-pagination" aria-label="Pagination berita"></div>
+    <?php endif; ?>
   </div>
 </section>

@@ -7,10 +7,21 @@ const API = window.GenBIAPI;
 renderShell('news');
 observeFadeUp();
 
-// Check if SSR markup exists - if so, skip client-side rendering
+// Check if SSR markup exists - if so, only bind search form behavior
 const list = document.querySelector('#news-list');
 if (list?.dataset.ssr === 'true') {
   document.body.classList.add('page-ready');
+  // Bind search input to submit the filter form on Enter
+  const filterForm = document.querySelector('#news-filter-form');
+  const searchInput = document.querySelector('#news-search');
+  if (searchInput && filterForm) {
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        filterForm.submit();
+      }
+    });
+  }
   return;
 }
 
