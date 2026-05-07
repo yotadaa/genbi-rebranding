@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\Prestasi;
@@ -19,11 +20,17 @@ class PrestasiController
 
     public function index(Request $request, Response $response): void
     {
-        $page = max(1, (int) ($request->query('page') ?? 1));
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
-        $items = $this->prestasi?->all($limit, $offset) ?? [];
-        $response->json(['data' => $items, 'page' => $page]);
+        $pg = Paginator::resolve([
+            'page' => $request->query('page'),
+            'per_page' => $request->query('per_page'),
+        ], 25, 100);
+        $status = $request->query('status');
+        $items = $this->prestasi?->all($pg['per_page'], $pg['offset']) ?? [];
+        $total = $this->prestasi?->countAll($status) ?? count($items);
+        $response->json([
+            'data' => $items,
+            'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),
+        ]);
     }
 
     public function show(Request $request, Response $response, array $params): void

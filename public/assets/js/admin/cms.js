@@ -1031,6 +1031,26 @@
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data anggota...</div>';
 
     const state = { view: 'grid', query: '', division: '', campus: '', year: '', page: 1, perPage: 12, total: 0, items: [], batchMode: false, filters: { divisions: [], campuses: [], years: [] } };
+    // Hydrate state from URL
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('page')) state.page = Math.max(1, Number(urlParams.get('page')) || 1);
+    if (urlParams.get('per_page')) state.perPage = Number(urlParams.get('per_page')) || 12;
+    if (urlParams.get('q')) state.query = urlParams.get('q');
+    if (urlParams.get('division')) state.division = urlParams.get('division');
+    if (urlParams.get('campus')) state.campus = urlParams.get('campus');
+    if (urlParams.get('year')) state.year = urlParams.get('year');
+    const syncUrl = () => {
+      const params = new URLSearchParams();
+      if (state.query) params.set('q', state.query);
+      if (state.division) params.set('division', state.division);
+      if (state.campus) params.set('campus', state.campus);
+      if (state.year) params.set('year', state.year);
+      if (state.page > 1) params.set('page', String(state.page));
+      if (state.perPage !== 12) params.set('per_page', String(state.perPage));
+      const qs = params.toString();
+      const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+      history.replaceState({}, '', url);
+    };
     const load = async () => {
       const endpoint = Core.buildEndpoint(route('admin.teamMembers'), { q: state.query, division: state.division, campus: state.campus, year: state.year, page: state.page, per_page: state.perPage });
       try {
@@ -1091,6 +1111,7 @@
       if (count) count.textContent = String(teamSelection.size);
     };
     const render = async () => {
+      syncUrl();
       await load();
       const root = document.querySelector('#team-cards');
       root.className = state.view === 'grid' ? 'team-card-grid mt-6' : 'team-card-list mt-6';
@@ -1617,29 +1638,61 @@
     );
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data prestasi...</div>';
 
-    let items = [];
-    try {
-      const res = await fetch(route('admin.prestasiList'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-      if (res.ok) {
-        const json = await res.json();
-        items = json.data || [];
-      }
-    } catch (e) { /* use empty fallback */ }
+    // Hydrate state from URL
+    const prestasiUrlParams = new URLSearchParams(location.search);
+    const prestasiState = {
+      page: Math.max(1, Number(prestasiUrlParams.get('page')) || 1),
+      perPage: Number(prestasiUrlParams.get('per_page')) || 25,
+      search: prestasiUrlParams.get('q') || '',
+      category: prestasiUrlParams.get('category') || '',
+      status: prestasiUrlParams.get('status') || '',
+      total: 0,
+      totalPages: 1,
+      items: [],
+    };
 
-    // Fallback to static data if backend unavailable
-    if (items.length === 0 && window.GenBIData && window.GenBIData.prestasi) {
-      items = window.GenBIData.prestasi;
-    }
+    const syncPrestasiUrl = () => {
+      const params = new URLSearchParams();
+      if (prestasiState.search) params.set('q', prestasiState.search);
+      if (prestasiState.category) params.set('category', prestasiState.category);
+      if (prestasiState.status) params.set('status', prestasiState.status);
+      if (prestasiState.page > 1) params.set('page', String(prestasiState.page));
+      if (prestasiState.perPage !== 25) params.set('per_page', String(prestasiState.perPage));
+      const qs = params.toString();
+      const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+      history.replaceState({}, '', url);
+    };
+
+    const loadPrestasiPage = async () => {
+      try {
+        const endpoint = Core.buildEndpoint(route('admin.prestasiList'), { page: prestasiState.page, per_page: prestasiState.perPage, status: prestasiState.status });
+        const res = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          prestasiState.items = json.data || [];
+          prestasiState.total = Number(json.meta?.total || prestasiState.items.length);
+          prestasiState.totalPages = Number(json.meta?.total_pages || 1);
+          prestasiState.page = Number(json.meta?.page || prestasiState.page);
+          return;
+        }
+      } catch (e) { /* fallback */ }
+      // Fallback to static data
+      if (window.GenBIData && window.GenBIData.prestasi) {
+        prestasiState.items = window.GenBIData.prestasi;
+        prestasiState.total = prestasiState.items.length;
+        prestasiState.totalPages = 1;
+      }
+    };
 
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         <div class="cms-toolbar">
           <div class="flex flex-wrap items-center gap-3">
-            <label class="text-sm text-neutral-600">Show ${selectControl({ id: 'prestasi-per-page', className: 'admin-inline-select', value: '50', options: ['10', '25', '50'] })} entries</label>
-            ${selectControl({ id: 'prestasi-filter-category', className: 'admin-toolbar-select', value: '', options: [{ value: '', label: 'Semua Kategori' }, ...prestasiCategories.map((category) => ({ value: category, label: category }))] })}
-            ${selectControl({ id: 'prestasi-filter-status', className: 'admin-toolbar-select', value: '', options: [{ value: '', label: 'Semua Status' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }, { value: 'archived', label: 'Archived' }] })}
+            <label class="text-sm text-neutral-600">Show ${selectControl({ id: 'prestasi-per-page', className: 'admin-inline-select', value: String(prestasiState.perPage), options: ['10', '25', '50'] })} entries</label>
+            ${selectControl({ id: 'prestasi-filter-category', className: 'admin-toolbar-select', value: prestasiState.category, options: [{ value: '', label: 'Semua Kategori' }, ...prestasiCategories.map((category) => ({ value: category, label: category }))] })}
+            ${selectControl({ id: 'prestasi-filter-status', className: 'admin-toolbar-select', value: prestasiState.status, options: [{ value: '', label: 'Semua Status' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }, { value: 'archived', label: 'Archived' }] })}
           </div>
-          <label class="cms-search">${Admin.icon('search')}<input id="prestasi-search" placeholder="Search prestasi..." /></label>
+          <label class="cms-search">${Admin.icon('search')}<input id="prestasi-search" placeholder="Search prestasi..." value="${escape(prestasiState.search)}" /></label>
         </div>
         <div class="admin-responsive-table mt-5">
           <table class="cms-table" id="prestasi-table">
@@ -1655,58 +1708,48 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="prestasi-tbody">
-              ${renderPrestasiRows(items)}
-            </tbody>
+            <tbody id="prestasi-tbody"></tbody>
           </table>
         </div>
         <div class="admin-pagination mt-5" id="prestasi-pagination" aria-label="Pagination prestasi"></div>
       </section>
     `;
 
-    // Bind filters and search
-    const allItems = items;
-    let currentPage = 1;
-    const filterAndRender = () => {
-      const search = (document.querySelector('#prestasi-search')?.value || '').toLowerCase();
-      const category = document.querySelector('#prestasi-filter-category')?.value || '';
-      const status = document.querySelector('#prestasi-filter-status')?.value || '';
-      const perPage = Number(document.querySelector('#prestasi-per-page')?.value) || 50;
+    const filterAndRender = async () => {
+      syncPrestasiUrl();
+      await loadPrestasiPage();
 
-      const filtered = allItems.filter(item => {
-        const title = (item.title || item.judul_prestasi || '').toLowerCase();
-        const name = (item.name || item.nama_anggota || '').toLowerCase();
-        const itemCategory = (item.category || item.kategori || '').toLowerCase();
-        const itemStatus = (item.status || '').toLowerCase();
+      // Client-side filter for search and category (backend doesn't support q/category filter yet)
+      let displayed = prestasiState.items;
+      const search = prestasiState.search.toLowerCase();
+      const category = prestasiState.category.toLowerCase();
+      if (search || category) {
+        displayed = displayed.filter(item => {
+          const title = (item.title || '').toLowerCase();
+          const name = (item.name || '').toLowerCase();
+          const itemCategory = (item.category || '').toLowerCase();
+          if (search && !title.includes(search) && !name.includes(search) && !itemCategory.includes(search)) return false;
+          if (category && itemCategory !== category) return false;
+          return true;
+        });
+      }
 
-        if (search && !title.includes(search) && !name.includes(search) && !itemCategory.includes(search)) return false;
-        if (category && itemCategory !== category.toLowerCase()) return false;
-        if (status && itemStatus !== status) return false;
-        return true;
-      });
-
-      const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-      currentPage = Math.min(currentPage, totalPages);
-      const start = (currentPage - 1) * perPage;
-      const pageItems = filtered.slice(start, start + perPage);
-
+      const offset = (prestasiState.page - 1) * prestasiState.perPage;
       const tbody = document.querySelector('#prestasi-tbody');
-      if (tbody) tbody.innerHTML = renderPrestasiRows(pageItems, start);
-      renderAdminPagination('#prestasi-pagination', totalPages, currentPage, (page) => {
-        currentPage = page;
+      if (tbody) tbody.innerHTML = renderPrestasiRows(displayed, offset);
+      renderAdminPagination('#prestasi-pagination', prestasiState.totalPages, prestasiState.page, (pg) => {
+        prestasiState.page = pg;
         filterAndRender();
       });
       bindPrestasiDeleteButtons();
     };
 
     enhanceAdminSelects(body);
-    document.querySelector('#prestasi-search')?.addEventListener('input', () => { currentPage = 1; filterAndRender(); });
-    document.querySelector('#prestasi-per-page')?.addEventListener('change', () => { currentPage = 1; filterAndRender(); });
-    document.querySelector('#prestasi-filter-category')?.addEventListener('change', () => { currentPage = 1; filterAndRender(); });
-    document.querySelector('#prestasi-filter-status')?.addEventListener('change', () => { currentPage = 1; filterAndRender(); });
+    document.querySelector('#prestasi-search')?.addEventListener('input', (event) => { prestasiState.search = event.target.value; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-per-page')?.addEventListener('change', (event) => { prestasiState.perPage = Number(event.target.value) || 25; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-filter-category')?.addEventListener('change', (event) => { prestasiState.category = event.target.value; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-filter-status')?.addEventListener('change', (event) => { prestasiState.status = event.target.value; prestasiState.page = 1; filterAndRender(); });
     filterAndRender();
-
-    bindPrestasiDeleteButtons();
   }
 
   function renderPrestasiRows(items, offset = 0) {
