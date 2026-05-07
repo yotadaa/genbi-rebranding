@@ -395,21 +395,23 @@
   function resolveStaticRoute(pathname = '/') {
     const cleanPath = String(pathname || '/').replace(/\/+$|^\s+|\s+$/g, '') || '/';
     const publicRoutes = {
-      '/': '/index.html',
-      '/about': '/about.html',
-      '/team': '/team.html',
-      '/teams': '/team.html',
-      '/event': '/event.html',
-      '/prestasi': '/prestasi.html',
-      '/news': '/news.html',
-      '/contact': '/contact.html',
+      '/': '/fallbacks/index.html',
+      '/about': '/fallbacks/about.html',
+      '/team': '/fallbacks/team.html',
+      '/teams': '/fallbacks/team.html',
+      '/event': '/fallbacks/event.html',
+      '/prestasi': '/fallbacks/prestasi.html',
+      '/news': '/fallbacks/news.html',
+      '/contact': '/fallbacks/contact.html',
     };
     if (publicRoutes[cleanPath]) return publicRoutes[cleanPath];
-    if (/^\/event\/\d+$/.test(cleanPath)) return '/event.html';
-    if (/^\/news\/[^/]+$/.test(cleanPath)) return '/news-detail.html';
-    if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/prestasi-submit.html';
-    if (cleanPath === '/admin') return '/admin/dashboard.html';
-    if (/^\/admin\/[^/]+$/.test(cleanPath)) return `/admin/${cleanPath.split('/').pop()}.html`;
+    if (/^\/event\/\d+$/.test(cleanPath)) return '/fallbacks/event.html';
+    if (/^\/news\/[^/]+$/.test(cleanPath)) return '/fallbacks/news-detail.html';
+    if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/fallbacks/prestasi-submit.html';
+    if (cleanPath === '/admin') return '/fallbacks/admin/dashboard.html';
+    if (/^\/admin\/[^/]+$/.test(cleanPath)) return `/fallbacks/admin/${cleanPath.split('/').pop()}.html`;
+    // Legacy: support paths without /fallbacks prefix for assets
+    if (/^\/assets\//.test(cleanPath)) return null;
     return null;
   }
 

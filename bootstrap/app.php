@@ -53,7 +53,7 @@ if (PHP_SAPI !== 'cli') {
     \App\Core\Session::start();
 }
 
-$renderer = new StaticPageRenderer($rootPath);
+$renderer = new StaticPageRenderer($rootPath . '/fallbacks');
 $viewRenderer = new ViewRenderer($rootPath . '/app/Views');
 $router = new Router();
 $newsModel = null;

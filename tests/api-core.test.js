@@ -91,13 +91,13 @@ test('routeUrl resolves named public and admin routes', () => {
   assert.equal(Core.routeUrl('admin.prestasiTokenRevoke', { id: 3 }), '/admin/prestasi-tokens/3/revoke');
 });
 
-test('resolveStaticRoute maps clean routes to prototype HTML files', () => {
-  assert.equal(Core.resolveStaticRoute('/'), '/index.html');
-  assert.equal(Core.resolveStaticRoute('/news'), '/news.html');
-  assert.equal(Core.resolveStaticRoute('/news/a-first-news-1'), '/news-detail.html');
-  assert.equal(Core.resolveStaticRoute('/admin'), '/admin/dashboard.html');
-  assert.equal(Core.resolveStaticRoute('/admin/login'), '/admin/login.html');
-  assert.equal(Core.resolveStaticRoute('/admin/comment'), '/admin/comment.html');
+test('resolveStaticRoute maps clean routes to fallback HTML files', () => {
+  assert.equal(Core.resolveStaticRoute('/'), '/fallbacks/index.html');
+  assert.equal(Core.resolveStaticRoute('/news'), '/fallbacks/news.html');
+  assert.equal(Core.resolveStaticRoute('/news/a-first-news-1'), '/fallbacks/news-detail.html');
+  assert.equal(Core.resolveStaticRoute('/admin'), '/fallbacks/admin/dashboard.html');
+  assert.equal(Core.resolveStaticRoute('/admin/login'), '/fallbacks/admin/login.html');
+  assert.equal(Core.resolveStaticRoute('/admin/comment'), '/fallbacks/admin/comment.html');
   assert.equal(Core.resolveStaticRoute('/assets/js/app.js'), null);
 });
 

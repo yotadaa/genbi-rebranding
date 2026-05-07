@@ -35,7 +35,16 @@ $endItem = min($page * $perPage, $total);
     <div class="soft-card overflow-hidden prestasi-list" id="prestasi-list" data-ssr="true">
       <?php if (!empty($items)): ?>
         <?php foreach ($items as $index => $item): ?>
-          <a href="/prestasi/<?= rawurlencode((string) ($item['slug'] ?? '')) ?>" class="prestasi-row soft-row" data-id="<?= (int) $item['id'] ?>" data-index="<?= $index ?>">
+          <button type="button" class="prestasi-row soft-row" data-id="<?= (int) $item['id'] ?>" data-index="<?= $index ?>"
+            data-title="<?= $e($item['title'] ?? '') ?>"
+            data-name="<?= $e($item['name'] ?? '') ?>"
+            data-campus="<?= $e($item['campus'] ?? '') ?>"
+            data-category="<?= $e($item['category'] ?? '') ?>"
+            data-year="<?= $e($item['year'] ?? '') ?>"
+            data-description="<?= $e($item['description'] ?? '') ?>"
+            data-detail="<?= $e($item['content'] ?? $item['description'] ?? '') ?>"
+            data-image="<?= $e($item['image'] ?? '') ?>"
+            data-institution="<?= $e($item['institution'] ?? '') ?>">
             <span class="serif prestasi-number"><?= str_pad((string) ($startItem + $index), 2, '0', STR_PAD_LEFT) ?></span>
             <div class="prestasi-row-copy">
               <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-blue-800">
@@ -47,7 +56,7 @@ $endItem = min($page * $perPage, $total);
             <div class="prestasi-person">
               <strong><?= $e($item['name'] ?? '') ?></strong><br /><?= $e($item['campus'] ?? $item['institution'] ?? '') ?>
             </div>
-          </a>
+          </button>
         <?php endforeach; ?>
       <?php else: ?>
         <div class="p-8 text-center text-sm text-neutral-600">Belum ada data prestasi yang tersedia.</div>
