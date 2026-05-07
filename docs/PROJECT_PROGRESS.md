@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
+Last updated: 2026-05-07 after SSR Migration Phase 2 (Admin News)
 
 ## Source Markdown Reviewed
 
@@ -40,6 +40,7 @@ Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 - News share image metadata now resolves legacy relative upload filenames against existing files in `public/uploads`, including same-basename extension fallback such as `news-98.jpeg` -> `news-98.jpg`.
 - Clean public routes now support `HEAD` requests by dispatching them through matching `GET` routes without a response body, so social/link validators do not receive false 404 results during preview checks.
 - **SSR Phase 1 complete**: Public news list and detail pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/public/news/`. Static HTML files remain as fallback. Client-side JS detects SSR markup and skips duplicate rendering (news list) or progressively binds behavior (news detail share/comment).
+- **SSR Phase 2 complete**: Admin news list, add, and edit pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/admin/news/`. Admin news list renders real rows from `tbl_news` with delete buttons. Admin news add/edit renders the full editor form shell with prefilled data for edit mode. JS hydrates Editor.js, image uploads, and form submission on SSR pages instead of rebuilding the DOM.
 
 ## Integration Strategy
 
@@ -80,6 +81,7 @@ Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 - [x] P3: Resolve legacy news share image upload filename mismatches for Open Graph/Twitter Card URLs.
 - [x] P3: Support `HEAD` requests for clean public routes used by link preview crawlers and validators.
 - [x] P3: SSR Phase 1 — Add ViewRenderer foundation, shared layouts/partials, and migrate public `/news` and `/news/{slug}` to server-side rendering.
+- [x] P3: SSR Phase 2 — Migrate admin `/admin/news`, `/admin/news-add`, and `/admin/news-edit` to server-side rendering with JS hydration.
 
 ## Working Checklist
 
@@ -297,6 +299,26 @@ Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 - [x] Verify HEAD requests still work correctly.
 - [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 1 completion.
 
+### Task 18: SSR Phase 2 — Admin News List, Add, and Edit
+
+- [x] Wire `AdminPageController` with `ViewRenderer` and `News` model via constructor injection.
+- [x] Update `bootstrap/app.php` to pass `$viewRenderer` and `$newsModel` to `AdminPageController`.
+- [x] Create `app/Views/admin/news/index.php` with server-rendered news table and delete buttons.
+- [x] Add SSR branch in `AdminPageController::show()` for `news` page.
+- [x] Refactor `cms.js` `renderNewsList()` to detect SSR and only bind delete behavior.
+- [x] Extend `bindNewsDeleteButtons()` to match both CSR and SSR delete button selectors.
+- [x] Create `app/Views/admin/news/form.php` with full editor form shell matching existing JS selectors.
+- [x] Add SSR branches in `AdminPageController` for `news-add` and `news-edit` pages.
+- [x] Load categories from `News::categories()` for SSR form category select.
+- [x] Prefill edit form with item data from `News::findById()` when editing.
+- [x] Include Editor.js CDN scripts in admin layout for add/edit pages.
+- [x] Add `bindNewsFormSubmit()` function to `cms.js` for reusable form submission.
+- [x] Refactor `renderNewsEditor()` to detect SSR form and hydrate instead of rebuilding.
+- [x] Run PHP lint, all PHP tests (9 suites), JS syntax check, and JS tests (20 tests).
+- [x] Verify SSR rendering for `/admin/news`, `/admin/news-add`, `/admin/news-edit?id=100`.
+- [x] Verify static fallback still works for non-news admin pages.
+- [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 2 completion.
+
 ## Test Log
 
 - 2026-05-06: No test harness existed at initial audit.
@@ -357,6 +379,7 @@ Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 - 2026-05-07: PHP router HEAD request test passed; `/news/{slug}` HEAD requests now match GET routes and return an empty 200 response instead of route-level 404.
 - 2026-05-07: All PHP regression tests and `npm test` passed after HEAD request handling. JS result: 20 passing tests.
 - 2026-05-07: SSR Phase 1 complete: Added ViewRenderer foundation with tests, shared public/admin layouts and partials, migrated public `/news` and `/news/{slug}` to server-side rendering. All 9 PHP tests and 20 JS tests pass. Smoke tests confirm SSR marker, article cards, NewsArticle JSON-LD, and HEAD request support.
+- 2026-05-07: SSR Phase 2 complete: Migrated admin `/admin/news`, `/admin/news-add`, `/admin/news-edit` to server-side rendering. All 9 PHP tests and 20 JS tests pass. SSR verification confirms: news list with delete buttons, add form with empty fields, edit form with prefilled data, CSRF meta, noindex, Editor.js CDN scripts, and static fallback for non-news admin pages.
 
 ## Progress Log
 
@@ -381,3 +404,4 @@ Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 - 2026-05-07: Fixed news share image URL generation for legacy DB rows that reference an upload filename with the wrong extension by resolving the actual file in `public/uploads` before emitting `/uploads/...` URLs.
 - 2026-05-07: Added HEAD request support to the router/response layer so clean news URLs return successful headers for validators and crawlers without emitting HTML bodies.
 - 2026-05-07: SSR Phase 1 implementation: Added `app/Core/ViewRenderer.php` for safe PHP template rendering with escaping helpers. Created shared layouts in `app/Views/layouts/` (public.php keeps shell placeholders for app.js, admin.php includes CSRF meta). Created news views in `app/Views/public/news/` for list and detail pages. Updated `NewsController` to render SSR when ViewRenderer exists, falling back to StaticPageRenderer otherwise. Updated `news.js` to detect SSR and skip duplicate rendering. Updated `news-detail.js` to progressively bind share/comment behavior on SSR pages. Static HTML files remain as fallback.
+- 2026-05-07: SSR Phase 2 implementation: Wired `AdminPageController` with `ViewRenderer` and `News` model. Created `app/Views/admin/news/index.php` for server-rendered news list with delete buttons. Created `app/Views/admin/news/form.php` for server-rendered editor form shell matching existing `cms.js` selectors. Added SSR branches in `AdminPageController::show()` for `news`, `news-add`, and `news-edit` pages. Refactored `cms.js` to detect SSR markup and hydrate (Editor.js, uploads, form submit) instead of rebuilding. Added `bindNewsFormSubmit()` for reusable form submission. Extended `bindNewsDeleteButtons()` to match both CSR and SSR selectors. Static HTML files remain as fallback for non-news admin pages.

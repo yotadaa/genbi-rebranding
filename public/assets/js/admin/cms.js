@@ -224,6 +224,12 @@
   }
 
   async function renderNewsList() {
+    // Check if SSR markup exists - if so, only bind delete behavior
+    if (document.querySelector('#admin-news-list[data-ssr="true"]')) {
+      bindNewsDeleteButtons();
+      return;
+    }
+
     const body = renderShell('View News', 'Daftar berita dari database. Aksi hapus memakai custom confirmation modal.', `<a href="${adminUrl('news-add')}" class="btn btn-primary">Add News</a>`);
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data berita...</div>';
 
@@ -297,9 +303,9 @@
   }
 
   function bindNewsDeleteButtons() {
-    document.querySelectorAll('[data-delete][data-news-id]').forEach((button) => {
+    document.querySelectorAll('[data-delete][data-news-id], [data-delete-news]').forEach((button) => {
       button.addEventListener('click', async () => {
-        const id = button.dataset.newsId;
+        const id = button.dataset.newsId || button.dataset.deleteNews;
         const ok = await Admin.showConfirm({ title: 'Hapus berita?', message: 'Berita akan dihapus (soft delete). Data masih bisa dipulihkan.', confirmText: 'Hapus', danger: true });
         if (!ok) return;
         try {
@@ -324,6 +330,27 @@
 
   async function renderNewsEditor(isEdit) {
     const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+
+    // Check if SSR form markup exists - if so, hydrate instead of rebuilding
+    const ssrForm = document.querySelector('#news-editor-form[data-ssr="true"]');
+    if (ssrForm) {
+      const ssrIsEdit = ssrForm.dataset.edit === '1';
+      const ssrItemId = Number(ssrForm.dataset.itemId) || 0;
+      const ssrContent = document.querySelector('#editor-fallback article')?.innerHTML || '';
+      const ssrItem = {
+        id: ssrItemId,
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: ssrContent,
+      };
+      const editor = initMediumEditor(ssrItem, ssrIsEdit);
+      bindMediumEditorActions(editor);
+      bindNewsImageUploads();
+      enhanceAdminSelects(document.querySelector('#cms-body') || document);
+      bindNewsFormSubmit(ssrIsEdit, ssrItemId, editor);
+      return;
+    }
+
     let item = {
       title: '',
       excerpt: '',
@@ -523,6 +550,71 @@
           Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
           if (!isEdit && result.data?.id) {
             // Redirect to edit page for the new article
+            setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+      }
+    });
+  }
+
+  function bindNewsFormSubmit(isEdit, id, editor) {
+    document.querySelector('#news-editor-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      let editorContent = '';
+      if (editor?.save) {
+        try {
+          const outputData = await editor.save();
+          editorContent = blocksToNewsHtml(outputData.blocks);
+        } catch (error) {
+          const fallbackEl = document.querySelector('#editor-fallback article');
+          if (fallbackEl) editorContent = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#editor-fallback article');
+        if (fallbackEl) editorContent = fallbackEl.innerHTML;
+      }
+
+      const ok = await Admin.showConfirm({
+        title: isEdit ? 'Update berita?' : 'Submit berita?',
+        message: isEdit ? 'Berita akan diperbarui di database.' : 'Berita baru akan disimpan ke database.',
+        confirmText: isEdit ? 'Update' : 'Submit'
+      });
+      if (!ok) return;
+
+      const payload = {
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: editorContent || '',
+        date: document.querySelector('[type="date"]')?.value || '',
+        category_id: Number(document.querySelector('#news-category-select')?.value) || 0,
+        status: document.querySelector('#news-status')?.value || 'draft',
+        contributor_pewarta: document.querySelector('#news-pewarta')?.value?.trim() || '',
+        contributor_editor: document.querySelector('#news-editor-name')?.value?.trim() || '',
+        meta_title: document.querySelector('#news-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
+        photo: document.querySelector('#news-photo-url')?.value?.trim() || '',
+        banner: document.querySelector('#news-banner-url')?.value?.trim() || '',
+      };
+
+      const token = getAdminCsrfToken();
+      const url = isEdit ? route('admin.newsUpdate', { id }) : route('admin.newsStore');
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ ...payload, _csrf_token: token })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
             setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
           }
         } else {
