@@ -25,19 +25,49 @@ final class NewsController
     public function index(Request $request, Response $response): void
     {
         if (!$this->news) {
-            $response->json(['data' => [], 'total' => 0]);
+            $response->json(['data' => [], 'meta' => ['total' => 0, 'page' => 1, 'per_page' => 50, 'total_pages' => 1]]);
             return;
         }
 
         $page = max(1, (int) ($request->query('page') ?? 1));
-        $status = $request->query('status');
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
+        $perPage = max(1, min(100, (int) ($request->query('per_page') ?? 50)));
+        $offset = ($page - 1) * $perPage;
 
-        $items = $this->news->allForAdmin($limit, $offset, $status);
-        $total = $this->news->countForAdmin($status);
+        // Build filters array
+        $filters = [];
+        if ($request->query('status')) {
+            $filters['status'] = $request->query('status');
+        }
+        if ($request->query('q')) {
+            $filters['q'] = $request->query('q');
+        }
+        
+        // Parse category[] query params
+        $categoryParams = $_GET['category'] ?? [];
+        if (!is_array($categoryParams)) {
+            $categoryParams = [$categoryParams];
+        }
+        $categoryIds = array_filter(array_map('intval', $categoryParams));
+        if (!empty($categoryIds)) {
+            $filters['categories'] = $categoryIds;
+        }
 
-        $response->json(['data' => $items, 'total' => $total, 'page' => $page]);
+        $items = $this->news->allForAdmin($perPage, $offset, $filters);
+        $total = $this->news->countForAdmin($filters);
+        $totalPages = (int) ceil($total / $perPage);
+
+        $response->json([
+            'data' => $items,
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+            ],
+            // Keep legacy fields for backward compatibility
+            'total' => $total,
+            'page' => $page,
+        ]);
     }
 
     public function show(Request $request, Response $response, array $params): void

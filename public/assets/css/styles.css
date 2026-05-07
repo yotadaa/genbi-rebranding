@@ -4113,3 +4113,212 @@ input[type="file"].config-input::file-selector-button:hover {
 
 .bpi-slide-photo { position: relative; }
 .bpi-slide-photo img { position: relative; z-index: 1; }
+
+/* Admin multi-select dropdown */
+.admin-multi-select {
+  position: relative;
+}
+
+.admin-multi-select-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(17 79 137 / 0.18);
+  background: white;
+  padding: 0.5rem 0.85rem;
+  color: #262626;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.admin-multi-select-button:hover {
+  border-color: var(--admin-blue-active);
+}
+
+.admin-multi-select-button[aria-expanded="true"] {
+  border-color: var(--admin-blue-active);
+  box-shadow: 0 0 0 3px rgb(36 106 167 / 0.12);
+}
+
+.admin-multi-select-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 500;
+  min-width: 16rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(17 79 137 / 0.12);
+  background: white;
+  padding: 0.5rem;
+  box-shadow: 0 12px 40px rgb(17 79 137 / 0.15);
+}
+
+.admin-multi-select-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 120ms ease;
+}
+
+.admin-multi-select-option:hover {
+  background: var(--blue-50);
+}
+
+.admin-multi-select-option input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.admin-multi-select-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgb(17 79 137 / 0.08);
+}
+
+.admin-multi-select-clear,
+.admin-multi-select-apply {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 120ms ease;
+}
+
+.admin-multi-select-clear {
+  background: rgb(239 239 239);
+  color: #525252;
+}
+
+.admin-multi-select-clear:hover {
+  background: rgb(229 229 229);
+}
+
+.admin-multi-select-apply {
+  background: var(--blue-800);
+  color: white;
+}
+
+.admin-multi-select-apply:hover {
+  background: var(--admin-blue-active);
+}
+
+/* Admin news grid layout */
+.admin-news-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.admin-news-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.3rem;
+  border: 1px solid rgb(23 23 23 / 0.10);
+  background: white;
+  overflow: hidden;
+  transition: 180ms ease;
+}
+
+.admin-news-card:hover {
+  border-color: rgb(17 75 154 / 0.24);
+  box-shadow: 0 18px 50px rgb(17 75 154 / 0.08);
+}
+
+.admin-news-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: var(--blue-50);
+}
+
+.admin-news-card-placeholder {
+  width: 100%;
+  height: 180px;
+  display: grid;
+  place-items: center;
+  background: var(--blue-50);
+  color: var(--blue-800);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.admin-news-card-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.admin-news-card h2 {
+  color: #171717;
+  font-weight: 900;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.admin-news-card p {
+  color: #525252;
+  font-size: 13px;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.admin-news-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-news-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* View toggle button styles */
+.view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  color: #525252;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: 120ms ease;
+}
+
+.view-toggle-btn:hover {
+  background: rgb(239 239 239);
+}
+
+.view-toggle-btn.is-active {
+  background: var(--blue-800);
+  color: white;
+}
+
+/* Admin filter group */
+.admin-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

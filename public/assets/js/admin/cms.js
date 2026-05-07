@@ -225,9 +225,10 @@
   }
 
   async function renderNewsList() {
-    // Check if SSR markup exists - if so, only bind delete behavior
+    // Check if SSR markup exists - if so, only bind delete behavior and multi-select
     if (document.querySelector('#admin-news-list[data-ssr="true"]')) {
       bindNewsDeleteButtons();
+      bindAdminMultiSelect();
       return;
     }
 
@@ -2483,6 +2484,65 @@
       holder.classList.add('hidden');
       fallback?.classList.remove('hidden');
       return null;
+    }
+  }
+
+  // Bind multi-select dropdown for SSR pages
+  function bindAdminMultiSelect() {
+    const multiSelect = document.querySelector('.admin-multi-select[data-ssr="true"]');
+    if (!multiSelect) return;
+
+    const button = multiSelect.querySelector('.admin-multi-select-button');
+    const menu = multiSelect.querySelector('.admin-multi-select-menu');
+    const label = multiSelect.querySelector('#category-label');
+    const checkboxes = multiSelect.querySelectorAll('input[type="checkbox"]');
+    const clearBtn = multiSelect.querySelector('.admin-multi-select-clear');
+    const applyBtn = multiSelect.querySelector('.admin-multi-select-apply');
+
+    if (!button || !menu) return;
+
+    // Toggle dropdown
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', !isOpen);
+      menu.classList.toggle('hidden');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!multiSelect.contains(e.target)) {
+        button.setAttribute('aria-expanded', 'false');
+        menu.classList.add('hidden');
+      }
+    });
+
+    // Update label when checkboxes change
+    const updateLabel = () => {
+      const checked = Array.from(checkboxes).filter(cb => cb.checked);
+      if (label) {
+        label.textContent = checked.length === 0 ? 'Semua Kategori' : `${checked.length} dipilih`;
+      }
+    };
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateLabel));
+
+    // Clear button
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkboxes.forEach(cb => cb.checked = false);
+        updateLabel();
+      });
+    }
+
+    // Apply button submits the form
+    if (applyBtn) {
+      applyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = multiSelect.closest('form');
+        if (form) form.submit();
+      });
     }
   }
 })();

@@ -118,21 +118,49 @@ final class News
 
     // --- Admin methods ---
 
-    /** @return array<int, array<string, mixed>> */
-    public function allForAdmin(int $limit = 50, int $offset = 0, ?string $status = null): array
+    /**
+     * @param array<string, mixed> $filters Supported: 'status', 'q', 'categories' (array of category IDs)
+     * @return array<int, array<string, mixed>>
+     */
+    public function allForAdmin(int $limit = 50, int $offset = 0, array $filters = []): array
     {
         $sql = 'SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL';
         $params = [];
 
-        if ($status !== null && $status !== '') {
+        // Status filter
+        if (!empty($filters['status'])) {
             $sql .= ' AND n.status = :status';
-            $params['status'] = $status;
+            $params['status'] = $filters['status'];
+        }
+
+        // Search filter
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . $filters['q'] . '%';
+        }
+
+        // Category filter (array of category IDs)
+        if (!empty($filters['categories']) && is_array($filters['categories'])) {
+            $categoryIds = array_filter(array_map('intval', $filters['categories']));
+            if (!empty($categoryIds)) {
+                $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+                $sql .= " AND n.category_id IN ($placeholders)";
+                foreach ($categoryIds as $catId) {
+                    $params[] = $catId;
+                }
+            }
         }
 
         $sql .= ' ORDER BY n.news_id DESC LIMIT :limit OFFSET :offset';
         $statement = $this->db->prepare($sql);
+        
+        $paramIndex = 1;
         foreach ($params as $key => $value) {
-            $statement->bindValue(':' . $key, $value);
+            if (is_string($key)) {
+                $statement->bindValue(':' . $key, $value);
+            } else {
+                $statement->bindValue($paramIndex++, $value, PDO::PARAM_INT);
+            }
         }
         $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
         $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -141,18 +169,49 @@ final class News
         return array_map([self::class, 'mapRow'], $statement->fetchAll());
     }
 
-    public function countForAdmin(?string $status = null): int
+    /**
+     * @param array<string, mixed> $filters Supported: 'status', 'q', 'categories' (array of category IDs)
+     */
+    public function countForAdmin(array $filters = []): int
     {
-        $sql = 'SELECT COUNT(*) FROM tbl_news WHERE deleted_at IS NULL';
+        $sql = 'SELECT COUNT(*) FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL';
         $params = [];
 
-        if ($status !== null && $status !== '') {
-            $sql .= ' AND status = :status';
-            $params['status'] = $status;
+        // Status filter
+        if (!empty($filters['status'])) {
+            $sql .= ' AND n.status = :status';
+            $params['status'] = $filters['status'];
+        }
+
+        // Search filter
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . $filters['q'] . '%';
+        }
+
+        // Category filter (array of category IDs)
+        if (!empty($filters['categories']) && is_array($filters['categories'])) {
+            $categoryIds = array_filter(array_map('intval', $filters['categories']));
+            if (!empty($categoryIds)) {
+                $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+                $sql .= " AND n.category_id IN ($placeholders)";
+                foreach ($categoryIds as $catId) {
+                    $params[] = $catId;
+                }
+            }
         }
 
         $statement = $this->db->prepare($sql);
-        $statement->execute($params);
+        
+        $paramIndex = 1;
+        foreach ($params as $key => $value) {
+            if (is_string($key)) {
+                $statement->bindValue(':' . $key, $value);
+            } else {
+                $statement->bindValue($paramIndex++, $value, PDO::PARAM_INT);
+            }
+        }
+        $statement->execute();
         return (int) $statement->fetchColumn();
     }
 

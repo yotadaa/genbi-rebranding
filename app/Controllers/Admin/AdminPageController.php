@@ -52,9 +52,30 @@ HTML;
                 'page' => $request->query('page'),
                 'per_page' => $request->query('per_page'),
             ], 25, 100);
-            $status = $request->query('status');
-            $items = $this->news?->allForAdmin($pg['per_page'], $pg['offset'], $status) ?? [];
-            $total = $this->news?->countForAdmin($status) ?? count($items);
+            
+            // Build filters array
+            $filters = [];
+            if ($request->query('status')) {
+                $filters['status'] = $request->query('status');
+            }
+            if ($request->query('q')) {
+                $filters['q'] = $request->query('q');
+            }
+            
+            // Parse category[] query params
+            $categoryParams = $_GET['category'] ?? [];
+            if (!is_array($categoryParams)) {
+                $categoryParams = [$categoryParams];
+            }
+            $categoryIds = array_filter(array_map('intval', $categoryParams));
+            if (!empty($categoryIds)) {
+                $filters['categories'] = $categoryIds;
+            }
+            
+            $layout = $request->query('layout') ?: 'list';
+            $categories = $this->news?->categories() ?? [];
+            $items = $this->news?->allForAdmin($pg['per_page'], $pg['offset'], $filters) ?? [];
+            $total = $this->news?->countForAdmin($filters) ?? count($items);
             $totalPages = Paginator::totalPages($total, $pg['per_page']);
 
             return $this->viewRenderer->renderWithLayout('admin/news/index.php', 'layouts/admin.php', [
@@ -67,7 +88,10 @@ HTML;
                 'perPage' => $pg['per_page'],
                 'total' => $total,
                 'totalPages' => $totalPages,
-                'status' => $status,
+                'filters' => $filters,
+                'categories' => $categories,
+                'selectedCategories' => $categoryIds,
+                'layout' => $layout,
                 'scripts' => $cmsScript,
             ]);
         }
@@ -121,6 +145,7 @@ HTML;
             'campus' => $request->query('campus'),
             'year' => $request->query('year'),
         ];
+        $layout = $request->query('layout') ?: 'grid';
         $items = $this->teamModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
         $total = $this->teamModel->countPublic($filters);
         $totalPages = Paginator::totalPages($total, $pg['per_page']);
@@ -136,6 +161,7 @@ HTML;
             'total' => $total,
             'totalPages' => $totalPages,
             'filters' => $filters,
+            'layout' => $layout,
             'scripts' => '<script src="/assets/js/admin/cms.js"></script>',
         ]);
     }

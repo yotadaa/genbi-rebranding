@@ -6,13 +6,17 @@ $perPage = $perPage ?? 24;
 $total = $total ?? 0;
 $totalPages = $totalPages ?? 1;
 $filters = $filters ?? [];
+$layout = $layout ?? 'grid';
 $startItem = ($page - 1) * $perPage + 1;
 $endItem = min($page * $perPage, $total);
+
+// Build filter params for pagination links
 $filterParams = array_filter([
     'q' => $filters['q'] ?? '',
     'division' => $filters['division'] ?? '',
     'campus' => $filters['campus'] ?? '',
     'year' => $filters['year'] ?? '',
+    'layout' => $layout,
 ], static fn($v) => $v !== '' && $v !== null);
 ?>
 <section class="mx-auto max-w-7xl">
@@ -26,70 +30,82 @@ $filterParams = array_filter([
       <a href="/admin/team-member-add" class="btn btn-primary">Add Team Member</a>
     </div>
   </header>
+
   <div class="mt-6">
-    <?php if ($total > 0): ?>
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
-        <span>Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> anggota.</span>
-        <form class="flex items-center gap-2" method="get" action="/admin/team-member">
-          <?php foreach ($filterParams as $k => $v): ?><input type="hidden" name="<?= $e($k) ?>" value="<?= $e($v) ?>" /><?php endforeach; ?>
-          <label for="admin-team-per-page" class="text-sm text-neutral-600">Show</label>
-          <select id="admin-team-per-page" name="per_page" class="config-input w-auto" onchange="this.form.submit()">
-            <?php foreach ([12, 24, 48, 100] as $opt): ?>
-              <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
-            <?php endforeach; ?>
-          </select>
-          <span class="text-sm text-neutral-600">entries</span>
-        </form>
-      </div>
-    <?php endif; ?>
-    <section class="admin-card overflow-hidden p-0">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>SL</th>
-            <th>Photo</th>
-            <th>Name</th>
-            <th>Division</th>
-            <th>Campus</th>
-            <th>Year</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="admin-team-list" data-ssr="true">
-          <?php if (empty($items)): ?>
-            <tr>
-              <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada anggota.</td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($items as $index => $item): ?>
-              <tr>
-                <td><?= $startItem + $index ?></td>
-                <td>
-                  <?php if (!empty($item['photo'])): ?>
-                    <img src="<?= $e($item['photo']) ?>" class="table-thumb rounded-full" alt="<?= $e($item['name']) ?>" onerror="this.style.display='none'">
-                  <?php else: ?>
-                    <span class="text-neutral-400"><?= $e(mb_substr($item['name'] ?? '', 0, 2)) ?></span>
-                  <?php endif; ?>
-                </td>
-                <td>
-                  <strong><?= $e($item['name'] ?? '') ?></strong>
-                  <p class="mt-1 text-xs text-neutral-500"><?= $e($item['role'] ?? '') ?></p>
-                </td>
-                <td><?= $e($item['division'] ?? '') ?></td>
-                <td><?= $e($item['campus'] ?? '') ?></td>
-                <td><?= $e($item['year'] ?? '') ?></td>
-                <td>
-                  <div class="flex gap-2">
-                    <a class="btn btn-secondary btn-sm" href="/admin/team-member-edit?id=<?= (int) $item['id'] ?>">Edit</a>
-                    <button class="btn btn-danger btn-sm" data-delete-team="<?= (int) $item['id'] ?>">Delete</button>
-                  </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
+    <!-- Toolbar -->
+    <section class="admin-card p-4 md:p-6">
+      <form method="get" action="/admin/team-member" class="cms-toolbar">
+        <input type="hidden" name="layout" value="<?= $e($layout) ?>">
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="cms-search">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input name="q" placeholder="Cari nama, jabatan, komisariat, divisi..." value="<?= $e($filters['q'] ?? '') ?>">
+          </label>
+          
+          <label class="text-sm text-neutral-600">
+            Show
+            <select name="per_page" class="config-input w-auto" onchange="this.form.submit()">
+              <?php foreach ([12, 24, 48, 100] as $opt): ?>
+                <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
+              <?php endforeach; ?>
+            </select>
+            entries
+          </label>
+        </div>
+
+        <div class="view-toggle" role="group" aria-label="Layout mode">
+          <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'grid']))) ?>" class="view-toggle-btn <?= $layout === 'grid' ? 'is-active' : '' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+            Grid
+          </a>
+          <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'list']))) ?>" class="view-toggle-btn <?= $layout === 'list' ? 'is-active' : '' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            List
+          </a>
+        </div>
+      </form>
+
+      <?php if ($total > 0): ?>
+        <div class="mt-4 text-sm text-neutral-600">
+          Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> anggota.
+        </div>
+      <?php endif; ?>
     </section>
+
+    <!-- Team Cards -->
+    <div class="<?= $layout === 'grid' ? 'team-card-grid' : 'team-card-list' ?> mt-5" id="admin-team-list" data-ssr="true">
+      <?php if (empty($items)): ?>
+        <div class="admin-card p-8 text-center text-sm text-neutral-500">Belum ada anggota.</div>
+      <?php else: ?>
+        <?php foreach ($items as $item): ?>
+          <article class="team-admin-card <?= !empty($item['show_on_home']) ? 'is-home' : '' ?>">
+            <div class="team-admin-photo">
+              <?php if (!empty($item['photo'])): ?>
+                <img src="<?= $e($item['photo']) ?>" alt="<?= $e($item['name']) ?>" onerror="this.remove(); this.parentElement.textContent='<?= $e(mb_substr($item['name'] ?? '', 0, 2)) ?>';">
+              <?php else: ?>
+                <?= $e(mb_substr($item['name'] ?? '', 0, 2)) ?>
+              <?php endif; ?>
+            </div>
+            <div class="team-admin-content">
+              <h2><?= $e($item['name'] ?? '') ?></h2>
+              <p><?= $e($item['role'] ?? '') ?></p>
+              <div class="team-tags">
+                <?php if (!empty($item['campus'])): ?><span><?= $e($item['campus']) ?></span><?php endif; ?>
+                <?php if (!empty($item['division'])): ?><span><?= $e($item['division']) ?></span><?php endif; ?>
+                <?php if (!empty($item['year'])): ?><span><?= $e($item['year']) ?></span><?php endif; ?>
+              </div>
+            </div>
+            <div class="team-card-actions">
+              <a href="/admin/team-member-edit?id=<?= (int) $item['id'] ?>" class="cms-action edit">Edit</a>
+              <button class="cms-action delete" data-delete-team="<?= (int) $item['id'] ?>">Delete</button>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+
+    <!-- Pagination -->
     <?php if ($totalPages > 1): ?>
       <nav class="admin-pagination mt-5" aria-label="Pagination anggota" data-ssr="true">
         <?php if ($page > 1): ?>
