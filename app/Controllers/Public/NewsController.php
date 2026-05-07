@@ -7,6 +7,7 @@ namespace App\Controllers\Public;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\StaticPageRenderer;
+use App\Core\ViewRenderer;
 use App\Models\News;
 use App\Services\SeoService;
 use App\Services\StructuredData;
@@ -14,8 +15,11 @@ use Throwable;
 
 final class NewsController
 {
-    public function __construct(private StaticPageRenderer $renderer, private ?News $news = null)
-    {
+    public function __construct(
+        private StaticPageRenderer $renderer,
+        private ?News $news = null,
+        private ?ViewRenderer $viewRenderer = null,
+    ) {
     }
 
     public function index(Request $request, Response $response): void
@@ -49,6 +53,20 @@ final class NewsController
             ['name' => 'Beranda', 'url' => '/'],
             ['name' => 'Berita', 'url' => '/news'],
         ]);
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $items = $this->readFromDatabase(static fn (News $news): array => $news->paginate([], 100, 0)) ?? [];
+            $html = $this->viewRenderer->renderWithLayout('public/news/index.php', 'layouts/public.php', [
+                'items' => $items,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-news',
+                'scripts' => '<script src="/assets/js/pages/news.js"></script>',
+            ]);
+            $response->html($html);
+            return;
+        }
+
         $response->html($this->renderer->render('news.html', ['meta' => $meta, 'jsonld' => $jsonld]));
     }
 

@@ -7,10 +7,16 @@ const API = window.GenBIAPI;
 renderShell('news');
 observeFadeUp();
 
+// Check if SSR markup exists - if so, skip client-side rendering
+const list = document.querySelector('#news-list');
+if (list?.dataset.ssr === 'true') {
+  document.body.classList.add('page-ready');
+  return;
+}
+
 let state = { query: '', category: 'Semua', page: 1, perPage: 12 };
 let news = [];
 const search = document.querySelector('#news-search');
-const list = document.querySelector('#news-list');
 const count = document.querySelector('#news-count');
 const pagination = document.querySelector('#news-pagination');
 
