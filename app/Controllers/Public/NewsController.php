@@ -108,6 +108,19 @@ final class NewsController
                 ['name' => $item['title'] ?? 'Detail', 'url' => '/news/' . ($item['slug'] ?? $slug)],
             ])
             : '';
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $html = $this->viewRenderer->renderWithLayout('public/news/show.php', 'layouts/public.php', [
+                'item' => $item,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-news-detail',
+                'scripts' => '<script src="/assets/js/pages/news-detail.js"></script>',
+            ]);
+            $response->html($html, is_array($item) ? 200 : 404);
+            return;
+        }
+
         $response->html($this->renderer->render('news-detail.html', ['slug' => $slug, 'meta' => $meta, 'jsonld' => $jsonld]));
     }
 

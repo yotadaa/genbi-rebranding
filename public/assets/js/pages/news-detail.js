@@ -6,11 +6,60 @@ const API = window.GenBIAPI;
 const Core = window.GenBIAPICore;
 
 renderShell('news');
-renderDetail();
 observeFadeUp();
+
+// Check if SSR markup exists - if so, only bind progressive behavior
+const root = document.querySelector('#news-detail-root');
+if (root?.dataset.ssr === 'true') {
+  bindProgressiveBehavior();
+  document.body.classList.add('page-ready');
+  return;
+}
+
+// Otherwise, render the full page client-side
+renderDetail();
 
 window.addEventListener('error', showDetailError);
 window.addEventListener('unhandledrejection', showDetailError);
+
+function bindProgressiveBehavior() {
+  // Bind share buttons
+  document.querySelectorAll('[data-share-url]').forEach((button) => {
+    button.addEventListener('click', () => window.open(button.dataset.shareUrl, '_blank', 'noopener,noreferrer'));
+  });
+
+  // Bind copy link
+  document.querySelector('[data-copy]')?.addEventListener('click', async (event) => {
+    const canonical = event.currentTarget.dataset.canonical || location.href;
+    try { 
+      await navigator.clipboard.writeText(canonical); 
+      showMiniToast('Link artikel disalin'); 
+    } catch { 
+      showMiniToast('Copy link disimulasikan'); 
+    }
+  });
+
+  // Bind comment form
+  const form = document.querySelector('#comment-form');
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const identifier = window.location.pathname.split('/').filter(Boolean).pop() || '';
+      try {
+        await API.submitNewsComment({ slug: identifier }, {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          comment: formData.get('comment'),
+        });
+        form.reset();
+        showMiniToast('Komentar masuk antrean moderasi');
+      } catch {
+        showMiniToast('Gagal mengirim komentar');
+      }
+    });
+  }
+}
 
 async function renderDetail() {
   const root = document.querySelector('#news-detail-root');
