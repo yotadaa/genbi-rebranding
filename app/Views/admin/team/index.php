@@ -66,6 +66,17 @@ $filterParams = array_filter([
         </div>
       </form>
 
+      <div class="team-action-row mt-5">
+        <button type="button" class="cms-action edit" id="team-batch-toggle">Batch Operation</button>
+      </div>
+
+      <div class="team-batch-bar mt-3 hidden" id="team-batch-bar">
+        <strong><span id="team-selection-count">0</span> dipilih</strong>
+        <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah BPI ke Beranda</button>
+        <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
+        <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
+      </div>
+
       <?php if ($total > 0): ?>
         <div class="mt-4 text-sm text-neutral-600">
           Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> anggota.
@@ -79,7 +90,13 @@ $filterParams = array_filter([
         <div class="admin-card p-8 text-center text-sm text-neutral-500">Belum ada anggota.</div>
       <?php else: ?>
         <?php foreach ($items as $item): ?>
-          <article class="team-admin-card <?= !empty($item['show_on_home']) ? 'is-home' : '' ?>">
+          <article class="team-admin-card <?= !empty($item['show_on_home']) ? 'is-home' : '' ?>" data-team-id="<?= (int) $item['id'] ?>">
+            <label class="team-select-check hidden">
+              <input type="checkbox" data-team-select="<?= (int) $item['id'] ?>"> Select
+            </label>
+            <button type="button" class="team-home-toggle" data-team-home="<?= (int) $item['id'] ?>" title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah BPI ke Beranda' ?>">
+              <?= !empty($item['show_on_home']) ? '−' : '+' ?>
+            </button>
             <div class="team-admin-photo">
               <?php if (!empty($item['photo'])): ?>
                 <img src="<?= $e($item['photo']) ?>" alt="<?= $e($item['name']) ?>" onerror="this.remove(); this.parentElement.textContent='<?= $e(mb_substr($item['name'] ?? '', 0, 2)) ?>';">

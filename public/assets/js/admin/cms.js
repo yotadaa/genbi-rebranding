@@ -1029,9 +1029,11 @@
   }
 
   async function renderTeamList() {
-    // Check if SSR markup exists - if so, only bind delete behavior
+    // Check if SSR markup exists - if so, bind delete, batch, and home toggle
     if (document.querySelector('#admin-team-list[data-ssr="true"]')) {
       bindTeamDeleteButtons();
+      bindTeamBatchMode();
+      bindTeamHomeToggle();
       return;
     }
 
@@ -2544,5 +2546,117 @@
         if (form) form.submit();
       });
     }
+  }
+
+  // Bind team batch mode toggle for SSR pages
+  function bindTeamBatchMode() {
+    const batchToggle = document.querySelector('#team-batch-toggle');
+    const batchBar = document.querySelector('#team-batch-bar');
+    const teamList = document.querySelector('#admin-team-list[data-ssr="true"]');
+    const selectionCount = document.querySelector('#team-selection-count');
+    const clearBtn = document.querySelector('#team-selection-clear');
+    
+    if (!batchToggle || !batchBar || !teamList) return;
+
+    let batchMode = false;
+    const selection = new Set();
+
+    const updateCount = () => {
+      if (selectionCount) selectionCount.textContent = String(selection.size);
+    };
+
+    const toggleBatchMode = () => {
+      batchMode = !batchMode;
+      batchBar.classList.toggle('hidden', !batchMode);
+      teamList.querySelectorAll('.team-select-check').forEach(label => {
+        label.classList.toggle('hidden', !batchMode);
+      });
+      if (!batchMode) {
+        selection.clear();
+        teamList.querySelectorAll('[data-team-select]').forEach(cb => cb.checked = false);
+        updateCount();
+      }
+    };
+
+    batchToggle.addEventListener('click', toggleBatchMode);
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        selection.clear();
+        teamList.querySelectorAll('[data-team-select]').forEach(cb => cb.checked = false);
+        updateCount();
+      });
+    }
+
+    teamList.querySelectorAll('[data-team-select]').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const id = Number(checkbox.dataset.teamSelect);
+        if (checkbox.checked) {
+          selection.add(id);
+        } else {
+          selection.delete(id);
+        }
+        updateCount();
+      });
+    });
+
+    batchBar.querySelectorAll('[data-team-bulk]').forEach(button => {
+      button.addEventListener('click', async () => {
+        if (selection.size < 1) {
+          Admin.showToast('Pilih minimal satu anggota.');
+          return;
+        }
+
+        const action = button.dataset.teamBulk;
+        const adding = action === 'home_add';
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+
+        for (const id of selection) {
+          try {
+            await fetch(route('admin.teamMemberHome', { id }), {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+              credentials: 'same-origin',
+              body: JSON.stringify({ show_on_home: adding }),
+            });
+          } catch (e) { /* continue */ }
+        }
+
+        Admin.showToast(adding ? 'Anggota ditambahkan ke BPI Beranda.' : 'Anggota dihapus dari BPI Beranda.');
+        setTimeout(() => location.reload(), 800);
+      });
+    });
+  }
+
+  // Bind team home toggle for SSR pages
+  function bindTeamHomeToggle() {
+    document.querySelectorAll('[data-team-home]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamHome);
+        const card = button.closest('.team-admin-card');
+        const adding = button.textContent.trim() === '+';
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+
+        try {
+          const res = await fetch(route('admin.teamMemberHome', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ show_on_home: adding }),
+          });
+
+          if (res.ok) {
+            Admin.showToast(adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.');
+            button.textContent = adding ? '−' : '+';
+            button.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah BPI ke Beranda';
+            card?.classList.toggle('is-home', adding);
+          } else {
+            Admin.showToast('Gagal memperbarui BPI Beranda.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal memperbarui BPI Beranda.');
+        }
+      });
+    });
   }
 })();
