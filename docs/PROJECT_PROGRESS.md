@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
+Last updated: 2026-05-07 after SSR Migration Phase 1 (Public News)
 
 ## Source Markdown Reviewed
 
@@ -39,6 +39,7 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - Backend target from plan is pure PHP MVC with routes such as `/news`, `/news/{slug}`, `/news/{slug}/comment`, `/prestasi`, `/team`, and admin routes.
 - News share image metadata now resolves legacy relative upload filenames against existing files in `public/uploads`, including same-basename extension fallback such as `news-98.jpeg` -> `news-98.jpg`.
 - Clean public routes now support `HEAD` requests by dispatching them through matching `GET` routes without a response body, so social/link validators do not receive false 404 results during preview checks.
+- **SSR Phase 1 complete**: Public news list and detail pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/public/news/`. Static HTML files remain as fallback. Client-side JS detects SSR markup and skips duplicate rendering (news list) or progressively binds behavior (news detail share/comment).
 
 ## Integration Strategy
 
@@ -78,6 +79,7 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - [x] P3: CLI password reset tool.
 - [x] P3: Resolve legacy news share image upload filename mismatches for Open Graph/Twitter Card URLs.
 - [x] P3: Support `HEAD` requests for clean public routes used by link preview crawlers and validators.
+- [x] P3: SSR Phase 1 — Add ViewRenderer foundation, shared layouts/partials, and migrate public `/news` and `/news/{slug}` to server-side rendering.
 
 ## Working Checklist
 
@@ -274,6 +276,27 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - [x] Run PHP lint (12 files), all PHP tests (7 suites), auth route smoke tests, and `npm test` before marking done.
 - [x] Add report in `docs/report/` after implementation.
 
+### Task 17: SSR Phase 1 — Public News List and Detail
+
+- [x] Audit `tbl_news` schema against SSR requirements (slug, contributors, status, timestamps, indexes).
+- [x] Create `app/Core/ViewRenderer.php` with render(), renderWithLayout(), safe escaping helpers.
+- [x] Create `tests/php/ViewRendererTest.php` with escaping, layout, missing view, CSRF token tests.
+- [x] Wire ViewRenderer into `bootstrap/app.php` and pass to NewsController.
+- [x] Create `app/Views/layouts/public.php` with shell placeholders for app.js rendering.
+- [x] Create `app/Views/layouts/admin.php` with CSRF meta tag injection.
+- [x] Create minimal partials: public-header.php, public-footer.php, admin-sidebar.php, admin-topbar.php.
+- [x] Create `app/Views/public/news/index.php` with server-rendered article cards marked `data-ssr="true"`.
+- [x] Update `NewsController::index()` to render SSR view when ViewRenderer exists, fallback to static otherwise.
+- [x] Update `public/assets/js/pages/news.js` to detect SSR and skip duplicate rendering.
+- [x] Create `app/Views/public/news/show.php` with hero, article body, contributors, share/comment sections.
+- [x] Update `NewsController::show()` to render SSR view when ViewRenderer exists, return 404 status when item missing.
+- [x] Update `public/assets/js/pages/news-detail.js` to progressively bind share/comment behavior on SSR pages.
+- [x] Run PHP lint, all PHP tests (9 suites), JS tests (20 tests), and smoke tests before marking done.
+- [x] Verify `/news` returns 200 with SSR marker and article cards.
+- [x] Verify `/news/{slug}` returns 200 with SSR marker, NewsArticle JSON-LD, hero section.
+- [x] Verify HEAD requests still work correctly.
+- [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 1 completion.
+
 ## Test Log
 
 - 2026-05-06: No test harness existed at initial audit.
@@ -333,6 +356,7 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - 2026-05-07: `npm test` passed after news image filename resolution. Result: 20 passing tests.
 - 2026-05-07: PHP router HEAD request test passed; `/news/{slug}` HEAD requests now match GET routes and return an empty 200 response instead of route-level 404.
 - 2026-05-07: All PHP regression tests and `npm test` passed after HEAD request handling. JS result: 20 passing tests.
+- 2026-05-07: SSR Phase 1 complete: Added ViewRenderer foundation with tests, shared public/admin layouts and partials, migrated public `/news` and `/news/{slug}` to server-side rendering. All 9 PHP tests and 20 JS tests pass. Smoke tests confirm SSR marker, article cards, NewsArticle JSON-LD, and HEAD request support.
 
 ## Progress Log
 
@@ -356,3 +380,4 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - 2026-05-06: Phase B CSRF hardening: CsrfMiddleware added to admin route group, CSRF meta tag injected into admin pages, frontend JS auto-includes X-CSRF-TOKEN header, security headers on all responses, logout button in admin topbar, CLI password reset tool.
 - 2026-05-07: Fixed news share image URL generation for legacy DB rows that reference an upload filename with the wrong extension by resolving the actual file in `public/uploads` before emitting `/uploads/...` URLs.
 - 2026-05-07: Added HEAD request support to the router/response layer so clean news URLs return successful headers for validators and crawlers without emitting HTML bodies.
+- 2026-05-07: SSR Phase 1 implementation: Added `app/Core/ViewRenderer.php` for safe PHP template rendering with escaping helpers. Created shared layouts in `app/Views/layouts/` (public.php keeps shell placeholders for app.js, admin.php includes CSRF meta). Created news views in `app/Views/public/news/` for list and detail pages. Updated `NewsController` to render SSR when ViewRenderer exists, falling back to StaticPageRenderer otherwise. Updated `news.js` to detect SSR and skip duplicate rendering. Updated `news-detail.js` to progressively bind share/comment behavior on SSR pages. Static HTML files remain as fallback.
