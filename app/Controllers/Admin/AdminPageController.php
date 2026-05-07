@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Models\Prestasi;
+use App\Models\TeamMember;
 use App\Services\CsrfService;
 
 final class AdminPageController
@@ -18,6 +20,8 @@ final class AdminPageController
         private StaticPageRenderer $renderer,
         private ?ViewRenderer $viewRenderer = null,
         private ?News $news = null,
+        private ?TeamMember $teamModel = null,
+        private ?Prestasi $prestasiModel = null,
     ) {
     }
 
@@ -101,14 +105,85 @@ HTML;
         return null;
     }
 
+    private function renderAdminTeamSsr(Request $request): ?string
+    {
+        if (!$this->teamModel) {
+            return null;
+        }
+
+        $pg = Paginator::resolve([
+            'page' => $request->query('page'),
+            'per_page' => $request->query('per_page'),
+        ], 24, 100);
+        $filters = [
+            'q' => $request->query('q'),
+            'division' => $request->query('division'),
+            'campus' => $request->query('campus'),
+            'year' => $request->query('year'),
+        ];
+        $items = $this->teamModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
+        $total = $this->teamModel->countPublic($filters);
+        $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+        return $this->viewRenderer->renderWithLayout('admin/team/index.php', 'layouts/admin.php', [
+            'title' => 'View Team Members | Admin GenBI',
+            'csrfToken' => CsrfService::token(),
+            'cmsPage' => 'team',
+            'cmsMode' => 'list',
+            'items' => $items,
+            'page' => $pg['page'],
+            'perPage' => $pg['per_page'],
+            'total' => $total,
+            'totalPages' => $totalPages,
+            'filters' => $filters,
+            'scripts' => '<script src="/assets/js/admin/cms.js"></script>',
+        ]);
+    }
+
+    private function renderAdminPrestasiSsr(Request $request): ?string
+    {
+        if (!$this->prestasiModel) {
+            return null;
+        }
+
+        $pg = Paginator::resolve([
+            'page' => $request->query('page'),
+            'per_page' => $request->query('per_page'),
+        ], 25, 100);
+        $status = $request->query('status');
+        $items = $this->prestasiModel->all($pg['per_page'], $pg['offset']);
+        $total = $this->prestasiModel->countAll($status);
+        $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+        return $this->viewRenderer->renderWithLayout('admin/prestasi/index.php', 'layouts/admin.php', [
+            'title' => 'View Prestasi | Admin GenBI',
+            'csrfToken' => CsrfService::token(),
+            'cmsPage' => 'prestasi',
+            'cmsMode' => 'list',
+            'items' => $items,
+            'page' => $pg['page'],
+            'perPage' => $pg['per_page'],
+            'total' => $total,
+            'totalPages' => $totalPages,
+            'status' => $status,
+            'scripts' => '<script src="/assets/js/admin/cms.js"></script>',
+        ]);
+    }
+
     /** @param array{page?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
         $page = preg_replace('/[^a-z0-9_-]/i', '', $params['page'] ?? 'dashboard') ?: 'dashboard';
         
-        // SSR for admin news pages
+        // SSR for admin pages
         if ($this->viewRenderer instanceof ViewRenderer) {
             $ssrHtml = $this->renderAdminNewsSsr($page, $request);
+            if ($ssrHtml === null && $page === 'team-member') {
+                $ssrHtml = $this->renderAdminTeamSsr($request);
+            }
+            if ($ssrHtml === null && $page === 'prestasi') {
+                $ssrHtml = $this->renderAdminPrestasiSsr($request);
+            }
             if ($ssrHtml !== null) {
                 $response->html($ssrHtml, 200, ['X-Robots-Tag' => 'noindex, nofollow']);
                 return;

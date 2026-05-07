@@ -1027,6 +1027,12 @@
   }
 
   async function renderTeamList() {
+    // Check if SSR markup exists - if so, only bind delete behavior
+    if (document.querySelector('#admin-team-list[data-ssr="true"]')) {
+      bindTeamDeleteButtons();
+      return;
+    }
+
     const body = renderShell('View Team Members', 'Direktori anggota memakai mode card. Bisa berpindah antara grid dan list tanpa tabel sempit.', `<a href="${adminUrl('team-member-add')}" class="btn btn-primary">Add Team Member</a>`);
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data anggota...</div>';
 
@@ -1391,6 +1397,29 @@
     `;
   }
 
+  function bindTeamDeleteButtons() {
+    document.querySelectorAll('[data-delete-team]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.deleteTeam);
+        const ok = await Admin.showConfirm({ title: 'Hapus anggota?', message: 'Anggota akan dihapus dari database.', confirmText: 'Delete', danger: true });
+        if (!ok) return;
+        const token = getAdminCsrfToken();
+        const res = await fetch(route('admin.teamMemberDelete', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ _csrf_token: token }),
+        });
+        if (res.ok) {
+          Admin.showToast('Anggota dihapus.');
+          button.closest('tr')?.remove();
+        } else {
+          Admin.showToast('Gagal menghapus anggota.');
+        }
+      });
+    });
+  }
+
   function bindTeamCardActions(render) {
     document.querySelectorAll('[data-team-select]').forEach((input) => {
       input.addEventListener('change', () => {
@@ -1631,6 +1660,12 @@
   const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
 
   async function renderPrestasiList() {
+    // Check if SSR markup exists - if so, only bind delete behavior
+    if (document.querySelector('#admin-prestasi-list[data-ssr="true"]')) {
+      bindPrestasiDeleteButtons();
+      return;
+    }
+
     const body = renderShell(
       'View Prestasi',
       'Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.',
@@ -1814,9 +1849,9 @@
   }
 
   function bindPrestasiDeleteButtons() {
-    document.querySelectorAll('[data-delete][data-prestasi-id]').forEach((button) => {
+    document.querySelectorAll('[data-delete][data-prestasi-id], [data-delete-prestasi]').forEach((button) => {
       button.addEventListener('click', async () => {
-        const id = button.dataset.prestasiId;
+        const id = button.dataset.prestasiId || button.dataset.deletePrestasi;
         const ok = await Admin.showConfirm({
           title: 'Hapus prestasi?',
           message: 'Prestasi akan dihapus (soft delete). Data masih bisa dipulihkan.',
