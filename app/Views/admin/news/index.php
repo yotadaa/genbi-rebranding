@@ -1,3 +1,15 @@
+<?php
+use App\Core\Paginator;
+
+$page = $page ?? 1;
+$perPage = $perPage ?? 25;
+$total = $total ?? 0;
+$totalPages = $totalPages ?? 1;
+$status = $status ?? null;
+$startItem = ($page - 1) * $perPage + 1;
+$endItem = min($page * $perPage, $total);
+$filterParams = array_filter(['status' => $status ?? ''], static fn($v) => $v !== '' && $v !== null);
+?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
     <div>
@@ -10,6 +22,21 @@
     </div>
   </header>
   <div class="mt-6">
+    <?php if ($total > 0): ?>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
+        <span>Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> berita.</span>
+        <form class="flex items-center gap-2" method="get" action="/admin/news">
+          <?php if ($status): ?><input type="hidden" name="status" value="<?= $e($status) ?>" /><?php endif; ?>
+          <label for="admin-news-per-page" class="text-sm text-neutral-600">Show</label>
+          <select id="admin-news-per-page" name="per_page" class="config-input w-auto" onchange="this.form.submit()">
+            <?php foreach ([10, 25, 50, 100] as $opt): ?>
+              <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
+            <?php endforeach; ?>
+          </select>
+          <span class="text-sm text-neutral-600">entries</span>
+        </form>
+      </div>
+    <?php endif; ?>
     <section class="admin-card overflow-hidden p-0">
       <table class="admin-table">
         <thead>
@@ -30,7 +57,7 @@
           <?php else: ?>
             <?php foreach ($items as $index => $item): ?>
               <tr>
-                <td><?= $index + 1 ?></td>
+                <td><?= $startItem + $index ?></td>
                 <td>
                   <?php if (!empty($item['photo'])): ?>
                     <img src="<?= $e($item['photo']) ?>" class="table-thumb" alt="<?= $e($item['title']) ?>" onerror="this.style.display='none'">
@@ -60,5 +87,26 @@
         </tbody>
       </table>
     </section>
+    <?php if ($totalPages > 1): ?>
+      <nav class="admin-pagination mt-5" aria-label="Pagination berita" data-ssr="true">
+        <?php if ($page > 1): ?>
+          <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+        <?php else: ?>
+          <span class="pager-button" aria-disabled="true">Sebelumnya</span>
+        <?php endif; ?>
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+          <?php if ($i === $page): ?>
+            <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
+          <?php else: ?>
+            <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+          <?php endif; ?>
+        <?php endfor; ?>
+        <?php if ($page < $totalPages): ?>
+          <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+        <?php else: ?>
+          <span class="pager-button" aria-disabled="true">Berikutnya</span>
+        <?php endif; ?>
+      </nav>
+    <?php endif; ?>
   </div>
 </section>

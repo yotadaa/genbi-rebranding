@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
+use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\StaticPageRenderer;
@@ -43,13 +44,26 @@ HTML;
         $cmsScript = '<script src="/assets/js/admin/cms.js"></script>';
 
         if ($page === 'news') {
-            $items = $this->news?->allForAdmin(50, 0) ?? [];
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+            $status = $request->query('status');
+            $items = $this->news?->allForAdmin($pg['per_page'], $pg['offset'], $status) ?? [];
+            $total = $this->news?->countForAdmin($status) ?? count($items);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
             return $this->viewRenderer->renderWithLayout('admin/news/index.php', 'layouts/admin.php', [
                 'title' => 'View News | Admin GenBI',
                 'csrfToken' => CsrfService::token(),
                 'cmsPage' => 'news',
                 'cmsMode' => 'list',
                 'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'status' => $status,
                 'scripts' => $cmsScript,
             ]);
         }
