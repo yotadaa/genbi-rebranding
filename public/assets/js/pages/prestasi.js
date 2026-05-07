@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const { renderShell } = window.GenBIApp;
-const { createModalController } = window.GenBIUI;
+const { createModalController, observeFadeUp } = window.GenBIUI;
 const API = window.GenBIAPI;
 const { news } = window.GenBIData;
 
@@ -11,6 +11,7 @@ renderShell('prestasi');
 const ssrList = document.querySelector('#prestasi-list[data-ssr="true"]');
 if (ssrList) {
   document.body.classList.add('page-ready');
+  observeFadeUp(); // Trigger fade-up animations
   ensurePrestasiModal();
   const prestasiModalCtrl = createModalController(document.querySelector('#prestasi-modal'));
 
@@ -130,6 +131,7 @@ function renderPrestasi() {
     image.addEventListener('error', () => imageFallback(image, item, index));
   });
   list.querySelectorAll('[data-id]').forEach((button) => button.addEventListener('click', () => openPrestasi(Number(button.dataset.id))));
+  observeFadeUp(); // Trigger fade-up animations after rendering
 }
 
 function renderListItem(item, index) {
