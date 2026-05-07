@@ -83,7 +83,7 @@ try {
 $pageController = new PageController($renderer);
 $newsController = new NewsController($renderer, $newsModel, $viewRenderer);
 $commentController = new CommentController($newsModel, $commentModel);
-$prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel);
+$prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel, $viewRenderer);
 $eventController = new EventController($renderer, $eventModel);
 $teamController = new TeamController($renderer, $teamModel);
 $sitemapController = new SitemapController($newsModel, $prestasiModel);

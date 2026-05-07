@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers\Public;
 
+use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\StaticPageRenderer;
+use App\Core\ViewRenderer;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
 use App\Services\SeoService;
+use App\Services\StructuredData;
 
 class PrestasiController
 {
@@ -17,21 +20,56 @@ class PrestasiController
         private StaticPageRenderer $renderer,
         private ?Prestasi $prestasi = null,
         private ?PrestasiToken $tokenModel = null,
+        private ?ViewRenderer $viewRenderer = null,
     ) {}
 
     public function index(Request $request, Response $response): void
     {
         if ($request->acceptsJson()) {
-            $page = max(1, (int) ($request->query('page') ?? 1));
-            $limit = 20;
-            $offset = ($page - 1) * $limit;
-            $items = $this->prestasi?->published($limit, $offset) ?? [];
-            $response->json(['data' => $items, 'page' => $page]);
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 12, 24);
+            $items = $this->prestasi?->published($pg['per_page'], $pg['offset']) ?? [];
+            $total = $this->prestasi?->countPublished() ?? count($items);
+            $response->json([
+                'data' => $items,
+                'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),
+            ]);
             return;
         }
 
         $seo = SeoService::forPage('prestasi.html');
         $meta = SeoService::renderMetaBlock($seo);
+        $jsonld = StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+            ['name' => 'Beranda', 'url' => '/'],
+            ['name' => 'Prestasi', 'url' => '/prestasi'],
+        ]);
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 12, 24);
+            $items = $this->prestasi?->published($pg['per_page'], $pg['offset']) ?? [];
+            $total = $this->prestasi?->countPublished() ?? count($items);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+            $html = $this->viewRenderer->renderWithLayout('public/prestasi/index.php', 'layouts/public.php', [
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-prestasi',
+                'scripts' => '<script src="/assets/js/pages/prestasi.js"></script>',
+            ]);
+            $response->html($html);
+            return;
+        }
+
         $response->html($this->renderer->render('prestasi.html', ['meta' => $meta]));
     }
 
@@ -56,6 +94,26 @@ class PrestasiController
             $seo = SeoService::forPage('prestasi.html');
         }
         $meta = SeoService::renderMetaBlock($seo);
+        $jsonld = is_array($item)
+            ? StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+                ['name' => 'Beranda', 'url' => '/'],
+                ['name' => 'Prestasi', 'url' => '/prestasi'],
+                ['name' => $item['title'] ?? 'Detail', 'url' => '/prestasi/' . ($item['slug'] ?? $slug)],
+            ])
+            : '';
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $html = $this->viewRenderer->renderWithLayout('public/prestasi/show.php', 'layouts/public.php', [
+                'item' => $item,
+                'meta' => $meta,
+                'jsonld' => $jsonld,
+                'bodyClass' => 'page-prestasi-detail',
+                'scripts' => '<script src="/assets/js/pages/prestasi.js"></script>',
+            ]);
+            $response->html($html, is_array($item) ? 200 : 404);
+            return;
+        }
+
         $response->html($this->renderer->render('prestasi.html', ['meta' => $meta]));
     }
 

@@ -60,6 +60,39 @@ class Prestasi
         return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
+    public function countPublished(): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM tbl_prestasi WHERE status = :status AND deleted_at IS NULL'
+        );
+        $stmt->bindValue(':status', 'published', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countAll(?string $status = null): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function findBySlug(string $slug): ?array
     {
         return $this->findBySlugWithStatus($slug, true);

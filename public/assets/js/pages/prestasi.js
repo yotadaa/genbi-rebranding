@@ -6,6 +6,22 @@ const API = window.GenBIAPI;
 const { news } = window.GenBIData;
 
 renderShell('prestasi');
+
+// Check if SSR markup exists - if so, only bind layout toggle and modal
+const ssrList = document.querySelector('#prestasi-list[data-ssr="true"]');
+if (ssrList) {
+  document.body.classList.add('page-ready');
+  // Bind layout toggle buttons
+  document.querySelectorAll('[data-prestasi-layout]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const layout = button.dataset.prestasiLayout || 'list';
+      document.querySelectorAll('[data-prestasi-layout]').forEach((item) => item.classList.toggle('is-active', item === button));
+      ssrList.className = layout === 'grid' ? 'prestasi-grid' : 'soft-card overflow-hidden prestasi-list';
+    });
+  });
+  return;
+}
+
 ensurePrestasiModal();
 
 let prestasi = [];
