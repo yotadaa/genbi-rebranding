@@ -15,6 +15,7 @@ storage/logs/*
 storage/cache/*
 storage/sessions/*
 public/uploads/*
+public/uploads.zip
 !storage/logs/.gitkeep
 !storage/cache/.gitkeep
 !storage/sessions/.gitkeep
