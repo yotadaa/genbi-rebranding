@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Models\Feature;
 use App\Models\Prestasi;
 use App\Models\TeamMember;
 use App\Services\CsrfService;
@@ -22,6 +23,7 @@ final class AdminPageController
         private ?News $news = null,
         private ?TeamMember $teamModel = null,
         private ?Prestasi $prestasiModel = null,
+        private ?Feature $featureModel = null,
     ) {
     }
 
@@ -43,9 +45,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js?v=20260508b"></script>
+<script src="/assets/js/admin/cms.js?v=20260508e"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508b"></script>';
+        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -178,9 +180,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js?v=20260508b"></script>
+<script src="/assets/js/admin/cms.js?v=20260508e"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508b"></script>';
+        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([
@@ -241,6 +243,60 @@ HTML;
         return null;
     }
 
+    private function renderAdminFeatureSsr(string $page, Request $request): ?string
+    {
+        if (!$this->featureModel) {
+            return null;
+        }
+
+        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
+
+        if ($page === 'feature') {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+            $filters = [
+                'q' => $request->query('q'),
+                'status' => $request->query('status'),
+                'show_on_home' => $request->query('show_on_home'),
+            ];
+            $items = $this->featureModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
+            $total = $this->featureModel->countForAdmin($filters);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+            return $this->viewRenderer->renderWithLayout('admin/feature/index.php', 'layouts/admin.php', [
+                'title' => 'Program Utama | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'feature',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
+                'scripts' => $cmsScript,
+            ]);
+        }
+
+        if ($page === 'feature-add' || $page === 'feature-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $page === 'feature-edit' && $id > 0 ? $this->featureModel->findById($id) : null;
+            return $this->viewRenderer->renderWithLayout('admin/feature/form.php', 'layouts/admin.php', [
+                'title' => ($page === 'feature-edit' ? 'Edit Program Utama' : 'Add Program Utama') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => $page === 'feature-edit' ? 'feature-edit' : 'feature',
+                'cmsMode' => 'editor',
+                'isEdit' => $page === 'feature-edit',
+                'item' => $item,
+                'scripts' => $cmsScript,
+            ]);
+        }
+
+        return null;
+    }
+
     /** @param array{page?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
@@ -254,6 +310,9 @@ HTML;
             }
             if ($ssrHtml === null && in_array($page, ['prestasi', 'prestasi-add', 'prestasi-edit'], true)) {
                 $ssrHtml = $this->renderAdminPrestasiSsr($page, $request);
+            }
+            if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
+                $ssrHtml = $this->renderAdminFeatureSsr($page, $request);
             }
             if ($ssrHtml !== null) {
                 $response->html($ssrHtml, 200, ['X-Robots-Tag' => 'noindex, nofollow']);

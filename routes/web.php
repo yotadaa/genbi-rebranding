@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\EventController;
 use App\Controllers\Public\FeedController;
+use App\Controllers\Public\HomeController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
 use App\Controllers\Public\PrestasiController;
@@ -15,6 +16,7 @@ use App\Controllers\Public\TeamController;
 use App\Middleware\CsrfMiddleware;
 
 /** @var PageController $pageController */
+/** @var HomeController $homeController */
 /** @var TeamController $teamController */
 /** @var PrestasiController $prestasiController */
 /** @var EventController $eventController */
@@ -24,7 +26,7 @@ use App\Middleware\CsrfMiddleware;
 /** @var FeedController $feedController */
 /** @var CsrfMiddleware $csrfMiddleware */
 
-$router->get('/', static fn(Request $request, Response $response) => $pageController->show($request, $response, 'index.html'));
+$router->get('/', static fn(Request $request, Response $response) => $homeController->index($request, $response));
 $router->get('/about', static fn(Request $request, Response $response) => $pageController->show($request, $response, 'about.html'));
 $router->get('/team', static fn(Request $request, Response $response) => $teamController->index($request, $response));
 $router->get('/teams', static fn(Request $request, Response $response) => $teamController->index($request, $response));

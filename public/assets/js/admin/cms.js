@@ -6,6 +6,7 @@
   const API = window.GenBIAPI;
   const Core = window.GenBIAPICore;
   const { adminUrl } = window.GenBIApp;
+  const programIconChoices = Admin.programIconChoices || ['sparkles', 'users', 'bank', 'chart', 'academic', 'calendar', 'heart', 'news', 'grid'];
   const page = document.body.dataset.cmsPage || 'news';
   const mode = document.body.dataset.cmsMode || 'list';
   const csrfMeta = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -74,6 +75,7 @@
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
     feature: () => { Admin.renderAdminShell('feature'); mode === 'editor' ? renderFeatureEditor() : renderFeatureList(); },
+    'feature-edit': () => { Admin.renderAdminShell('feature'); renderFeatureEditor(); },
     why: () => { Admin.renderAdminShell('why'); mode === 'editor' ? renderWhyChooseEditor() : renderWhyChooseList(); },
     faq: () => { Admin.renderAdminShell('faq'); mode === 'editor' ? renderFaqEditor() : renderFaqList(); },
     social: () => { Admin.renderAdminShell('social'); renderSocialMedia(); },
@@ -1208,17 +1210,24 @@
 
 
   function renderFeatureList() {
-    const body = renderShell('View Features', 'Program utama tampil sebagai daftar editorial. Isi dapat dipindai tanpa visual yang ramai.', `<a href="${adminUrl('feature-add')}" class="btn btn-primary">Add New</a>`);
+    const ssrList = document.querySelector('#admin-feature-list[data-ssr="true"]');
+    if (ssrList) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      hydrateFeatureIcons(ssrList);
+      bindFeatureDeleteButtons();
+      return;
+    }
+    const body = renderShell('Program Utama', 'Program utama tampil sebagai daftar editorial. Isi dapat dipindai tanpa visual yang ramai.', `<a href="${adminUrl('feature-add')}" class="btn btn-primary">Add Program Utama</a>`);
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('Feature')}
+        ${renderSearchToolbar('Program Utama')}
         <div class="simple-card-grid mt-5">
           ${programs.map((item) => `
             <article class="simple-admin-card">
               <div class="meta">${escape(item.focus)}</div>
               <h2>${escape(item.title)} · ${escape(item.name)}</h2>
               <p>${escape(item.description)}</p>
-              <div class="mt-4 flex gap-2">${rowActions('Feature')}</div>
+              <div class="mt-4 flex gap-2">${rowActions('Program Utama')}</div>
             </article>
           `).join('')}
         </div>
@@ -1228,7 +1237,16 @@
   }
 
   function renderFeatureEditor() {
-    const body = renderShell('Add Feature', 'Tambah program dengan field besar dan tombol input custom.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
+    const form = document.querySelector('#feature-editor-form[data-ssr="true"]');
+    if (form) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      setupFeatureIconPicker(form);
+      bindFeatureImageBoard(form);
+      bindFeatureForm(form);
+      hydrateFeatureIcons(document.querySelector('#admin-content') || document);
+      return;
+    }
+    const body = renderShell('Add Program Utama', 'Tambah program dengan field besar dan tombol input custom.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
       <form class="editor-workspace compact" id="feature-form">
         <main class="block-writing-surface">
@@ -1238,11 +1256,230 @@
         </main>
         <aside class="editor-config-sidebar">
           <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', selectControl({ id: 'feature-show-home', value: 'Show', options: ['Show', 'Hide'] }))}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit Feature</button>
+          <button type="submit" class="btn btn-primary w-full">Submit Program Utama</button>
         </aside>
       </form>
     `;
     bindSimpleSubmit('#feature-form', 'Submit program?', 'Program ditambahkan pada mode simulasi.');
+  }
+
+  function hydrateFeatureIcons(root = document) {
+    root.querySelectorAll('[data-program-icon]').forEach((node) => {
+      const iconKey = node.dataset.programIcon || 'sparkles';
+      node.innerHTML = Admin.icon(iconKey, 'h-4 w-4');
+    });
+    root.querySelectorAll('[data-feature-icon-preview]').forEach((node) => {
+      const iconKey = node.dataset.featureIconPreview || 'sparkles';
+      node.innerHTML = Admin.icon(iconKey, 'h-5 w-5');
+    });
+  }
+
+  function setupFeatureIconPicker(form) {
+    const picker = form.querySelector('#feature-icon-picker');
+    const button = form.querySelector('#feature-icon-button');
+    const menu = form.querySelector('#feature-icon-menu');
+    const label = form.querySelector('#feature-icon-label');
+    if (!picker || !button || !menu || !label) return;
+
+    if (!menu.children.length) {
+      menu.innerHTML = programIconChoices.map((iconKey) => `
+        <button type="button" class="feature-icon-option ${picker.dataset.selectedIcon === iconKey ? 'is-active' : ''}" data-icon-key="${iconKey}">
+          <span>${Admin.icon(iconKey, 'h-4 w-4')}</span>
+          <span>${escape(iconKey)}</span>
+        </button>
+      `).join('');
+    }
+
+    const updateSelection = (iconKey) => {
+      picker.dataset.selectedIcon = iconKey;
+      const preview = button.querySelector('[data-feature-icon-preview]');
+      if (preview) preview.dataset.featureIconPreview = iconKey;
+      label.textContent = iconKey;
+      hydrateFeatureIcons(button);
+      menu.querySelectorAll('[data-icon-key]').forEach((option) => option.classList.toggle('is-active', option.dataset.iconKey === iconKey));
+    };
+
+    button.addEventListener('click', () => menu.classList.toggle('hidden'));
+    menu.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-icon-key]');
+      if (!option) return;
+      updateSelection(option.dataset.iconKey || 'sparkles');
+      menu.classList.add('hidden');
+    });
+    document.addEventListener('click', (event) => {
+      if (!picker.contains(event.target)) menu.classList.add('hidden');
+    });
+    updateSelection(picker.dataset.selectedIcon || 'sparkles');
+  }
+
+  function collectFeatureImages(form) {
+    return Array.from(form.querySelectorAll('.feature-image-card')).map((card, index) => ({
+      id: Number(card.dataset.imageId || 0) || 0,
+      path: card.dataset.imagePath || '',
+      sort_order: index,
+    })).filter((image) => image.path);
+  }
+
+  function bindFeatureImageBoard(form) {
+    const board = form.querySelector('#feature-image-board');
+    const empty = form.querySelector('#feature-image-empty');
+    const fileInput = form.querySelector('#feature-image-files');
+    const uploadButton = form.querySelector('#feature-upload-btn');
+    if (!board || !fileInput || !uploadButton) return;
+
+    const syncState = () => {
+      const cards = board.querySelectorAll('.feature-image-card');
+      cards.forEach((card, index) => {
+        const badge = card.querySelector('.feature-image-card-meta span');
+        if (badge) badge.textContent = `#${index + 1}`;
+      });
+      if (empty) empty.classList.toggle('hidden', cards.length > 0);
+    };
+
+    const createCard = (image) => {
+      const card = document.createElement('article');
+      card.className = 'feature-image-card';
+      card.dataset.imageId = String(image.id || 0);
+      card.dataset.imagePath = image.path || image.url || '';
+      card.innerHTML = `
+        <img src="${escape(image.url || image.path || '')}" alt="Preview Program Utama" />
+        <div class="feature-image-card-meta">
+          <span>#1</span>
+          <div class="flex gap-2">
+            <button type="button" class="feature-image-move" data-direction="up" aria-label="Geser ke atas">↑</button>
+            <button type="button" class="feature-image-move" data-direction="down" aria-label="Geser ke bawah">↓</button>
+            <button type="button" class="feature-image-remove" aria-label="Hapus gambar">Hapus</button>
+          </div>
+        </div>
+      `;
+      board.appendChild(card);
+      syncState();
+    };
+
+    uploadButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files || []);
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch(route('admin.featureUpload'), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: formData,
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.data?.url) {
+          Admin.showToast(json.error || 'Gagal mengunggah gambar Program Utama.');
+          continue;
+        }
+        createCard(json.data);
+      }
+      fileInput.value = '';
+    });
+
+    board.addEventListener('click', async (event) => {
+      const removeButton = event.target.closest('.feature-image-remove');
+      const moveButton = event.target.closest('.feature-image-move');
+      const card = event.target.closest('.feature-image-card');
+      if (!card) return;
+
+      if (moveButton) {
+        const sibling = moveButton.dataset.direction === 'up' ? card.previousElementSibling : card.nextElementSibling;
+        if (sibling && sibling.classList.contains('feature-image-card')) {
+          if (moveButton.dataset.direction === 'up') {
+            board.insertBefore(card, sibling);
+          } else {
+            board.insertBefore(sibling, card);
+          }
+          syncState();
+        }
+        return;
+      }
+
+      if (removeButton) {
+        const featureId = Number(form.dataset.itemId || 0);
+        const imageId = Number(card.dataset.imageId || 0);
+        if (featureId > 0 && imageId > 0) {
+          const ok = await Admin.showConfirm({ title: 'Hapus gambar?', message: 'Gambar akan dihapus dari slideshow Program Utama.', confirmText: 'Hapus', danger: true });
+          if (!ok) return;
+          const res = await fetch(route('admin.featureImageDelete', { id: featureId, imageId }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+            credentials: 'same-origin',
+          });
+          if (!res.ok) {
+            Admin.showToast('Gagal menghapus gambar Program Utama.');
+            return;
+          }
+        }
+        card.remove();
+        syncState();
+      }
+    });
+
+    syncState();
+  }
+
+  function featurePayload(form) {
+    return {
+      title: form.querySelector('#feature-title')?.value?.trim() || '',
+      name: form.querySelector('#feature-name')?.value?.trim() || '',
+      focus: form.querySelector('#feature-focus')?.value?.trim() || '',
+      description: form.querySelector('#feature-description')?.value?.trim() || '',
+      icon_key: form.querySelector('#feature-icon-picker')?.dataset.selectedIcon || 'sparkles',
+      show_on_home: form.querySelector('#feature-show-home')?.value === '1',
+      status: form.querySelector('#feature-status')?.value || 'draft',
+      sort_order: Number(form.querySelector('#feature-sort-order')?.value || 0),
+      images: collectFeatureImages(form),
+    };
+  }
+
+  function bindFeatureForm(form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const isEdit = form.dataset.edit === '1';
+      const featureId = Number(form.dataset.itemId || 0);
+      const endpoint = isEdit ? route('admin.featureUpdate', { id: featureId }) : route('admin.featureStore');
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        credentials: 'same-origin',
+        body: JSON.stringify(featurePayload(form)),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Admin.showToast(json.error || 'Gagal menyimpan Program Utama.');
+        return;
+      }
+      Admin.showToast(isEdit ? 'Program Utama diperbarui.' : 'Program Utama ditambahkan.');
+      const nextId = json.data?.id || featureId;
+      if (!isEdit && nextId) {
+        window.setTimeout(() => { window.location.href = `${adminUrl('feature-edit')}?id=${nextId}`; }, 800);
+      }
+    });
+  }
+
+  function bindFeatureDeleteButtons() {
+    document.querySelectorAll('[data-delete-feature]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const featureId = Number(button.dataset.deleteFeature || 0);
+        if (!featureId) return;
+        const ok = await Admin.showConfirm({ title: 'Hapus Program Utama?', message: 'Program akan disembunyikan dari landing page dan daftar admin.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+        const res = await fetch(route('admin.featureDelete', { id: featureId }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+        });
+        if (!res.ok) {
+          Admin.showToast('Gagal menghapus Program Utama.');
+          return;
+        }
+        button.closest('tr')?.remove();
+        Admin.showToast('Program Utama berhasil dihapus.');
+      });
+    });
   }
 
   function renderWhyChooseList() {

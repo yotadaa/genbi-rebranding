@@ -64,31 +64,41 @@ const programs = [
     title: 'KKG',
     name: 'Kegiatan Kenal GenBI',
     description: 'Pintu awal bagi anggota baru untuk mengenal nilai GenBI, membangun kedekatan, dan memahami cara organisasi bergerak.',
-    focus: 'Internal komunitas'
+    focus: 'Internal komunitas',
+    icon_key: 'users',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   },
   {
     title: 'SIGINJAI',
     name: 'Semarak Ekonomi dan Keuangan Syariah Negeri Jambi',
     description: 'Forum kolaboratif untuk memperluas pemahaman ekonomi syariah, halal value chain, dan peran generasi muda dalam ekosistem keuangan.',
-    focus: 'Literasi syariah'
+    focus: 'Literasi syariah',
+    icon_key: 'bank',
+    images: [site.heroSlides[1].image, site.heroSlides[0].image]
   },
   {
     title: 'GENTALA ARASY',
     name: 'Gebyar Ekonomi Digital dan Literasi Jambi',
     description: 'Gerakan literasi digital yang mendekatkan QRIS, transaksi aman, dan peluang ekonomi digital kepada mahasiswa serta masyarakat.',
-    focus: 'Literasi digital'
+    focus: 'Literasi digital',
+    icon_key: 'chart',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   },
   {
     title: 'GGTC',
     name: 'GenBI Goes To Campus',
     description: 'Kunjungan edukatif ke kampus untuk mengenalkan beasiswa Bank Indonesia, kebanksentralan, CBP Rupiah, QRIS, dan iBI Library.',
-    focus: 'Kampus'
+    focus: 'Kampus',
+    icon_key: 'academic',
+    images: [site.heroSlides[1].image, site.heroSlides[0].image]
   },
   {
     title: 'Leadership Camp',
     name: 'Pembinaan Kepemimpinan',
     description: 'Ruang pembentukan karakter, keberanian memimpin, kerja tim, dan tanggung jawab sosial bagi anggota GenBI Jambi.',
-    focus: 'Kepemimpinan'
+    focus: 'Kepemimpinan',
+    icon_key: 'sparkles',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   }
 ];
 

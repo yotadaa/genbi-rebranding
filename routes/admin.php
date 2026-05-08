@@ -10,6 +10,7 @@ use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
+use App\Controllers\Admin\FeatureController as AdminFeatureController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
@@ -21,6 +22,7 @@ use App\Middleware\CsrfMiddleware;
 /** @var AdminPrestasiController $adminPrestasiController */
 /** @var PrestasiTokenController $adminPrestasiTokenController */
 /** @var AdminTeamMemberController $adminTeamMemberController */
+/** @var AdminFeatureController $adminFeatureController */
 /** @var AuthMiddleware $authMiddleware */
 /** @var CsrfMiddleware $csrfMiddleware */
 
@@ -41,6 +43,7 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $adminPrestasiController,
     $adminPrestasiTokenController,
     $adminTeamMemberController,
+    $adminFeatureController,
 ) {
     // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
@@ -84,6 +87,16 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $router->post('/admin/team-members/{id}/update', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->update($request, $response, $params));
     $router->post('/admin/team-members/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->delete($request, $response, $params));
     $router->post('/admin/team-members/{id}/home', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->setHome($request, $response, $params));
+
+    // Program Utama
+    $router->get('/admin/features', static fn(Request $request, Response $response) => $adminFeatureController->index($request, $response));
+    $router->get('/admin/features/{id}', static fn(Request $request, Response $response, array $params) => $adminFeatureController->show($request, $response, $params));
+    $router->post('/admin/features', static fn(Request $request, Response $response) => $adminFeatureController->store($request, $response));
+    $router->post('/admin/features/upload', static fn(Request $request, Response $response) => $adminFeatureController->upload($request, $response));
+    $router->post('/admin/features/{id}/update', static fn(Request $request, Response $response, array $params) => $adminFeatureController->update($request, $response, $params));
+    $router->post('/admin/features/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->delete($request, $response, $params));
+    $router->post('/admin/features/{id}/images/reorder', static fn(Request $request, Response $response, array $params) => $adminFeatureController->reorderImages($request, $response, $params));
+    $router->post('/admin/features/{id}/images/{imageId}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->deleteImage($request, $response, $params));
 
     // Catch-all for static admin pages (must be last)
     $router->get('/admin/{page}', static fn(Request $request, Response $response, array $params) => $adminPageController->show($request, $response, $params));

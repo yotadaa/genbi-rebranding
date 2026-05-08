@@ -16,6 +16,10 @@
     slider: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h12A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 16.5 4.72-4.72a1.5 1.5 0 0 1 2.12 0l2.16 2.16 1.22-1.22a1.5 1.5 0 0 1 2.12 0l4.16 4.16M8.25 8.25h.01"/></svg>',
     gallery: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75 7.5 10.5a2.25 2.25 0 0 1 3.18 0l1.82 1.82.82-.82a2.25 2.25 0 0 1 3.18 0l5.25 5.25M3.75 6A2.25 2.25 0 0 1 6 3.75h12A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6Zm12-1.5h.01"/></svg>',
     feature: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75 3.75 8.25 12 12.75l8.25-4.5L12 3.75Zm0 9v7.5m0-7.5L3.75 8.25m8.25 4.5 8.25-4.5"/></svg>',
+    bank: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75 12 4.5l8.25 5.25M5.25 10.5h13.5M6.75 10.5v7.5m3.5-7.5v7.5m3.5-7.5v7.5m3.5-7.5v7.5M4.5 18h15"/></svg>',
+    chart: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 19.5h16.5M6.75 16.5v-6m5.25 6V6.75m5.25 9.75v-9"/></svg>',
+    academic: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 8.25 12 4.5l8.25 3.75L12 12 3.75 8.25Zm3 2.25v4.25c0 1.66 2.35 3 5.25 3s5.25-1.34 5.25-3V10.5"/></svg>',
+    heart: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.49-2.01-4.5-4.5-4.5A4.48 4.48 0 0 0 12 6.36a4.48 4.48 0 0 0-4.5-2.61C5.01 3.75 3 5.76 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>',
     faq: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75a2.25 2.25 0 1 1 3.38 1.95c-.85.49-1.13.92-1.13 1.8v.38M12 17.25h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>',
     social: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9M7.5 12h6M21 12c0 4.14-4.03 7.5-9 7.5a10.7 10.7 0 0 1-3.72-.65L3 20.25l1.42-3.79A6.85 6.85 0 0 1 3 12c0-4.14 4.03-7.5 9-7.5s9 3.36 9 7.5Z"/></svg>',
     menu: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15M4.5 12h15M4.5 17.25h15"/></svg>',
@@ -41,11 +45,13 @@
   icons.window = icons.page;
   icons.swatch = icons.settings;
   icons.sparkles = icons.feature;
+  const programIconChoices = ['sparkles', 'users', 'bank', 'chart', 'academic', 'calendar', 'heart', 'news', 'grid'];
 
   const links = [
     { key: 'dashboard', label: 'Dashboard', href: adminUrl('dashboard'), icon: 'dashboard' },
     { key: 'settings', label: 'Settings', href: adminUrl('settings'), icon: 'settings' },
     { key: 'page', label: 'Page', href: adminUrl('page'), icon: 'page' },
+    { key: 'feature', label: 'Program Utama', href: adminUrl('feature'), icon: 'feature' },
     { key: 'team', label: 'Team Member', href: adminUrl('team-member'), icon: 'users' },
     { key: 'news', label: 'News', href: adminUrl('news'), icon: 'news', children: [
       { key: 'category', label: 'Category', href: adminUrl('category') },
@@ -61,7 +67,6 @@
     { key: 'slider', label: 'Slider', href: adminUrl('slider'), icon: 'slider' },
     { key: 'testimonial', label: 'Testimonial', href: '#', icon: 'social' },
     { key: 'gallery', label: 'Photo Gallery', href: adminUrl('photo'), icon: 'gallery' },
-    { key: 'feature', label: 'Feature', href: adminUrl('feature'), icon: 'feature' },
     { key: 'why', label: 'Why Choose Us', href: adminUrl('why-choose'), icon: 'sparkles' },
     { key: 'faq', label: 'FAQ', href: adminUrl('faq'), icon: 'faq' },
     { key: 'social', label: 'Social Media', href: adminUrl('social-media'), icon: 'social' },
@@ -246,5 +251,5 @@
     return name.split(' ').filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase();
   }
 
-  window.GenBIAdmin = { renderAdminShell, showToast, showConfirm, icon, escapeHtml, initials };
+  window.GenBIAdmin = { renderAdminShell, showToast, showConfirm, icon, escapeHtml, initials, programIconChoices };
 })();

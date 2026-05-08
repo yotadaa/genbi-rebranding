@@ -61,6 +61,17 @@
       teamMemberUpdate: { clean: '/admin/team-members/{id}/update' },
       teamMemberDelete: { clean: '/admin/team-members/{id}/delete' },
       teamMemberHome: { clean: '/admin/team-members/{id}/home' },
+      feature: { clean: '/admin/feature', static: 'admin/feature.html' },
+      featureAdd: { clean: '/admin/feature-add', static: 'admin/feature-add.html' },
+      featureEdit: { clean: '/admin/feature-edit', static: 'admin/feature-edit.html' },
+      features: { clean: '/admin/features' },
+      featureShow: { clean: '/admin/features/{id}' },
+      featureStore: { clean: '/admin/features' },
+      featureUpload: { clean: '/admin/features/upload' },
+      featureUpdate: { clean: '/admin/features/{id}/update' },
+      featureDelete: { clean: '/admin/features/{id}/delete' },
+      featureImageDelete: { clean: '/admin/features/{id}/images/{imageId}/delete' },
+      featureImageReorder: { clean: '/admin/features/{id}/images/reorder' },
     },
   };
 

@@ -10,6 +10,7 @@ use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Controllers\Public\CommentController;
+use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
@@ -32,6 +33,7 @@ use App\Models\NewsComment;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
 use App\Models\Event;
+use App\Models\Feature;
 use App\Models\TeamMember;
 
 spl_autoload_register(static function (string $class): void {
@@ -64,6 +66,7 @@ $commentModel = null;
 $prestasiModel = null;
 $tokenModel = null;
 $teamModel = null;
+$featureModel = null;
 
 try {
     $db = \App\Core\Database::connection();
@@ -73,6 +76,7 @@ try {
     $tokenModel = new PrestasiToken($db);
     $eventModel = new Event($db);
     $teamModel = new TeamMember($db);
+    $featureModel = new Feature($db);
 } catch (\Throwable $exception) {
     error_log('[GenBI DB] ' . $exception->getMessage());
     $newsModel = null;
@@ -81,9 +85,11 @@ try {
     $tokenModel = null;
     $eventModel = null;
     $teamModel = null;
+    $featureModel = null;
 }
 
 $pageController = new PageController($renderer);
+$homeController = new HomeController($renderer, $featureModel, $viewRenderer);
 $newsController = new NewsController($renderer, $newsModel, $viewRenderer);
 $commentController = new CommentController($newsModel, $commentModel);
 $prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel, $viewRenderer);
@@ -96,12 +102,13 @@ $loginThrottle = new LoginThrottleService($db ?? null);
 $authController = new AuthController($authService, $loginThrottle);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
-$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel);
+$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel);
 $adminNewsController = new AdminNewsController($newsModel);
 $adminNewsCommentController = new NewsCommentController($commentModel);
 $adminPrestasiController = new AdminPrestasiController($prestasiModel);
 $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
 $adminTeamMemberController = new AdminTeamMemberController($teamModel);
+$adminFeatureController = new \App\Controllers\Admin\FeatureController($featureModel);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <?= $meta ?? '<title>GenBI Provinsi Jambi</title>' ?>
-  <link rel="stylesheet" href="/assets/css/tailwind.css">
-  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260508e">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20260508e">
   <?= $jsonld ?? '' ?>
 </head>
 <body class="<?= $e($bodyClass ?? '') ?>">
@@ -15,11 +15,11 @@
   </main>
   <div id="site-footer"></div>
   <div id="modal-root"></div>
-  <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/api-core.js"></script>
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/app.js"></script>
-  <script src="/assets/js/lib/ui.js"></script>
+  <script src="/assets/js/data.js?v=20260508e"></script>
+  <script src="/assets/js/api-core.js?v=20260508e"></script>
+  <script src="/assets/js/api.js?v=20260508e"></script>
+  <script src="/assets/js/app.js?v=20260508e"></script>
+  <script src="/assets/js/lib/ui.js?v=20260508e"></script>
   <?= $scripts ?? '' ?>
 </body>
 </html>
