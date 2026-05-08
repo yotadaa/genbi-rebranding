@@ -9,6 +9,10 @@ use Throwable;
 
 final class Feature
 {
+    /** @var array<int, string>|null */
+    private ?array $featureColumns = null;
+    private ?bool $featureImageTableExists = null;
+
     public function __construct(private ?PDO $db = null)
     {
     }
@@ -23,7 +27,7 @@ final class Feature
         $sql = 'SELECT * FROM tbl_feature WHERE ' . $this->activeWhere();
         $params = [];
         $sql = $this->applyFilters($sql, $params, $filters, false);
-        $sql .= ' ORDER BY sort_order ASC, feature_id DESC LIMIT :limit OFFSET :offset';
+        $sql .= ' ORDER BY ' . $this->adminOrderBy() . ' LIMIT :limit OFFSET :offset';
 
         $stmt = $this->db->prepare($sql);
         foreach ($params as $key => $value) {
@@ -58,7 +62,7 @@ final class Feature
             return null;
         }
 
-        $stmt = $this->db->prepare('SELECT * FROM tbl_feature WHERE feature_id = :id AND ' . $this->activeWhere() . ' LIMIT 1');
+        $stmt = $this->db->prepare('SELECT * FROM tbl_feature WHERE ' . $this->featureIdColumn() . ' = :id AND ' . $this->activeWhere() . ' LIMIT 1');
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -77,7 +81,7 @@ final class Feature
             return [];
         }
 
-        $sql = 'SELECT * FROM tbl_feature WHERE ' . $this->publicWhere() . ' ORDER BY sort_order ASC, feature_id DESC LIMIT :limit';
+        $sql = 'SELECT * FROM tbl_feature WHERE ' . $this->publicWhere() . ' ORDER BY ' . $this->adminOrderBy() . ' LIMIT :limit';
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
@@ -91,9 +95,13 @@ final class Feature
             return 0;
         }
 
-        $payload = $this->normalizePayload($data);
+        $payload = $this->filterPersistablePayload($this->normalizePayload($data));
         $images = $payload['images'];
         unset($payload['images']);
+
+        if ($payload === []) {
+            return 0;
+        }
 
         $columns = array_keys($payload);
         $placeholders = array_map(static fn(string $column): string => ':' . $column, $columns);
@@ -122,7 +130,7 @@ final class Feature
             return false;
         }
 
-        $payload = $this->normalizePayload($data, false);
+        $payload = $this->filterPersistablePayload($this->normalizePayload($data, false));
         $images = $payload['images'] ?? null;
         unset($payload['images']);
 
@@ -139,8 +147,10 @@ final class Feature
                     $sets[] = $column . ' = :' . $column;
                     $params[':' . $column] = $value;
                 }
-                $sets[] = 'updated_at = NOW()';
-                $sql = 'UPDATE tbl_feature SET ' . implode(', ', $sets) . ' WHERE feature_id = :id AND ' . $this->activeWhere();
+                if ($this->hasFeatureColumn('updated_at')) {
+                    $sets[] = 'updated_at = NOW()';
+                }
+                $sql = 'UPDATE tbl_feature SET ' . implode(', ', $sets) . ' WHERE ' . $this->featureIdColumn() . ' = :id AND ' . $this->activeWhere();
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute($params);
             }
@@ -164,7 +174,23 @@ final class Feature
         }
 
         try {
-            $stmt = $this->db->prepare('UPDATE tbl_feature SET deleted_at = NOW(), show_on_home = 0, updated_at = NOW() WHERE feature_id = :id AND ' . $this->activeWhere());
+            $sets = [];
+            if ($this->hasFeatureColumn('deleted_at')) {
+                $sets[] = 'deleted_at = NOW()';
+            }
+            if ($this->hasFeatureColumn('show_on_home')) {
+                $sets[] = 'show_on_home = 0';
+            }
+            if ($this->hasFeatureColumn('status')) {
+                $sets[] = "status = 'archived'";
+            }
+            if ($this->hasFeatureColumn('updated_at')) {
+                $sets[] = 'updated_at = NOW()';
+            }
+            if ($sets === []) {
+                return false;
+            }
+            $stmt = $this->db->prepare('UPDATE tbl_feature SET ' . implode(', ', $sets) . ' WHERE ' . $this->featureIdColumn() . ' = :id AND ' . $this->activeWhere());
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->rowCount() > 0;
@@ -176,6 +202,9 @@ final class Feature
     public function deleteImage(int $featureId, int $imageId): ?string
     {
         if (!$this->db) {
+            return null;
+        }
+        if (!$this->hasFeatureImageTable()) {
             return null;
         }
 
@@ -198,6 +227,9 @@ final class Feature
         if (!$this->db) {
             return false;
         }
+        if (!$this->hasFeatureImageTable()) {
+            return false;
+        }
 
         $stmt = $this->db->prepare('UPDATE tbl_feature_image SET sort_order = :sort_order, updated_at = NOW() WHERE id = :id AND feature_id = :feature_id');
         foreach (array_values($imageIds) as $index => $imageId) {
@@ -215,6 +247,9 @@ final class Feature
     public function imageRows(int $featureId): array
     {
         if (!$this->db) {
+            return [];
+        }
+        if (!$this->hasFeatureImageTable()) {
             return [];
         }
 
@@ -235,14 +270,21 @@ final class Feature
     private function applyFilters(string $sql, array &$params, array $filters, bool $publicOnly): string
     {
         if (!empty($filters['q'])) {
-            $sql .= ' AND (title LIKE :q OR name LIKE :q OR description LIKE :q OR focus LIKE :q)';
-            $params[':q'] = '%' . trim((string) $filters['q']) . '%';
+            $searchable = array_values(array_filter(
+                ['title', 'name', 'description', 'focus'],
+                fn(string $column): bool => $this->hasFeatureColumn($column)
+            ));
+            if ($searchable !== []) {
+                $clauses = array_map(static fn(string $column): string => $column . ' LIKE :q', $searchable);
+                $sql .= ' AND (' . implode(' OR ', $clauses) . ')';
+                $params[':q'] = '%' . trim((string) $filters['q']) . '%';
+            }
         }
-        if (!empty($filters['status'])) {
+        if (!empty($filters['status']) && $this->hasFeatureColumn('status')) {
             $sql .= ' AND status = :status';
             $params[':status'] = trim((string) $filters['status']);
         }
-        if (!$publicOnly && isset($filters['show_on_home']) && $filters['show_on_home'] !== '') {
+        if (!$publicOnly && $this->hasFeatureColumn('show_on_home') && isset($filters['show_on_home']) && $filters['show_on_home'] !== '') {
             $sql .= ' AND show_on_home = :show_on_home';
             $params[':show_on_home'] = (int) (bool) $filters['show_on_home'];
         }
@@ -251,12 +293,22 @@ final class Feature
 
     private function activeWhere(): string
     {
-        return 'deleted_at IS NULL';
+        if ($this->hasFeatureColumn('deleted_at')) {
+            return 'deleted_at IS NULL';
+        }
+        return '1=1';
     }
 
     private function publicWhere(): string
     {
-        return "deleted_at IS NULL AND show_on_home = 1 AND status = 'published'";
+        $conditions = [$this->activeWhere()];
+        if ($this->hasFeatureColumn('show_on_home')) {
+            $conditions[] = 'show_on_home = 1';
+        }
+        if ($this->hasFeatureColumn('status')) {
+            $conditions[] = "status = 'published'";
+        }
+        return implode(' AND ', $conditions);
     }
 
     /** @param array<string, mixed> $row @return array<string, mixed> */
@@ -320,6 +372,9 @@ final class Feature
         if (!$this->db || $featureIds === []) {
             return [];
         }
+        if (!$this->hasFeatureImageTable()) {
+            return [];
+        }
 
         $placeholders = implode(',', array_fill(0, count($featureIds), '?'));
         $stmt = $this->db->prepare("SELECT id, feature_id, image_path, sort_order FROM tbl_feature_image WHERE feature_id IN ($placeholders) ORDER BY sort_order ASC, id ASC");
@@ -365,21 +420,23 @@ final class Feature
             $payload[$field] = strip_tags(mb_substr(trim((string) $data[$field]), 0, $limit));
         }
 
-        if (array_key_exists('show_on_home', $data) || $includeDefaults) {
+        if ($this->hasFeatureColumn('show_on_home') && (array_key_exists('show_on_home', $data) || $includeDefaults)) {
             $payload['show_on_home'] = !empty($data['show_on_home']) ? 1 : 0;
         }
-        if (array_key_exists('sort_order', $data) || $includeDefaults) {
+        if ($this->hasFeatureColumn('sort_order') && (array_key_exists('sort_order', $data) || $includeDefaults)) {
             $payload['sort_order'] = (int) ($data['sort_order'] ?? 0);
         }
-        if (array_key_exists('status', $data) || $includeDefaults) {
+        if ($this->hasFeatureColumn('status') && (array_key_exists('status', $data) || $includeDefaults)) {
             $status = strtolower(trim((string) ($data['status'] ?? 'draft')));
             $payload['status'] = in_array($status, ['draft', 'published', 'archived'], true) ? $status : 'draft';
         }
 
-        if ($includeDefaults) {
+        if ($includeDefaults && $this->hasFeatureColumn('created_at')) {
             $payload['created_at'] = date('Y-m-d H:i:s');
         }
-        $payload['updated_at'] = date('Y-m-d H:i:s');
+        if ($this->hasFeatureColumn('updated_at')) {
+            $payload['updated_at'] = date('Y-m-d H:i:s');
+        }
 
         if (array_key_exists('images', $data)) {
             $payload['images'] = $this->normalizeImages($data['images']);
@@ -427,6 +484,10 @@ final class Feature
     /** @param array<int, array<string, mixed>> $images */
     private function syncImages(int $featureId, array $images): void
     {
+        if (!$this->hasFeatureImageTable()) {
+            return;
+        }
+
         $existing = $this->imageRows($featureId);
         $existingIds = array_column($existing, 'id');
         $incomingIds = array_filter(array_map(static fn(array $image): int => (int) ($image['id'] ?? 0), $images));
@@ -491,5 +552,102 @@ final class Feature
             return $path;
         }
         return '/uploads/features/' . ltrim($path, '/');
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    private function filterPersistablePayload(array $payload): array
+    {
+        $columns = array_flip($this->featureColumns());
+        $safe = [];
+        foreach ($payload as $key => $value) {
+            if ($key === 'images') {
+                $safe[$key] = $value;
+                continue;
+            }
+            if (isset($columns[$key])) {
+                $safe[$key] = $value;
+            }
+        }
+        return $safe;
+    }
+
+    private function adminOrderBy(): string
+    {
+        $parts = [];
+        if ($this->hasFeatureColumn('sort_order')) {
+            $parts[] = 'sort_order ASC';
+        }
+        $parts[] = $this->featureIdColumn() . ' DESC';
+        return implode(', ', $parts);
+    }
+
+    private function featureIdColumn(): string
+    {
+        if ($this->hasFeatureColumn('feature_id')) {
+            return 'feature_id';
+        }
+        if ($this->hasFeatureColumn('id')) {
+            return 'id';
+        }
+        return 'feature_id';
+    }
+
+    /** @return array<int, string> */
+    private function featureColumns(): array
+    {
+        if ($this->featureColumns !== null) {
+            return $this->featureColumns;
+        }
+        if (!$this->db) {
+            $this->featureColumns = [];
+            return $this->featureColumns;
+        }
+        try {
+            $statement = $this->db->query('DESCRIBE tbl_feature');
+            $this->featureColumns = $statement ? array_map('strval', array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'Field')) : [];
+            return $this->featureColumns;
+        } catch (Throwable) {
+            try {
+                $statement = $this->db->query('PRAGMA table_info(tbl_feature)');
+                $rows = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+                $this->featureColumns = array_map('strval', array_column($rows, 'name'));
+                return $this->featureColumns;
+            } catch (Throwable) {
+                $this->featureColumns = [];
+                return $this->featureColumns;
+            }
+        }
+    }
+
+    private function hasFeatureColumn(string $column): bool
+    {
+        return in_array($column, $this->featureColumns(), true);
+    }
+
+    private function hasFeatureImageTable(): bool
+    {
+        if ($this->featureImageTableExists !== null) {
+            return $this->featureImageTableExists;
+        }
+        if (!$this->db) {
+            $this->featureImageTableExists = false;
+            return false;
+        }
+        try {
+            $statement = $this->db->query('DESCRIBE tbl_feature_image');
+            $rows = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+            $this->featureImageTableExists = $rows !== [];
+            return $this->featureImageTableExists;
+        } catch (Throwable) {
+            try {
+                $statement = $this->db->query('PRAGMA table_info(tbl_feature_image)');
+                $rows = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+                $this->featureImageTableExists = $rows !== [];
+                return $this->featureImageTableExists;
+            } catch (Throwable) {
+                $this->featureImageTableExists = false;
+                return false;
+            }
+        }
     }
 }
