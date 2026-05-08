@@ -28,4 +28,14 @@ assert($security['session_name'] === 'GENBI_TEST');
 assert($security['session_secure'] === true);
 assert($security['session_samesite'] === 'Strict');
 
+$_ENV['APP_ENV'] = 'production';
+$_SERVER['APP_ENV'] = 'production';
+unset($_ENV['SESSION_SECURE'], $_SERVER['SESSION_SECURE']);
+$_ENV['SESSION_SAMESITE'] = 'Unexpected';
+$_SERVER['SESSION_SAMESITE'] = 'Unexpected';
+
+$prodSecurity = Security::config();
+assert($prodSecurity['session_secure'] === true);
+assert($prodSecurity['session_samesite'] === 'Lax');
+
 echo "PHP foundation tests passed\n";

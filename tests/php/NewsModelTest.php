@@ -44,8 +44,32 @@ $relativeImageRow = News::mapRow([
     'news_title' => 'Talkshow Ekonomi Syariah Siginjai Fest',
     'photo' => 'news-98.jpeg',
 ]);
-assert($relativeImageRow['photo'] === 'http://example.test/uploads/news-98.jpg');
+assert($relativeImageRow['photo'] === '/uploads/news-98.jpeg');
 
 assert(Slugger::slugify('Talkshow Siginjai Fest 2026!') === 'talkshow-siginjai-fest-2026');
+
+$db = new PDO('sqlite::memory:');
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$db->exec('CREATE TABLE tbl_category (category_id INTEGER PRIMARY KEY, category_name TEXT)');
+$db->exec('CREATE TABLE tbl_news (
+    news_id INTEGER PRIMARY KEY,
+    slug TEXT,
+    news_title TEXT,
+    news_content TEXT,
+    news_content_short TEXT,
+    category_id INTEGER,
+    status TEXT,
+    deleted_at TEXT NULL
+)');
+$db->exec("INSERT INTO tbl_category (category_id, category_name) VALUES (1, 'General')");
+$db->exec("INSERT INTO tbl_news (news_id, slug, news_title, news_content, news_content_short, category_id, status, deleted_at) VALUES
+    (1, 'published-news', 'Published', '<p>ok</p>', 'short', 1, 'published', NULL),
+    (2, 'draft-news', 'Draft', '<p>draft</p>', 'draft', 1, 'draft', NULL),
+    (3, 'deleted-news', 'Deleted', '<p>deleted</p>', 'deleted', 1, 'published', '2026-05-08 00:00:00')");
+
+$model = new News($db);
+assert(($model->findPublicBySlug('published-news')['id'] ?? 0) === 1);
+assert($model->findPublicBySlug('draft-news') === null);
+assert($model->findPublicById(3) === null);
 
 echo "PHP news model tests passed\n";

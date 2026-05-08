@@ -8,7 +8,7 @@ $totalPages = $totalPages ?? 1;
 $startItem = ($page - 1) * $perPage + 1;
 $endItem = min($page * $perPage, $total);
 ?>
-<section class="bg-stone py-16 md:py-24">
+<section class="public-inner-hero py-16 md:py-24">
   <div class="article-container fade-up">
     <p class="eyebrow">Prestasi</p>
     <h1 class="page-title mt-5">Prestasi GenBI Jambi.</h1>

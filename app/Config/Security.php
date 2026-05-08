@@ -11,10 +11,15 @@ final class Security
     /** @return array{session_name: string, session_secure: bool, session_samesite: string} */
     public static function config(): array
     {
+        $appEnv = Env::get('APP_ENV', 'local') ?? 'local';
+        $defaultSecure = $appEnv === 'production' ? 'true' : 'false';
+        $sameSite = Env::get('SESSION_SAMESITE', 'Lax') ?? 'Lax';
+        $sameSite = in_array($sameSite, ['Lax', 'Strict', 'None'], true) ? $sameSite : 'Lax';
+
         return [
             'session_name' => Env::get('SESSION_NAME', 'GENBISESSID') ?? 'GENBISESSID',
-            'session_secure' => filter_var(Env::get('SESSION_SECURE', 'false'), FILTER_VALIDATE_BOOLEAN),
-            'session_samesite' => Env::get('SESSION_SAMESITE', 'Lax') ?? 'Lax',
+            'session_secure' => filter_var(Env::get('SESSION_SECURE', $defaultSecure), FILTER_VALIDATE_BOOLEAN),
+            'session_samesite' => $sameSite,
         ];
     }
 }

@@ -102,7 +102,7 @@ async function renderDetail() {
         ${renderContributorBox(item)}
       </article>
     </section>
-    <section class="bg-[#f6f3ec] py-12 md:py-16">
+    <section class="bg-[var(--surface-soft)] py-12 md:py-16">
       <div class="article-container fade-up in-view">
         <div class="news-engagement-grid">
           <section class="share-card">
@@ -180,7 +180,7 @@ function hasPreservedRelated(item) {
 function renderRelatedSection(related) {
   if (!related.length) return '';
   return `
-    <section class="bg-[#f6f3ec] pb-14 md:pb-20">
+    <section class="bg-[var(--surface-soft)] pb-14 md:pb-20">
       <div class="article-container fade-up in-view">
         <p class="eyebrow">Artikel terkait</p>
         <div class="mt-6 related-news-list">

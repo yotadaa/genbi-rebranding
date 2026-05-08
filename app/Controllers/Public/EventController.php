@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\Event;
+use App\Services\HtmlSanitizer;
 use App\Services\SeoService;
 use App\Services\StructuredData;
 use Throwable;
@@ -35,7 +36,7 @@ final class EventController
             $total = $this->eventModel?->countPublic($filters) ?? count($items);
 
             $response->json([
-                'data' => $items,
+                'data' => array_map(fn (array $item): array => $this->sanitizePublicItem($item), $items),
                 'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),
             ]);
             return;
@@ -81,16 +82,19 @@ final class EventController
         $id = (int) ($params['id'] ?? 0);
 
         if ($request->acceptsJson()) {
-            $item = $id > 0 ? $this->eventModel?->findById($id) : null;
+            $item = $id > 0 ? $this->eventModel?->findPublicById($id) : null;
             if (!$item) {
                 $response->json(['error' => 'Event not found'], 404);
                 return;
             }
-            $response->json(['data' => $item]);
+            $response->json(['data' => $this->sanitizePublicItem($item)]);
             return;
         }
 
-        $item = $id > 0 ? $this->eventModel?->findById($id) : null;
+        $item = $id > 0 ? $this->eventModel?->findPublicById($id) : null;
+        if (is_array($item)) {
+            $item = $this->sanitizePublicItem($item);
+        }
 
         if (is_array($item)) {
             $seo = SeoService::forPage('event.html');
@@ -124,5 +128,18 @@ final class EventController
         }
 
         $response->html($this->renderer->render('event.html', ['meta' => $meta, 'jsonld' => $jsonld]));
+    }
+
+    /** @param array<string, mixed> $item @return array<string, mixed> */
+    private function sanitizePublicItem(array $item): array
+    {
+        $item['title'] = strip_tags((string) ($item['title'] ?? ''));
+        $item['event_title'] = $item['title'];
+        $item['excerpt'] = strip_tags((string) ($item['excerpt'] ?? ''));
+        $item['location'] = strip_tags((string) ($item['location'] ?? ''));
+        $item['content'] = HtmlSanitizer::sanitize((string) ($item['content'] ?? $item['excerpt'] ?? ''));
+        $item['map'] = HtmlSanitizer::sanitizeMapEmbedUrl((string) ($item['map'] ?? ''));
+
+        return $item;
     }
 }

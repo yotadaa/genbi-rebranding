@@ -24,7 +24,8 @@
     edit: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65m-1.13-3.78a1.88 1.88 0 0 1 2.65 2.65L8.25 18.79 4.5 19.5l.71-3.75L18.38 3.36Z"/></svg>',
     grid: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h6.5v6.5h-6.5v-6.5Zm10 0h6.5v6.5h-6.5v-6.5Zm-10 10h6.5v6.5h-6.5v-6.5Zm10 0h6.5v6.5h-6.5v-6.5Z"/></svg>',
     list: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.01M3.75 12h.01M3.75 17.25h.01"/></svg>',
-    search: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>'
+    search: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>',
+    chevronDown: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>'
   };
 
   icons.photo = icons.slider;
@@ -45,7 +46,7 @@
     { key: 'dashboard', label: 'Dashboard', href: adminUrl('dashboard'), icon: 'dashboard' },
     { key: 'settings', label: 'Settings', href: adminUrl('settings'), icon: 'settings' },
     { key: 'page', label: 'Page', href: adminUrl('page'), icon: 'page' },
-    { key: 'language', label: 'Language', href: adminUrl('language'), icon: 'language' },
+    { key: 'team', label: 'Team Member', href: adminUrl('team-member'), icon: 'users' },
     { key: 'news', label: 'News', href: adminUrl('news'), icon: 'news', children: [
       { key: 'category', label: 'Category', href: adminUrl('category') },
       { key: 'news-list', label: 'News', href: adminUrl('news') },
@@ -57,14 +58,14 @@
     ] },
     { key: 'event', label: 'Event', href: adminUrl('event'), icon: 'event' },
     { key: 'subscriber', label: 'Subscriber', href: '#', icon: 'subscriber' },
-    { key: 'team', label: 'Team Member', href: adminUrl('team-member'), icon: 'users' },
     { key: 'slider', label: 'Slider', href: adminUrl('slider'), icon: 'slider' },
     { key: 'testimonial', label: 'Testimonial', href: '#', icon: 'social' },
     { key: 'gallery', label: 'Photo Gallery', href: adminUrl('photo'), icon: 'gallery' },
     { key: 'feature', label: 'Feature', href: adminUrl('feature'), icon: 'feature' },
     { key: 'why', label: 'Why Choose Us', href: adminUrl('why-choose'), icon: 'sparkles' },
     { key: 'faq', label: 'FAQ', href: adminUrl('faq'), icon: 'faq' },
-    { key: 'social', label: 'Social Media', href: adminUrl('social-media'), icon: 'social' }
+    { key: 'social', label: 'Social Media', href: adminUrl('social-media'), icon: 'social' },
+    { key: 'language', label: 'Language', href: adminUrl('language'), icon: 'language' }
   ];
 
   function icon(name, extra = '') {

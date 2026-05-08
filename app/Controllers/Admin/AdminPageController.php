@@ -43,9 +43,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js"></script>
+<script src="/assets/js/admin/cms.js?v=20260508b"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js"></script>';
+        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508b"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -162,7 +162,7 @@ HTML;
             'totalPages' => $totalPages,
             'filters' => $filters,
             'layout' => $layout,
-            'scripts' => '<script src="/assets/js/admin/cms.js"></script>',
+            'scripts' => '<script src="/assets/js/admin/cms.js?v=20260508b"></script>',
         ]);
     }
 
@@ -178,9 +178,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js"></script>
+<script src="/assets/js/admin/cms.js?v=20260508b"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js"></script>';
+        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508b"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([

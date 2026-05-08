@@ -11,6 +11,7 @@ use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
+use App\Services\HtmlSanitizer;
 use App\Services\SeoService;
 use App\Services\StructuredData;
 
@@ -33,7 +34,7 @@ class PrestasiController
             $items = $this->prestasi?->published($pg['per_page'], $pg['offset']) ?? [];
             $total = $this->prestasi?->countPublished() ?? count($items);
             $response->json([
-                'data' => $items,
+                'data' => array_map(fn (array $item): array => $this->sanitizePublicItem($item), $items),
                 'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total),
             ]);
             return;
@@ -83,11 +84,14 @@ class PrestasiController
                 $response->json(['error' => 'Not found'], 404);
                 return;
             }
-            $response->json(['data' => $item]);
+            $response->json(['data' => $this->sanitizePublicItem($item)]);
             return;
         }
 
         $item = $this->prestasi?->findBySlug($slug);
+        if (is_array($item)) {
+            $item = $this->sanitizePublicItem($item);
+        }
         if (is_array($item)) {
             $seo = SeoService::forPrestasi($item);
         } else {
@@ -253,5 +257,21 @@ class PrestasiController
         }
 
         return $slug;
+    }
+
+    /** @param array<string, mixed> $item @return array<string, mixed> */
+    private function sanitizePublicItem(array $item): array
+    {
+        $item['title'] = strip_tags((string) ($item['title'] ?? ''));
+        $item['name'] = strip_tags((string) ($item['name'] ?? ''));
+        $item['member_name'] = $item['name'];
+        $item['campus'] = strip_tags((string) ($item['campus'] ?? ''));
+        $item['category'] = strip_tags((string) ($item['category'] ?? ''));
+        $item['description'] = strip_tags((string) ($item['description'] ?? ''));
+        $item['institution'] = strip_tags((string) ($item['institution'] ?? ''));
+        $item['content'] = HtmlSanitizer::sanitize((string) ($item['content'] ?? ''));
+        $item['detail'] = $item['content'];
+
+        return $item;
     }
 }

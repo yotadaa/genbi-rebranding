@@ -21,7 +21,7 @@ $filterParams = array_filter([
     'year' => $activeYear,
 ], static fn($v) => $v !== '' && $v !== null);
 ?>
-<section class="bg-stone py-16 md:py-24">
+<section class="public-inner-hero py-16 md:py-24">
   <div class="site-container fade-up">
     <p class="eyebrow">Team</p>
     <h1 class="page-title mt-5">Tim GenBI Jambi.</h1>

@@ -21,7 +21,7 @@ final class CommentController
     {
         $item = $this->findNews($params['slug'] ?? '');
         if ($item === null || !$this->comments instanceof NewsComment) {
-            $response->json(['data' => []]);
+            $response->json(['message' => 'News not found'], 404);
             return;
         }
 
@@ -84,7 +84,7 @@ final class CommentController
         }
 
         try {
-            return $this->news->findBySlug($slug);
+            return $this->news->findPublicBySlug($slug);
         } catch (Throwable) {
             return null;
         }

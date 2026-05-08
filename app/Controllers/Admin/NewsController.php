@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\News;
+use App\Services\HtmlSanitizer;
 
 final class NewsController
 {
@@ -323,14 +324,6 @@ final class NewsController
 
     private function sanitizeEditorHtml(string $html): string
     {
-        $html = mb_substr(trim($html), 0, self::MAX_CONTENT_LENGTH);
-
-        $html = preg_replace('#<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|link|meta)[^>]*>.*?<\s*/\s*\1\s*>#is', '', $html) ?? '';
-        $html = preg_replace('#<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|link|meta)[^>]*\/?>#is', '', $html) ?? '';
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
-        $html = preg_replace('/\s+(href|src)\s*=\s*(["\'])\s*javascript:[^"\']*\2/i', ' $1="#"', $html) ?? '';
-
-        $allowed = '<p><br><strong><b><em><i><u><a><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><cite><figure><figcaption><img>';
-        return strip_tags($html, $allowed);
+        return HtmlSanitizer::sanitize(mb_substr(trim($html), 0, self::MAX_CONTENT_LENGTH));
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Config\App;
 use App\Core\Slugger;
 use PDO;
 use Throwable;
@@ -80,6 +79,32 @@ final class News
     {
         $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.slug = :slug AND n.deleted_at IS NULL LIMIT 1');
         $statement->execute(['slug' => $slug]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? self::mapRow($row) : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPublicById(int $id): ?array
+    {
+        $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.news_id = :id AND n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status) LIMIT 1');
+        $statement->execute([
+            'id' => $id,
+            'status' => 'published',
+        ]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? self::mapRow($row) : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPublicBySlug(string $slug): ?array
+    {
+        $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.slug = :slug AND n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status) LIMIT 1');
+        $statement->execute([
+            'slug' => $slug,
+            'status' => 'published',
+        ]);
         $row = $statement->fetch();
 
         return is_array($row) ? self::mapRow($row) : null;
@@ -402,14 +427,28 @@ final class News
 
     private static function resolveImageUrl(string $filename): string
     {
+        $filename = trim($filename);
         if ($filename === '') {
             return '';
         }
-        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://') || str_starts_with($filename, '/')) {
+
+        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://')) {
+            $parts = parse_url($filename);
+            $host = strtolower((string) ($parts['host'] ?? ''));
+            $path = (string) ($parts['path'] ?? '');
+
+            if (in_array($host, ['127.0.0.1', 'localhost', '::1'], true) && str_starts_with($path, '/uploads/')) {
+                return $path;
+            }
+
             return $filename;
         }
 
-        return rtrim(App::config()['url'], '/') . '/uploads/' . self::resolveUploadFilename($filename);
+        if (str_starts_with($filename, '/uploads/')) {
+            return $filename;
+        }
+
+        return '/uploads/' . self::resolveUploadFilename($filename);
     }
 
     private static function resolveUploadFilename(string $filename): string

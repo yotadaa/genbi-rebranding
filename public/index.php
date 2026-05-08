@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/app/Core/HotReload.php';
+
 if (PHP_VERSION_ID < 80200) {
     http_response_code(500);
     header('Content-Type: text/plain; charset=UTF-8');
@@ -17,6 +19,18 @@ if (!extension_loaded('pdo_mysql')) {
 }
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$rootPath = dirname(__DIR__);
+
+if (\App\Core\HotReload::enabled() && $path === \App\Core\HotReload::endpoint()) {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    echo json_encode([
+        'token' => \App\Core\HotReload::token($rootPath),
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    return;
+}
 
 // Serve static public files (robots.txt, favicon.ico, etc.)
 $staticFiles = ['robots.txt', 'favicon.ico', 'manifest.webmanifest', 'browserconfig.xml'];
@@ -92,7 +106,6 @@ if (str_starts_with($path, '/uploads/')) {
 
 [$router, $request, $response] = require dirname(__DIR__) . '/bootstrap/app.php';
 
-// Security headers for all dynamic responses
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');

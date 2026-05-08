@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Services\HtmlSanitizer;
 use App\Services\SeoService;
 use App\Services\StructuredData;
 use Throwable;
@@ -38,7 +39,7 @@ final class NewsController
             $total = $this->readFromDatabase(static fn (News $news): int => $news->countPublic($filters));
 
             $response->json([
-                'data' => $items ?? [],
+                'data' => array_map(fn (array $item): array => $this->sanitizePublicItem($item), $items ?? []),
                 'meta' => Paginator::meta($pg['page'], $pg['per_page'], $total ?? count($items ?? [])),
             ]);
             return;
@@ -89,7 +90,7 @@ final class NewsController
         $slug = $params['slug'] ?? '';
         if ($request->acceptsJson()) {
             $item = $this->readFromDatabase(static function (News $news) use ($slug): ?array {
-                $row = $news->findBySlug($slug);
+                $row = $news->findPublicBySlug($slug);
                 if ($row !== null) {
                     $news->incrementViews((int) $row['id']);
                 }
@@ -98,7 +99,7 @@ final class NewsController
             });
 
             if (is_array($item)) {
-                $response->json($item);
+                $response->json($this->sanitizePublicItem($item));
                 return;
             }
 
@@ -107,7 +108,10 @@ final class NewsController
         }
 
         // Fetch news from DB for SEO meta injection (HTML rendering)
-        $item = $this->readFromDatabase(static fn (News $news): ?array => $news->findBySlug($slug));
+        $item = $this->readFromDatabase(static fn (News $news): ?array => $news->findPublicBySlug($slug));
+        if (is_array($item)) {
+            $item = $this->sanitizePublicItem($item);
+        }
         if (is_array($item)) {
             $seo = SeoService::forNews($item);
         } else {
@@ -141,13 +145,13 @@ final class NewsController
     public function legacyShow(Request $request, Response $response, array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
-        $item = $id > 0 ? $this->readFromDatabase(static fn (News $news): ?array => $news->findById($id)) : null;
+        $item = $id > 0 ? $this->readFromDatabase(static fn (News $news): ?array => $news->findPublicById($id)) : null;
         if (is_array($item) && !empty($item['slug'])) {
             $response->redirect('/news/' . rawurlencode((string) $item['slug']), 301);
             return;
         }
 
-        $response->redirect('/news-detail.html?id=' . rawurlencode((string) ($params['id'] ?? '')), 301);
+        $response->html('<!doctype html><title>404</title><h1>404 - Berita tidak ditemukan</h1>', 404);
     }
 
     /** @template T @param callable(News): T $callback @return T|null */
@@ -162,5 +166,24 @@ final class NewsController
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /** @param array<string, mixed> $item @return array<string, mixed> */
+    private function sanitizePublicItem(array $item): array
+    {
+        $item['title'] = strip_tags((string) ($item['title'] ?? ''));
+        $item['news_title'] = $item['title'];
+        $item['excerpt'] = strip_tags((string) ($item['excerpt'] ?? ''));
+        $item['news_content_short'] = $item['excerpt'];
+        $item['category'] = strip_tags((string) ($item['category'] ?? ''));
+        $item['category_name'] = $item['category'];
+        $item['contributor_pewarta'] = strip_tags((string) ($item['contributor_pewarta'] ?? ''));
+        $item['contributor_editor'] = strip_tags((string) ($item['contributor_editor'] ?? ''));
+        $item['author'] = $item['contributor_pewarta'];
+        $item['editor'] = $item['contributor_editor'];
+        $item['content'] = HtmlSanitizer::sanitize((string) ($item['content'] ?? ''));
+        $item['news_content'] = $item['content'];
+
+        return $item;
     }
 }

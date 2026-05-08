@@ -6,8 +6,8 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="csrf-token" content="<?= $e($csrfToken ?? '') ?>">
   <title><?= $e($title ?? 'Admin GenBI') ?></title>
-  <link rel="stylesheet" href="/assets/css/tailwind.css">
-  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260508b">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20260508c">
 </head>
 <body class="admin-body" data-cms-page="<?= $e($cmsPage ?? '') ?>" data-cms-mode="<?= $e($cmsMode ?? '') ?>">
   <div class="admin-shell">
@@ -25,7 +25,7 @@
   <script src="/assets/js/api-core.js"></script>
   <script src="/assets/js/api.js"></script>
   <script src="/assets/js/app.js"></script>
-  <script src="/assets/js/admin/admin.js"></script>
+  <script src="/assets/js/admin/admin.js?v=20260508"></script>
   <?= $scripts ?? '' ?>
 </body>
 </html>

@@ -45,7 +45,7 @@ $filterParams = array_filter([
           
           <label class="text-sm text-neutral-600">
             Show
-            <select name="per_page" class="config-input w-auto" onchange="this.form.submit()">
+            <select name="per_page" class="config-input w-auto js-admin-custom-select" onchange="this.form.submit()">
               <?php foreach ([12, 24, 48, 100] as $opt): ?>
                 <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
               <?php endforeach; ?>
@@ -72,14 +72,14 @@ $filterParams = array_filter([
 
       <div class="team-batch-bar mt-3 hidden" id="team-batch-bar">
         <strong><span id="team-selection-count">0</span> dipilih</strong>
-        <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah BPI ke Beranda</button>
+        <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah Anggota ke Beranda</button>
         <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
         <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
       </div>
 
       <?php if ($total > 0): ?>
         <div class="mt-4 text-sm text-neutral-600">
-          Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> anggota.
+          Menampilkan <?= $startItem ?>-<?= $endItem ?> dari <?= $total ?> anggota.
         </div>
       <?php endif; ?>
     </section>
@@ -94,8 +94,8 @@ $filterParams = array_filter([
             <label class="team-select-check hidden">
               <input type="checkbox" data-team-select="<?= (int) $item['id'] ?>"> Select
             </label>
-            <button type="button" class="team-home-toggle" data-team-home="<?= (int) $item['id'] ?>" title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah BPI ke Beranda' ?>">
-              <?= !empty($item['show_on_home']) ? '−' : '+' ?>
+            <button type="button" class="team-home-toggle hidden" data-team-home="<?= (int) $item['id'] ?>" title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda' ?>">
+              <?= !empty($item['show_on_home']) ? '-' : '+' ?>
             </button>
             <div class="team-admin-photo">
               <?php if (!empty($item['photo'])): ?>
@@ -146,3 +146,4 @@ $filterParams = array_filter([
     <?php endif; ?>
   </div>
 </section>
+

@@ -8,6 +8,7 @@ use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\Prestasi;
+use App\Services\HtmlSanitizer;
 
 class PrestasiController
 {
@@ -252,7 +253,9 @@ class PrestasiController
                 continue;
             }
             $value = mb_substr(trim((string) $body[$field]), 0, $limit);
-            if ($field !== 'content') {
+            if ($field === 'content') {
+                $value = HtmlSanitizer::sanitize($value);
+            } else {
                 $value = strip_tags($value);
             }
             $sanitized[$field] = $value;

@@ -125,7 +125,7 @@
       button.type = 'button';
       button.className = 'admin-select-button';
       button.setAttribute('aria-expanded', 'false');
-      button.innerHTML = `<span>${escape(select.options[select.selectedIndex]?.text || 'Pilih')}</span><span aria-hidden="true">⌄</span>`;
+      button.innerHTML = `<span>${escape(select.options[select.selectedIndex]?.text || 'Pilih')}</span>${Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-neutral-500')}`;
 
       const menu = document.createElement('div');
       menu.className = 'admin-select-menu hidden';
@@ -227,6 +227,7 @@
   async function renderNewsList() {
     // Check if SSR markup exists - if so, only bind delete behavior and multi-select
     if (document.querySelector('#admin-news-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
       bindNewsDeleteButtons();
       bindAdminMultiSelect();
       return;
@@ -1020,7 +1021,7 @@
           </div>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Slider Config</h2>${control('Photo', '<input class="config-input" type="file" />')}${control('Position', '<select class="config-input"><option>Left</option><option>Right</option></select>')}</section>
+          <section class="config-card"><h2>Slider Config</h2>${control('Photo', '<input class="config-input" type="file" />')}${control('Position', selectControl({ id: 'slider-position', value: 'Left', options: ['Left', 'Right'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Slider</button>
         </aside>
       </form>
@@ -1031,6 +1032,7 @@
   async function renderTeamList() {
     // Check if SSR markup exists - if so, bind delete, batch, and home toggle
     if (document.querySelector('#admin-team-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
       bindTeamDeleteButtons();
       bindTeamBatchMode();
       bindTeamHomeToggle();
@@ -1235,7 +1237,7 @@
           <article class="news-body-block smaller" contenteditable="true" data-placeholder="Manfaat program untuk anggota dan publik..."></article>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', '<select class="config-input"><option>Show</option><option>Hide</option></select>')}</section>
+          <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', selectControl({ id: 'feature-show-home', value: 'Show', options: ['Show', 'Hide'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Feature</button>
         </aside>
       </form>
@@ -1313,7 +1315,7 @@
           <article class="news-body-block smaller" contenteditable="true" data-placeholder="Tulis jawaban FAQ..."></article>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', '<select class="config-input"><option>Yes</option><option>No</option></select>')}</section>
+          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', selectControl({ id: 'faq-show-home', value: 'Yes', options: ['Yes', 'No'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit FAQ</button>
         </aside>
       </form>
@@ -1367,7 +1369,7 @@
           </div>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Photo Info</h2>${control('Caption', '<input class="config-input" placeholder="Caption foto..." />')}${control('Visibility', '<select class="config-input"><option>Show</option><option>Hide</option></select>')}</section>
+          <section class="config-card"><h2>Photo Info</h2>${control('Caption', '<input class="config-input" placeholder="Caption foto..." />')}${control('Visibility', selectControl({ id: 'photo-visibility', value: 'Show', options: ['Show', 'Hide'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Photo</button>
         </aside>
       </form>
@@ -1386,10 +1388,11 @@
     const photo = item.photo || memberPhotos[index % memberPhotos.length];
     const checked = teamSelection.has(Number(item.id)) ? 'checked' : '';
     const homeClass = item.show_on_home ? 'is-home' : '';
+    const batchClass = batchMode ? 'is-batch' : '';
     return `
-      <article class="team-admin-card ${homeClass}" data-team-id="${item.id}">
-        ${batchMode ? `<label class="team-select-check"><input type="checkbox" data-team-select="${item.id}" ${checked} /> Select</label>` : ''}
-        <button type="button" class="team-home-toggle" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah BPI ke Beranda'}">${item.show_on_home ? '−' : '+'}</button>
+      <article class="team-admin-card ${homeClass} ${batchClass}" data-team-id="${item.id}">
+        <label class="team-select-check ${batchMode ? '' : 'hidden'}"><input type="checkbox" data-team-select="${item.id}" ${checked} /> Select</label>
+        <button type="button" class="team-home-toggle ${batchMode ? '' : 'hidden'}" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? '-' : '+'}</button>
         <div class="team-admin-photo"><img src="${photo}" alt="${escape(item.name)}" onerror="this.remove(); this.parentElement.textContent='${Admin.initials(item.name)}';" /></div>
         <div class="team-admin-content">
           <h2>${escape(item.name)}</h2>
@@ -1508,7 +1511,7 @@
 
     bar.innerHTML = `
       <strong><span id="team-selection-count">${teamSelection.size}</span> dipilih</strong>
-      <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah BPI ke Beranda</button>
+      <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah Anggota ke Beranda</button>
       <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
       <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
     `;
@@ -1631,7 +1634,7 @@
   }
 
   function miniSelectBlock(label, options, selected = '') {
-    return `<section class="mini-block"><span>${label}</span><select class="team-commission-select">${options.map((option) => `<option ${option === selected ? 'selected' : ''}>${option}</option>`).join('')}</select></section>`;
+    return `<section class="mini-block"><span>${label}</span>${selectControl({ id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-select`, className: 'team-commission-select', value: selected, options })}</section>`;
   }
 
   function miniBlock(label, value = '') {
@@ -1666,6 +1669,7 @@
   async function renderPrestasiList() {
     // Check if SSR markup exists - if so, only bind delete/detail behavior
     if (document.querySelector('#admin-prestasi-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
       bindPrestasiDeleteButtons();
       bindPrestasiDetailButtons();
       // Bind search form Enter key
@@ -2568,12 +2572,17 @@
     const toggleBatchMode = () => {
       batchMode = !batchMode;
       batchBar.classList.toggle('hidden', !batchMode);
-      teamList.querySelectorAll('.team-select-check').forEach(label => {
-        label.classList.toggle('hidden', !batchMode);
+      teamList.querySelectorAll('.team-admin-card').forEach((card) => {
+        card.classList.toggle('is-batch', batchMode);
+      });
+      teamList.querySelectorAll('.team-select-check, .team-home-toggle').forEach((control) => {
+        control.classList.toggle('hidden', !batchMode);
       });
       if (!batchMode) {
         selection.clear();
-        teamList.querySelectorAll('[data-team-select]').forEach(cb => cb.checked = false);
+        teamList.querySelectorAll('[data-team-select]').forEach((cb) => { cb.checked = false; });
+        updateCount();
+      } else {
         updateCount();
       }
     };
@@ -2583,7 +2592,7 @@
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
         selection.clear();
-        teamList.querySelectorAll('[data-team-select]').forEach(cb => cb.checked = false);
+        teamList.querySelectorAll('[data-team-select]').forEach((cb) => { cb.checked = false; });
         updateCount();
       });
     }
@@ -2648,7 +2657,7 @@
           if (res.ok) {
             Admin.showToast(adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.');
             button.textContent = adding ? '−' : '+';
-            button.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah BPI ke Beranda';
+            button.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda';
             card?.classList.toggle('is-home', adding);
           } else {
             Admin.showToast('Gagal memperbarui BPI Beranda.');

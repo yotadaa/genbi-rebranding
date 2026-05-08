@@ -10,7 +10,7 @@ $activeQ = $filters['q'] ?? '';
 $startItem = ($page - 1) * $perPage + 1;
 $endItem = min($page * $perPage, $total);
 ?>
-<section class="bg-stone py-16 md:py-24">
+<section class="public-inner-hero py-16 md:py-24">
   <div class="site-container">
     <p class="eyebrow">Event</p>
     <h1 class="page-title mt-5 max-w-4xl">Agenda dan kegiatan GenBI Jambi.</h1>

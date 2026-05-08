@@ -39,7 +39,7 @@
       <?php endif; ?>
     </article>
   </section>
-  <section class="bg-[#f6f3ec] py-12 md:py-16">
+  <section class="bg-[var(--surface-soft)] py-12 md:py-16">
     <div class="article-container fade-up in-view">
       <div class="news-engagement-grid">
         <section class="share-card">

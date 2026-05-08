@@ -12,6 +12,9 @@ final class Router
     /** @var Middleware[] */
     private array $groupMiddleware = [];
 
+    /** @var Middleware[] */
+    private array $globalMiddleware = [];
+
     public function get(string $pattern, callable $handler): void
     {
         $this->add('GET', $pattern, $handler);
@@ -29,6 +32,11 @@ final class Router
         $this->groupMiddleware = array_merge($this->groupMiddleware, $middleware);
         $callback($this);
         $this->groupMiddleware = $previous;
+    }
+
+    public function addGlobalMiddleware(Middleware $middleware): void
+    {
+        $this->globalMiddleware[] = $middleware;
     }
 
     private function add(string $method, string $pattern, callable $handler): void
@@ -56,18 +64,11 @@ final class Router
             $handler = $route['handler'];
             $middleware = $route['middleware'];
 
-            if (empty($middleware)) {
-                call_user_func($handler, $request, $response, $params);
-                return;
-            }
-
-            // Build middleware pipeline
             $pipeline = static function () use ($handler, $request, $response, $params): void {
                 call_user_func($handler, $request, $response, $params);
             };
 
-            // Wrap from inside out
-            foreach (array_reverse($middleware) as $mw) {
+            foreach (array_reverse(array_merge($this->globalMiddleware, $middleware)) as $mw) {
                 $next = $pipeline;
                 $pipeline = static function () use ($mw, $request, $response, $next): void {
                     $mw->handle($request, $response, $next);

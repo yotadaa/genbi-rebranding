@@ -16,7 +16,7 @@ final class Response
         if ($this->isHeadRequest()) {
             return;
         }
-        echo $content;
+        echo HotReload::inject($content);
     }
 
     public function redirect(string $url, int $status = 302): void

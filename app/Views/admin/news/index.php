@@ -12,7 +12,6 @@ $layout = $layout ?? 'list';
 $startItem = ($page - 1) * $perPage + 1;
 $endItem = min($page * $perPage, $total);
 
-// Build filter params for pagination links
 $filterParams = array_filter([
     'q' => $filters['q'] ?? '',
     'status' => $filters['status'] ?? '',
@@ -35,20 +34,19 @@ foreach ($selectedCategories as $catId) {
   </header>
 
   <div class="mt-6">
-    <!-- Toolbar -->
     <section class="admin-card p-4 md:p-6">
-      <form method="get" action="/admin/news" class="cms-toolbar" id="news-filter-form">
+      <form method="get" action="/admin/news" class="cms-toolbar cms-toolbar-admin" id="news-filter-form">
         <input type="hidden" name="layout" value="<?= $e($layout) ?>">
         <?php foreach ($selectedCategories as $catId): ?>
           <input type="hidden" name="category[]" value="<?= (int) $catId ?>">
         <?php endforeach; ?>
-        
-        <div class="flex flex-wrap items-center gap-3">
+
+        <div class="admin-toolbar-row">
           <label class="cms-search">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             <input id="news-search" name="q" placeholder="Cari judul, konten, kategori..." value="<?= $e($filters['q'] ?? '') ?>">
           </label>
-          
+
           <div class="admin-filter-group">
             <label class="text-sm text-neutral-600">Status</label>
             <select name="status" class="config-input w-auto js-admin-custom-select" onchange="this.form.submit()">
@@ -81,9 +79,9 @@ foreach ($selectedCategories as $catId) {
             </div>
           </div>
 
-          <label class="text-sm text-neutral-600">
+          <label class="admin-toolbar-inline-label text-sm text-neutral-600">
             Show
-            <select name="per_page" class="config-input w-auto" onchange="this.form.submit()">
+            <select name="per_page" class="config-input w-auto js-admin-custom-select" onchange="this.form.submit()">
               <?php foreach ([10, 25, 50, 100] as $opt): ?>
                 <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
               <?php endforeach; ?>
@@ -93,83 +91,102 @@ foreach ($selectedCategories as $catId) {
         </div>
       </form>
 
-      <div class="view-toggle mt-4" role="group" aria-label="Layout mode">
-        <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'list']))) ?>" class="view-toggle-btn <?= $layout === 'list' ? 'is-active' : '' ?>">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-          List
-        </a>
-        <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'grid']))) ?>" class="view-toggle-btn <?= $layout === 'grid' ? 'is-active' : '' ?>">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
-          Grid
-        </a>
-      </div>
-
-      <?php if ($total > 0): ?>
-        <div class="mt-4 text-sm text-neutral-600">
-          Menampilkan <?= $startItem ?>–<?= $endItem ?> dari <?= $total ?> berita.
+      <div class="admin-toolbar-footer mt-4">
+        <div class="view-toggle" role="group" aria-label="Layout mode">
+          <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'list']))) ?>" class="view-toggle-btn <?= $layout === 'list' ? 'is-active' : '' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            List
+          </a>
+          <a href="?<?= $e(http_build_query(array_merge($filterParams, ['layout' => 'grid']))) ?>" class="view-toggle-btn <?= $layout === 'grid' ? 'is-active' : '' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+            Grid
+          </a>
         </div>
-      <?php endif; ?>
+
+        <?php if ($total > 0): ?>
+          <div class="admin-toolbar-summary text-sm text-neutral-600">
+            Menampilkan <?= $startItem ?>-<?= $endItem ?> dari <?= $total ?> berita.
+          </div>
+        <?php endif; ?>
+      </div>
     </section>
 
-    <!-- List Layout -->
     <?php if ($layout === 'list'): ?>
-      <section class="admin-card overflow-hidden p-0 mt-5">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>SL</th>
-              <th>News Title</th>
-              <th>News Short Content</th>
-              <th>Photo</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="admin-news-list" data-ssr="true">
-            <?php if (empty($items)): ?>
+      <section class="admin-card p-0 mt-5">
+        <div class="admin-data-table-wrap">
+          <table class="admin-table admin-data-table admin-data-table-news">
+            <colgroup>
+              <col class="admin-col-index">
+              <col class="admin-col-title">
+              <col class="admin-col-excerpt">
+              <col class="admin-col-image">
+              <col class="admin-col-meta">
+              <col class="admin-col-status">
+              <col class="admin-col-actions">
+            </colgroup>
+            <thead>
               <tr>
-                <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada berita.</td>
+                <th>No.</th>
+                <th>News Title</th>
+                <th>News Short Content</th>
+                <th>Photo</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            <?php else: ?>
-              <?php foreach ($items as $index => $item): ?>
+            </thead>
+            <tbody id="admin-news-list" data-ssr="true">
+              <?php if (empty($items)): ?>
                 <tr>
-                  <td><?= $startItem + $index ?></td>
-                  <td>
-                    <strong><?= $e($item['title']) ?></strong>
-                    <p class="mt-1 text-xs text-neutral-500"><?= $e(substr((string) ($item['date'] ?? ''), 0, 10)) ?></p>
-                  </td>
-                  <td>
-                    <p class="news-caption-cell"><?= $e($item['excerpt']) ?></p>
-                  </td>
-                  <td>
-                    <?php if (!empty($item['photo'])): ?>
-                      <img src="<?= $e($item['photo']) ?>" class="table-thumb" alt="<?= $e($item['title']) ?>" onerror="this.style.display='none'">
-                    <?php else: ?>
-                      <span class="text-neutral-400">-</span>
-                    <?php endif; ?>
-                  </td>
-                  <td><span class="cms-pill"><?= $e($item['category']) ?></span></td>
-                  <td>
-                    <span class="status-pill <?= $e(strtolower($item['status'] ?? 'draft')) ?>">
-                      <?= $e(ucfirst($item['status'] ?? 'draft')) ?>
-                    </span>
-                  </td>
-                  <td>
-                    <div class="flex gap-2">
-                      <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">Edit</a>
-                      <button class="btn btn-danger btn-sm" data-delete-news="<?= (int) $item['id'] ?>">Delete</button>
-                    </div>
-                  </td>
+                  <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada berita.</td>
                 </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
-        </table>
+              <?php else: ?>
+                <?php foreach ($items as $index => $item): ?>
+                  <tr>
+                    <td class="admin-cell-index"><?= $startItem + $index ?></td>
+                    <td class="admin-cell-title">
+                      <div class="admin-table-title">
+                        <strong><?= $e($item['title']) ?></strong>
+                        <p><?= $e(substr((string) ($item['date'] ?? ''), 0, 10)) ?></p>
+                      </div>
+                    </td>
+                    <td class="admin-cell-excerpt">
+                      <p class="admin-table-copy news-caption-cell"><?= $e($item['excerpt']) ?></p>
+                    </td>
+                    <td class="admin-cell-thumb">
+                      <?php if (!empty($item['photo'])): ?>
+                        <img src="<?= $e($item['photo']) ?>" class="table-thumb" alt="<?= $e($item['title']) ?>" onerror="this.style.display='none'">
+                      <?php else: ?>
+                        <span class="admin-thumb-placeholder">No image</span>
+                      <?php endif; ?>
+                    </td>
+                    <td class="admin-cell-meta"><span class="cms-pill"><?= $e($item['category']) ?></span></td>
+                    <td class="admin-cell-status">
+                      <span class="status-pill <?= $e(strtolower($item['status'] ?? 'draft')) ?>">
+                        <?= $e(ucfirst($item['status'] ?? 'draft')) ?>
+                      </span>
+                    </td>
+                    <td class="admin-cell-actions">
+                      <div class="admin-table-actions">
+                        <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">
+                          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                          Edit
+                        </a>
+                        <button class="btn btn-danger btn-sm" data-delete-news="<?= (int) $item['id'] ?>">
+                          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.5 5.5h11M8 5.5V4.25A1.25 1.25 0 0 1 9.25 3h1.5A1.25 1.25 0 0 1 12 4.25V5.5m-5.5 0 .5 10A1.25 1.25 0 0 0 8.25 16.75h3.5A1.25 1.25 0 0 0 13 15.5l.5-10M8.5 8.25v5M11.5 8.25v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </section>
     <?php endif; ?>
 
-    <!-- Grid Layout -->
     <?php if ($layout === 'grid'): ?>
       <div class="admin-news-grid mt-5" id="admin-news-list" data-ssr="true">
         <?php if (empty($items)): ?>
@@ -191,8 +208,14 @@ foreach ($selectedCategories as $catId) {
                   <span class="text-xs text-neutral-500"><?= $e(substr((string) ($item['date'] ?? ''), 0, 10)) ?></span>
                 </div>
                 <div class="admin-news-card-actions">
-                  <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">Edit</a>
-                  <button class="btn btn-danger btn-sm" data-delete-news="<?= (int) $item['id'] ?>">Delete</button>
+                  <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    Edit
+                  </a>
+                  <button class="btn btn-danger btn-sm" data-delete-news="<?= (int) $item['id'] ?>">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.5 5.5h11M8 5.5V4.25A1.25 1.25 0 0 1 9.25 3h1.5A1.25 1.25 0 0 1 12 4.25V5.5m-5.5 0 .5 10A1.25 1.25 0 0 0 8.25 16.75h3.5A1.25 1.25 0 0 0 13 15.5l.5-10M8.5 8.25v5M11.5 8.25v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Delete
+                  </button>
                 </div>
               </div>
             </article>
@@ -201,7 +224,6 @@ foreach ($selectedCategories as $catId) {
       </div>
     <?php endif; ?>
 
-    <!-- Pagination -->
     <?php if ($totalPages > 1): ?>
       <nav class="admin-pagination mt-5" aria-label="Pagination berita" data-ssr="true">
         <?php if ($page > 1): ?>

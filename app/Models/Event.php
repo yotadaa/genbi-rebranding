@@ -19,7 +19,7 @@ final class Event
         }
 
         try {
-            $sql = 'SELECT * FROM tbl_event WHERE 1=1';
+            $sql = 'SELECT * FROM tbl_event WHERE ' . $this->buildPublicVisibilityWhere();
             $params = [];
 
             if (!empty($filters['q'])) {
@@ -49,7 +49,7 @@ final class Event
         }
 
         try {
-            $sql = 'SELECT COUNT(*) FROM tbl_event WHERE 1=1';
+            $sql = 'SELECT COUNT(*) FROM tbl_event WHERE ' . $this->buildPublicVisibilityWhere();
             $params = [];
 
             if (!empty($filters['q'])) {
@@ -77,6 +77,24 @@ final class Event
             $stmt->bindValue(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ? self::mapRow($row) : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public function findPublicById(int $id): ?array
+    {
+        if (!$this->db) {
+            return null;
+        }
+
+        try {
+            $statement = $this->db->prepare('SELECT * FROM tbl_event WHERE event_id = :id AND ' . $this->buildPublicVisibilityWhere() . ' LIMIT 1');
+            $statement->bindValue(':id', $id, PDO::PARAM_INT);
+            $statement->execute();
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
 
             return $row ? self::mapRow($row) : null;
         } catch (Throwable) {
@@ -250,5 +268,44 @@ final class Event
         }
 
         return $end >= strtotime('today') ? 'Upcoming' : 'Past Event';
+    }
+
+    private function buildPublicVisibilityWhere(): string
+    {
+        $conditions = ['1=1'];
+
+        // Legacy databases may still be missing publishing columns, so public
+        // visibility only depends on the constraints that exist locally.
+        if ($this->hasColumn('deleted_at')) {
+            $conditions[] = 'deleted_at IS NULL';
+        }
+        if ($this->hasColumn('status')) {
+            $conditions[] = "status = 'published'";
+        } elseif ($this->hasColumn('published')) {
+            $conditions[] = 'published = 1';
+        }
+
+        return implode(' AND ', $conditions);
+    }
+
+    private function hasColumn(string $column): bool
+    {
+        static $columns = null;
+        if ($columns === null) {
+            try {
+                $statement = $this->db?->query('DESCRIBE tbl_event');
+                $columns = $statement ? array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'Field') : [];
+            } catch (Throwable) {
+                try {
+                    $statement = $this->db?->query('PRAGMA table_info(tbl_event)');
+                    $rows = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+                    $columns = array_column($rows, 'name');
+                } catch (Throwable) {
+                    $columns = [];
+                }
+            }
+        }
+
+        return in_array($column, $columns, true);
     }
 }
