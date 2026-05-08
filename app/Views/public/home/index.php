@@ -44,21 +44,22 @@ $programs = $programs ?? [];
             $images = $program['images'] ?? [];
             $firstImage = $images[0]['url'] ?? 'https://genbijambi.com/public/uploads/slider-1.png';
             ?>
-            <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program <?= $index + 1 ?> dari <?= count($programs) ?>" data-program-slides="<?= $e(json_encode(array_values(array_map(static fn(array $image): string => (string) ($image['url'] ?? ''), $images)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]') ?>">
-              <div class="program-slide-media">
-                <img src="<?= $e($firstImage) ?>" alt="<?= $e($program['name'] ?? 'Program Utama') ?>" class="program-slide-image is-active" loading="lazy" />
-              </div>
-              <div class="program-slide-overlay"></div>
-              <div class="program-slide-content">
-                <span class="slide-index"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
-                <span class="program-icon program-hero-icon" data-program-icon="<?= $e($program['icon_key'] ?? 'sparkles') ?>"></span>
-                <p class="slide-kicker"><?= $e($program['title'] ?? '') ?></p>
-                <h3><?= $e($program['name'] ?? '') ?></h3>
-                <p><?= $e($program['description'] ?? '') ?></p>
-                <?php if (!empty($program['focus'])): ?>
-                  <span class="program-focus-badge mt-5"><?= $e($program['focus']) ?></span>
-                <?php endif; ?>
-              </div>
+            <article
+              class="editorial-slide-card program-slide-card"
+              role="group"
+              aria-roledescription="slide"
+              aria-label="Program <?= $index + 1 ?> dari <?= count($programs) ?>"
+              data-program-slides="<?= $e(json_encode(array_values(array_map(static fn(array $image): string => (string) ($image['url'] ?? ''), $images)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]') ?>"
+              style="--program-bg-image: url('<?= $e($firstImage) ?>');"
+            >
+              <span class="slide-index"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
+              <span class="program-icon mx-auto" data-program-icon="<?= $e($program['icon_key'] ?? 'sparkles') ?>"></span>
+              <p class="slide-kicker"><?= $e($program['title'] ?? '') ?></p>
+              <h3><?= $e($program['name'] ?? '') ?></h3>
+              <p><?= $e($program['description'] ?? '') ?></p>
+              <?php if (!empty($program['focus'])): ?>
+                <span class="blue-badge mx-auto mt-5"><?= $e($program['focus']) ?></span>
+              <?php endif; ?>
             </article>
           <?php endforeach; ?>
         <?php endif; ?>

@@ -77,18 +77,15 @@ function renderPrograms() {
 
   root.innerHTML = programs.map((program, index) => {
     const images = Array.isArray(program.images) && program.images.length ? program.images : [site.heroSlides[0]?.image || 'https://genbijambi.com/public/uploads/slider-1.png'];
+    const focusBadge = program.focus ? `<span class="blue-badge mx-auto mt-5">${program.focus}</span>` : '';
     return `
-      <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program ${index + 1} dari ${programs.length}" data-program-slides='${JSON.stringify(images)}'>
-        <div class="program-slide-media"><img src="${images[0]}" alt="${program.name}" class="program-slide-image is-active" loading="lazy" /></div>
-        <div class="program-slide-overlay"></div>
-        <div class="program-slide-content">
-          <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
-          <span class="program-icon program-hero-icon">${window.GenBIApp.icon(program.icon_key || 'sparkles')}</span>
-          <p class="slide-kicker">${program.title}</p>
-          <h3>${program.name}</h3>
-          <p>${program.description}</p>
-          <span class="program-focus-badge mt-5">${program.focus}</span>
-        </div>
+      <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program ${index + 1} dari ${programs.length}" data-program-slides='${JSON.stringify(images)}' style="--program-bg-image: url('${images[0]}');">
+        <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
+        <span class="program-icon mx-auto">${window.GenBIApp.icon(program.icon_key || 'sparkles')}</span>
+        <p class="slide-kicker">${program.title}</p>
+        <h3>${program.name}</h3>
+        <p>${program.description}</p>
+        ${focusBadge}
       </article>
     `;
   }).join('');
@@ -102,26 +99,21 @@ function hydrateProgramCards(root) {
       const iconKey = iconTarget.dataset.programIcon || 'sparkles';
       iconTarget.innerHTML = window.GenBIApp.icon(iconKey);
     } else {
-      const existingIcon = card.querySelector('.program-hero-icon');
+      const existingIcon = card.querySelector('.program-icon');
       if (existingIcon && !existingIcon.innerHTML.trim()) {
         existingIcon.innerHTML = window.GenBIApp.icon('sparkles');
       }
     }
 
     const slides = JSON.parse(card.dataset.programSlides || '[]').filter(Boolean);
-    const media = card.querySelector('.program-slide-media');
-    if (!media || slides.length <= 1) return;
-
-    media.innerHTML = slides.map((slide, index) => `
-      <img src="${slide}" alt="" class="program-slide-image ${index === 0 ? 'is-active' : ''}" loading="lazy" />
-    `).join('');
+    if (!slides.length) return;
+    card.style.setProperty('--program-bg-image', `url('${slides[0]}')`);
+    if (slides.length <= 1) return;
 
     let active = 0;
     window.setInterval(() => {
-      const images = media.querySelectorAll('.program-slide-image');
-      if (images.length <= 1) return;
-      active = (active + 1) % images.length;
-      images.forEach((image, index) => image.classList.toggle('is-active', index === active));
+      active = (active + 1) % slides.length;
+      card.style.setProperty('--program-bg-image', `url('${slides[active]}')`);
     }, 4200);
   });
 }
