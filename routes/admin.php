@@ -11,6 +11,7 @@ use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\FeatureController as AdminFeatureController;
+use App\Controllers\Admin\ContactSettingController as AdminContactSettingController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
@@ -23,6 +24,7 @@ use App\Middleware\CsrfMiddleware;
 /** @var PrestasiTokenController $adminPrestasiTokenController */
 /** @var AdminTeamMemberController $adminTeamMemberController */
 /** @var AdminFeatureController $adminFeatureController */
+/** @var AdminContactSettingController $adminContactSettingController */
 /** @var AuthMiddleware $authMiddleware */
 /** @var CsrfMiddleware $csrfMiddleware */
 
@@ -44,6 +46,7 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $adminPrestasiTokenController,
     $adminTeamMemberController,
     $adminFeatureController,
+    $adminContactSettingController,
 ) {
     // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
@@ -97,6 +100,10 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $router->post('/admin/features/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->delete($request, $response, $params));
     $router->post('/admin/features/{id}/images/reorder', static fn(Request $request, Response $response, array $params) => $adminFeatureController->reorderImages($request, $response, $params));
     $router->post('/admin/features/{id}/images/{imageId}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->deleteImage($request, $response, $params));
+
+    // Contact settings
+    $router->get('/admin/contact-setting', static fn(Request $request, Response $response) => $adminContactSettingController->show($request, $response));
+    $router->post('/admin/contact-setting', static fn(Request $request, Response $response) => $adminContactSettingController->update($request, $response));
 
     // Catch-all for static admin pages (must be last)
     $router->get('/admin/{page}', static fn(Request $request, Response $response, array $params) => $adminPageController->show($request, $response, $params));

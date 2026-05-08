@@ -14,6 +14,7 @@ use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
+use App\Controllers\Public\ContactController;
 use App\Controllers\Public\PrestasiController;
 use App\Controllers\Public\SitemapController;
 use App\Controllers\Public\EventController;
@@ -35,6 +36,7 @@ use App\Models\PrestasiToken;
 use App\Models\Event;
 use App\Models\Feature;
 use App\Models\TeamMember;
+use App\Models\ContactSetting;
 
 spl_autoload_register(static function (string $class): void {
     $prefix = 'App\\';
@@ -67,6 +69,7 @@ $prestasiModel = null;
 $tokenModel = null;
 $teamModel = null;
 $featureModel = null;
+$contactSettingModel = null;
 
 try {
     $db = \App\Core\Database::connection();
@@ -77,6 +80,7 @@ try {
     $eventModel = new Event($db);
     $teamModel = new TeamMember($db);
     $featureModel = new Feature($db);
+    $contactSettingModel = new ContactSetting($db);
 } catch (\Throwable $exception) {
     error_log('[GenBI DB] ' . $exception->getMessage());
     $newsModel = null;
@@ -86,9 +90,11 @@ try {
     $eventModel = null;
     $teamModel = null;
     $featureModel = null;
+    $contactSettingModel = null;
 }
 
 $pageController = new PageController($renderer);
+$contactController = new ContactController($viewRenderer, $contactSettingModel);
 $homeController = new HomeController($renderer, $featureModel, $viewRenderer);
 $newsController = new NewsController($renderer, $newsModel, $viewRenderer);
 $commentController = new CommentController($newsModel, $commentModel);
@@ -109,6 +115,7 @@ $adminPrestasiController = new AdminPrestasiController($prestasiModel);
 $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
 $adminTeamMemberController = new AdminTeamMemberController($teamModel);
 $adminFeatureController = new \App\Controllers\Admin\FeatureController($featureModel);
+$adminContactSettingController = new \App\Controllers\Admin\ContactSettingController($contactSettingModel);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';

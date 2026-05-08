@@ -10,12 +10,14 @@ use App\Controllers\Public\FeedController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
+use App\Controllers\Public\ContactController;
 use App\Controllers\Public\PrestasiController;
 use App\Controllers\Public\SitemapController;
 use App\Controllers\Public\TeamController;
 use App\Middleware\CsrfMiddleware;
 
 /** @var PageController $pageController */
+/** @var ContactController $contactController */
 /** @var HomeController $homeController */
 /** @var TeamController $teamController */
 /** @var PrestasiController $prestasiController */
@@ -35,7 +37,7 @@ $router->get('/prestasi/submit/{token}', static fn(Request $request, Response $r
 $router->get('/prestasi/{slug}', static fn(Request $request, Response $response, array $params) => $prestasiController->show($request, $response, $params));
 $router->get('/event', static fn(Request $request, Response $response) => $eventController->index($request, $response));
 $router->get('/event/{id}', static fn(Request $request, Response $response, array $params) => $eventController->show($request, $response, $params));
-$router->get('/contact', static fn(Request $request, Response $response) => $pageController->show($request, $response, 'contact.html'));
+$router->get('/contact', static fn(Request $request, Response $response) => $contactController->index($request, $response));
 $router->get('/news', static fn(Request $request, Response $response) => $newsController->index($request, $response));
 $router->get('/news/id/{id}', static fn(Request $request, Response $response, array $params) => $newsController->legacyShow($request, $response, $params));
 $router->get('/news/{slug}/comments', static fn(Request $request, Response $response, array $params) => $commentController->index($request, $response, $params));

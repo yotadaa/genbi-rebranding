@@ -72,6 +72,8 @@
       featureDelete: { clean: '/admin/features/{id}/delete' },
       featureImageDelete: { clean: '/admin/features/{id}/images/{imageId}/delete' },
       featureImageReorder: { clean: '/admin/features/{id}/images/reorder' },
+      contactSetting: { clean: '/admin/contact-setting' },
+      contactSettingUpdate: { clean: '/admin/contact-setting' },
     },
   };
 

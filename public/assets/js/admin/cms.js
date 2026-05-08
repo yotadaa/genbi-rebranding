@@ -1281,6 +1281,29 @@
     const label = form.querySelector('#feature-icon-label');
     if (!picker || !button || !menu || !label) return;
 
+    const closeAdminSelectMenus = () => {
+      document.querySelectorAll('.admin-select-button[aria-expanded="true"]').forEach((openButton) => openButton.click());
+    };
+    const closeAllFeatureMenus = () => {
+      document.querySelectorAll('.feature-icon-picker.is-open').forEach((openPicker) => {
+        openPicker.classList.remove('is-open');
+        openPicker.querySelector('.feature-icon-menu')?.classList.add('hidden');
+        openPicker.querySelector('.feature-icon-button')?.setAttribute('aria-expanded', 'false');
+      });
+    };
+    const closeMenu = () => {
+      picker.classList.remove('is-open');
+      menu.classList.add('hidden');
+      button.setAttribute('aria-expanded', 'false');
+    };
+    const openMenu = () => {
+      closeAdminSelectMenus();
+      closeAllFeatureMenus();
+      picker.classList.add('is-open');
+      menu.classList.remove('hidden');
+      button.setAttribute('aria-expanded', 'true');
+    };
+
     if (!menu.children.length) {
       menu.innerHTML = programIconChoices.map((iconKey) => `
         <button type="button" class="feature-icon-option ${picker.dataset.selectedIcon === iconKey ? 'is-active' : ''}" data-icon-key="${iconKey}">
@@ -1299,15 +1322,22 @@
       menu.querySelectorAll('[data-icon-key]').forEach((option) => option.classList.toggle('is-active', option.dataset.iconKey === iconKey));
     };
 
-    button.addEventListener('click', () => menu.classList.toggle('hidden'));
+    button.setAttribute('aria-expanded', 'false');
+    menu.classList.add('hidden');
+    picker.classList.remove('is-open');
+
+    button.addEventListener('click', () => (menu.classList.contains('hidden') ? openMenu() : closeMenu()));
     menu.addEventListener('click', (event) => {
       const option = event.target.closest('[data-icon-key]');
       if (!option) return;
       updateSelection(option.dataset.iconKey || 'sparkles');
-      menu.classList.add('hidden');
+      closeMenu();
     });
     document.addEventListener('click', (event) => {
-      if (!picker.contains(event.target)) menu.classList.add('hidden');
+      if (!picker.contains(event.target)) closeMenu();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
     });
     updateSelection(picker.dataset.selectedIcon || 'sparkles');
   }
