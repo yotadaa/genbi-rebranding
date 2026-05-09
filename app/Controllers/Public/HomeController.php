@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\Feature;
+use App\Models\News;
 use App\Services\SeoService;
 use App\Services\StructuredData;
 
@@ -17,6 +18,7 @@ final class HomeController
     public function __construct(
         private StaticPageRenderer $renderer,
         private ?Feature $featureModel = null,
+        private ?News $newsModel = null,
         private ?ViewRenderer $viewRenderer = null,
     ) {
     }
@@ -30,6 +32,7 @@ final class HomeController
         if ($this->viewRenderer instanceof ViewRenderer && $this->featureModel instanceof Feature) {
             $html = $this->viewRenderer->renderWithLayout('public/home/index.php', 'layouts/public.php', [
                 'programs' => $this->featureModel?->homeVisible(12) ?? [],
+                'latestNews' => $this->newsModel?->paginate([], 3, 0) ?? [],
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-home',

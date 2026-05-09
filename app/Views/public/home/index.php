@@ -1,5 +1,6 @@
 <?php
 $programs = $programs ?? [];
+$latestNews = $latestNews ?? [];
 ?>
 <section class="hero-bg hero-section-compact relative overflow-hidden bg-blue-950 text-white">
   <div id="hero-slider" class="absolute inset-0"></div>
@@ -113,7 +114,23 @@ $programs = $programs ?? [];
       </div>
       <a data-transition href="/news" class="btn btn-secondary w-fit">Lihat semua berita</a>
     </div>
-    <div class="fade-up" id="home-news"></div>
+    <div class="fade-up" id="home-news"<?= $latestNews !== [] ? ' data-ssr="true"' : '' ?>>
+      <?php if ($latestNews !== []): ?>
+        <?php foreach ($latestNews as $item): ?>
+          <a data-transition href="<?= $e('/news/' . ($item['slug'] ?? '')) ?>" class="home-news-card">
+            <figure class="home-news-media"><img src="<?= $e((string) ($item['image'] ?? '')) ?>" alt="<?= $e((string) ($item['title'] ?? 'Berita GenBI')) ?>" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>
+            <div class="home-news-copy">
+              <div class="flex flex-wrap items-center gap-3 text-xs font-semibold text-neutral-500">
+                <span class="text-blue-800"><?= $e((string) ($item['category'] ?? 'Berita GenBI')) ?></span>
+                <span><?= $e(!empty($item['date']) ? date('d M Y', strtotime((string) $item['date'])) : '-') ?></span>
+              </div>
+              <h3 class="serif text-2xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-3xl"><?= $e((string) ($item['title'] ?? 'Berita GenBI')) ?></h3>
+              <p class="text-base leading-7 text-neutral-600"><?= $e((string) ($item['excerpt'] ?? '')) ?></p>
+            </div>
+          </a>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
   </div>
 </section>
 

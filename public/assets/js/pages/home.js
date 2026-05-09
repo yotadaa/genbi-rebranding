@@ -192,6 +192,8 @@ function renderHomeContact() {
 
 function renderHomeNews() {
   const root = document.querySelector('#home-news');
+  if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
   root.innerHTML = news.slice(0, 3).map((item) => `
     <a data-transition href="${newsDetailUrl(item)}" class="home-news-card">
       <figure class="home-news-media"><img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>
