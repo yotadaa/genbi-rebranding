@@ -715,8 +715,17 @@
         const url = await uploadNewsImageFile(file);
 
         if (urlInput) urlInput.value = url;
-        const preview = document.querySelector('.config-preview');
-        if (preview && buttonSelector === '#news-photo-upload-btn') preview.src = url;
+        if (buttonSelector === '#news-photo-upload-btn') {
+          let preview = document.querySelector('.config-preview');
+          const empty = document.querySelector('.config-empty');
+          if (!preview && empty) {
+            preview = document.createElement('img');
+            preview.className = 'config-preview';
+            preview.alt = 'Featured photo';
+            empty.replaceWith(preview);
+          }
+          if (preview) preview.src = url;
+        }
         Admin.showToast('Gambar berhasil diupload.');
       } catch (err) {
         Admin.showToast(err.message || 'Gagal upload gambar.');
