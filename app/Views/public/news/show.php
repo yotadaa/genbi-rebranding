@@ -1,4 +1,5 @@
 <?php $item = $item ?? null; ?>
+<?php $comments = $comments ?? []; ?>
 <?php if (!$item): ?>
   <section class="bg-stone py-16">
     <div class="article-container text-sm text-neutral-600">Berita tidak ditemukan.</div>
@@ -68,7 +69,22 @@
             <p class="text-sm leading-6 text-neutral-500">Komentar akan tampil setelah disetujui admin.</p>
           </form>
           <div class="mt-7 grid gap-3" id="comments-list">
-            <div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>
+            <?php if (empty($comments)): ?>
+              <div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>
+            <?php else: ?>
+              <?php foreach ($comments as $comment): ?>
+                <article class="comment-item">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <h3><?= $e($comment['name'] ?? 'Pembaca') ?></h3>
+                      <p>Pembaca</p>
+                    </div>
+                    <span class="comment-status">Disetujui</span>
+                  </div>
+                  <p class="comment-text"><?= $e($comment['content'] ?? $comment['comment'] ?? '') ?></p>
+                </article>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </section>
       </div>

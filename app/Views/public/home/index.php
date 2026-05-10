@@ -72,7 +72,7 @@ $latestNews = $latestNews ?? [];
 <section class="bg-cream py-16 md:py-24">
   <div class="site-container">
     <div class="home-section-intro fade-up">
-      <p class="eyebrow">BPI Provinsi Jambi</p>
+      <p class="eyebrow">GenBI Provinsi Jambi</p>
       <h2 class="section-title mt-4">Wajah pengurus yang menjaga arah gerak organisasi.</h2>
       <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.</p>
       <a data-transition href="/team" class="btn btn-secondary mt-7">Lihat direktori anggota</a>
@@ -82,7 +82,7 @@ $latestNews = $latestNews ?? [];
         <button class="carousel-nav" data-carousel-prev aria-label="Anggota sebelumnya">‹</button>
         <button class="carousel-nav" data-carousel-next aria-label="Anggota berikutnya">›</button>
       </div>
-      <div class="horizontal-carousel bpi-carousel" id="bpi-list" aria-label="Daftar BPI Provinsi Jambi"></div>
+      <div class="horizontal-carousel bpi-carousel" id="bpi-list" aria-label="Daftar GenBI Provinsi Jambi"></div>
     </div>
   </div>
 </section>

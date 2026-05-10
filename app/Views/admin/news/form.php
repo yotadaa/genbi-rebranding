@@ -8,7 +8,6 @@ $content = $isEdit ? ($item['content'] ?? '') : '';
 $date = $isEdit ? substr((string) ($item['date'] ?? $item['published_at'] ?? ''), 0, 10) : date('Y-m-d');
 $categoryId = $isEdit ? ($item['category_id'] ?? 0) : 0;
 $photo = $isEdit ? ($item['photo'] ?? '') : '';
-$banner = $isEdit ? ($item['banner'] ?? '') : '';
 $pewarta = $isEdit ? ($item['contributor_pewarta'] ?? '') : '';
 $editor = $isEdit ? ($item['contributor_editor'] ?? '') : '';
 $metaTitle = $isEdit ? ($item['meta_title'] ?? '') : '';
@@ -80,7 +79,7 @@ $itemId = $isEdit ? (int) ($item['id'] ?? 0) : 0;
           </div>
         </section>
         <section class="config-card medium-config-card">
-          <h2>Photo and Banner</h2>
+          <h2>Featured Photo</h2>
           <?php if (!empty($photo)): ?>
             <img src="<?= $e($photo) ?>" class="config-preview" alt="Featured photo" />
           <?php else: ?>
@@ -89,9 +88,6 @@ $itemId = $isEdit ? (int) ($item['id'] ?? 0) : 0;
           <input id="news-photo-file" class="hidden" type="file" accept="image/*" />
           <button type="button" id="news-photo-upload-btn" class="btn btn-secondary w-full mt-2">Upload Featured Photo</button>
           <input class="config-input mt-2" id="news-photo-url" value="<?= $e($photo) ?>" placeholder="URL foto utama" />
-          <input id="news-banner-file" class="hidden" type="file" accept="image/*" />
-          <button type="button" id="news-banner-upload-btn" class="btn btn-secondary w-full mt-2">Upload Banner</button>
-          <input class="config-input mt-2" id="news-banner-url" value="<?= $e($banner) ?>" placeholder="URL banner" />
         </section>
         <section class="config-card medium-config-card">
           <h2>Contributors</h2>

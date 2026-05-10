@@ -136,18 +136,43 @@ class TeamMember
         }
 
         try {
+            $yearStmt = $this->db->query('SELECT MAX(CAST(tahun AS UNSIGNED)) FROM teams WHERE deleted_at IS NULL');
+            $latestYear = (int) $yearStmt->fetchColumn();
+            if ($latestYear < 1) {
+                return [];
+            }
+
+            $manualStmt = $this->db->prepare(
+                "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM teams t
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE t.deleted_at IS NULL
+                   AND CAST(t.tahun AS UNSIGNED) = :year
+                   AND t.show_on_home = 1
+                 ORDER BY t.home_sort_order ASC, t.id ASC
+                 LIMIT :limit"
+            );
+            $manualStmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
+            $manualStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $manualStmt->execute();
+            $manualRows = $manualStmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($manualRows !== []) {
+                return array_map([self::class, 'mapRow'], $manualRows);
+            }
+
             $stmt = $this->db->prepare(
                 "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                  WHERE t.deleted_at IS NULL
-                    AND (t.show_on_home = 1
-                      OR LOWER(COALESCE(d.nama, t.designation, '')) LIKE '%badan pengurus inti%'
-                      OR LOWER(COALESCE(t.designation, '')) REGEXP 'ketua|sekretaris|bendahara|koordinator')
-                  ORDER BY t.show_on_home DESC, t.home_sort_order ASC, t.tahun DESC, t.id ASC
-                  LIMIT :limit"
+                 WHERE t.deleted_at IS NULL
+                   AND CAST(t.tahun AS UNSIGNED) = :year
+                   AND LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%'
+                 ORDER BY t.home_sort_order ASC, t.id ASC
+                 LIMIT :limit"
             );
+            $stmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
 

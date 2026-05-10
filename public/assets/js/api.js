@@ -70,28 +70,20 @@
 
   async function getNewsComments(news) {
     const slug = news?.slug || news?.id;
-    const fallbackComments = [
-      { id: 1, name: 'Rina Aprilianti', role: 'Mahasiswa', status: 'Disetujui', text: 'Beritanya membantu memahami kegiatan GenBI Jambi dengan lebih ringkas.' },
-      { id: 2, name: 'Dimas Pratama', role: 'Anggota GenBI', status: 'Pending', text: 'Dokumentasi kegiatan bisa ditambah pada pembaruan berikutnya.' },
-      { id: 3, name: 'Aulia Rahman', role: 'Pembaca', status: 'Approved', text: 'Semoga agenda serupa makin sering hadir untuk mahasiswa Jambi.' },
-    ];
     return withFallback(
       async () => Core.normalizeApprovedComments(await requestJson(Core.routeUrl('public.newsComments', { slug }))),
-      () => Core.normalizeApprovedComments(fallbackComments)
+      () => []
     );
   }
 
   async function submitNewsComment(news, payload) {
     const slug = news?.slug || news?.id;
     const body = Core.createCommentPayload(payload);
-    return withFallback(
-      async () => requestJson(Core.routeUrl('public.newsCommentStore', { slug }), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }),
-      () => ({ ok: true, mode: 'fallback', message: 'Komentar masuk antrean moderasi.' })
-    );
+    return requestJson(Core.routeUrl('public.newsCommentStore', { slug }), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
   }
 
   async function getPrestasiList(filters = {}) {

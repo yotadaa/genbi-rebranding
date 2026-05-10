@@ -131,65 +131,302 @@
 
   function closeActiveSelect() {
     if (!activeOverlay) return;
-    activeOverlay.menu.classList.add('hidden');
-    activeOverlay.button.setAttribute('aria-expanded', 'false');
+    if (typeof activeOverlay.close === 'function') {
+      activeOverlay.close();
+      return;
+    }
+    activeOverlay.menu?.classList?.add('hidden');
+    activeOverlay.button?.setAttribute?.('aria-expanded', 'false');
     activeOverlay = null;
+  }
+
+  function getPortalTarget(portalTarget) {
+    if (portalTarget === false || typeof document === 'undefined') return null;
+    if (!portalTarget) return document.body;
+    if (typeof portalTarget === 'string') return document.querySelector(portalTarget);
+    return portalTarget;
+  }
+
+  function positionFloatingMenu(button, menu, options = {}) {
+    if (!button || !menu) return;
+
+    const { offset = 6 } = options;
+    const rect = button.getBoundingClientRect();
+    const maxMenuHeight = Math.min(320, window.innerHeight - 24);
+    const spaceBelow = window.innerHeight - rect.bottom - offset;
+    const spaceAbove = rect.top - offset;
+    const estimatedHeight = Math.min(maxMenuHeight, Math.max(48, menu.scrollHeight || 180));
+    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const height = Math.max(120, Math.min(maxMenuHeight, openUp ? spaceAbove : spaceBelow));
+    const top = openUp
+      ? rect.top + window.scrollY - Math.min(estimatedHeight, spaceAbove) - offset
+      : rect.bottom + window.scrollY + offset;
+
+    menu.style.left = `${rect.left + window.scrollX}px`;
+    menu.style.top = `${top}px`;
+    menu.style.width = `${rect.width}px`;
+    menu.style.maxHeight = `${height}px`;
+    menu.style.setProperty('--select-button-width', `${rect.width}px`);
+  }
+
+  function createDropdownController({
+    root,
+    button,
+    menu,
+    portalTarget = false,
+    offset = 6,
+    onOpen,
+    onClose,
+  } = {}) {
+    if (!root || !button || !menu) return null;
+
+    let isOpen = false;
+    const portal = getPortalTarget(portalTarget);
+
+    const contains = (node) => {
+      if (!node) return false;
+      return root.contains(node) || menu.contains(node);
+    };
+
+    const syncPosition = () => {
+      if (!portal || !isOpen) return;
+      positionFloatingMenu(button, menu, { offset });
+    };
+
+    const close = () => {
+      if (!isOpen) return;
+      isOpen = false;
+      menu.classList.add('hidden');
+      button.setAttribute('aria-expanded', 'false');
+      if (activeOverlay === api) activeOverlay = null;
+      onClose?.();
+    };
+
+    const open = () => {
+      if (activeOverlay && activeOverlay !== api && typeof activeOverlay.close === 'function') {
+        activeOverlay.close();
+      }
+      if (portal && menu.parentNode !== portal) {
+        portal.appendChild(menu);
+      }
+      isOpen = true;
+      syncPosition();
+      menu.classList.remove('hidden');
+      button.setAttribute('aria-expanded', 'true');
+      activeOverlay = api;
+      onOpen?.();
+    };
+
+    const toggle = () => {
+      if (isOpen) {
+        close();
+        return;
+      }
+      open();
+    };
+
+    const api = {
+      button,
+      close,
+      contains,
+      isOpen: () => isOpen,
+      menu,
+      open,
+      root,
+      syncPosition,
+      toggle,
+    };
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggle();
+    });
+
+    button.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+      }
+    });
+
+    return api;
+  }
+
+  function enhanceNativeSelect(select, options = {}) {
+    if (!select || select.dataset.customSelectReady === '1') return null;
+
+    const {
+      buttonClass = 'select-button',
+      iconHtml = '<span aria-hidden="true">⌄</span>',
+      menuClass = 'select-menu',
+      offset = 6,
+      portal = false,
+      wrapperClass = 'custom-select custom-select-root',
+    } = options;
+
+    select.dataset.customSelectReady = '1';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = wrapperClass;
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = buttonClass;
+    button.setAttribute('aria-expanded', 'false');
+    button.innerHTML = `<span></span>${iconHtml}`;
+
+    const menu = document.createElement('div');
+    menu.className = `${menuClass} hidden`;
+
+    const updateButtonLabel = () => {
+      const text = select.options[select.selectedIndex]?.text || 'Pilih';
+      button.querySelector('span').textContent = text;
+    };
+
+    const controller = createDropdownController({
+      root: wrapper,
+      button,
+      menu,
+      offset,
+      portalTarget: portal ? document.body : false,
+    });
+
+    const buildOptions = () => {
+      menu.innerHTML = '';
+      Array.from(select.options).forEach((option) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.dataset.value = option.value;
+        item.textContent = option.text;
+        item.classList.toggle('is-active', option.selected);
+        item.addEventListener('click', () => {
+          select.value = option.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          updateButtonLabel();
+          menu.querySelectorAll('button').forEach((entry) => {
+            entry.classList.toggle('is-active', entry === item);
+          });
+          controller?.close();
+        });
+        menu.appendChild(item);
+      });
+    };
+
+    wrapper.appendChild(button);
+    if (!portal) {
+      wrapper.appendChild(menu);
+    }
+
+    buildOptions();
+    updateButtonLabel();
+
+    return {
+      button,
+      controller,
+      menu,
+      refresh() {
+        buildOptions();
+        updateButtonLabel();
+      },
+      select,
+      wrapper,
+    };
+  }
+
+  function enhanceNativeSelects(root = document, selector = 'select.js-admin-custom-select', options = {}) {
+    return Array.from(root.querySelectorAll(selector)).map((select) => enhanceNativeSelect(select, options));
   }
 
   function createCustomSelect(root, { label = 'Filter', options = [], value = 'Semua', onChange }) {
     if (!root) return null;
-    let current = value;
 
-    const render = () => {
-      root.classList.add('custom-select-root');
-      root.innerHTML = `
-        <div class="custom-select">
-          <button class="select-button" type="button" aria-expanded="false"><span>${current}</span><span>⌄</span></button>
-          <div class="select-menu hidden">
-            ${options.map((option) => `<button type="button" class="${option === current ? 'is-active' : ''}" data-value="${option}">${option}</button>`).join('')}
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      let current = value;
+
+      const render = () => {
+        root.classList.add('custom-select-root');
+        root.innerHTML = `
+          <div class="custom-select">
+            <button class="select-button" type="button" aria-expanded="false"><span>${current}</span><span>⌄</span></button>
+            <div class="select-menu hidden">
+              ${options.map((option) => `<button type="button" class="${option === current ? 'is-active' : ''}" data-value="${option}">${option}</button>`).join('')}
+            </div>
           </div>
-        </div>
-      `;
-      const button = root.querySelector('.select-button');
-      const menu = root.querySelector('.select-menu');
-      button.setAttribute('aria-label', label);
+        `;
+        const button = root.querySelector('.select-button');
+        const menu = root.querySelector('.select-menu');
+        button.setAttribute('aria-label', label);
 
-      button.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const willOpen = menu.classList.contains('hidden');
-        closeActiveSelect();
-        menu.classList.toggle('hidden', !willOpen);
-        button.setAttribute('aria-expanded', String(willOpen));
-        activeOverlay = willOpen ? { root, button, menu } : null;
-      });
-
-      button.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') closeActiveSelect();
-      });
-
-      menu.querySelectorAll('button').forEach((item) => {
-        item.addEventListener('click', () => {
-          current = item.dataset.value;
+        button.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const willOpen = menu.classList.contains('hidden');
           closeActiveSelect();
-          onChange?.(current);
-          render();
-          root.querySelector('.select-button')?.focus();
+          menu.classList.toggle('hidden', !willOpen);
+          button.setAttribute('aria-expanded', String(willOpen));
+          activeOverlay = willOpen ? { root, button, menu } : null;
         });
-      });
-    };
 
-    render();
-    return { close: closeActiveSelect };
+        button.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') closeActiveSelect();
+        });
+
+        menu.querySelectorAll('button').forEach((item) => {
+          item.addEventListener('click', () => {
+            current = item.dataset.value;
+            closeActiveSelect();
+            onChange?.(current);
+            render();
+            root.querySelector('.select-button')?.focus();
+          });
+        });
+      };
+
+      render();
+      return { close: closeActiveSelect };
+    }
+
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', label);
+    options.forEach((option) => {
+      const entry = document.createElement('option');
+      entry.value = option;
+      entry.textContent = option;
+      entry.selected = option === value;
+      select.appendChild(entry);
+    });
+
+    root.innerHTML = '';
+    root.appendChild(select);
+
+    const enhanced = enhanceNativeSelect(select, {
+      iconHtml: '<span aria-hidden="true">⌄</span>',
+      portal: false,
+      wrapperClass: 'custom-select custom-select-root',
+    });
+
+    select.addEventListener('change', () => onChange?.(select.value));
+
+    return {
+      close: closeActiveSelect,
+      refresh: enhanced?.refresh,
+      select,
+    };
   }
 
   if (typeof document !== 'undefined') {
     document.addEventListener('click', (event) => {
-      if (activeOverlay && !activeOverlay.root.contains(event.target)) closeActiveSelect();
+      if (activeOverlay && !activeOverlay.contains(event.target)) closeActiveSelect();
     });
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeActiveSelect();
     });
+
+    document.addEventListener('scroll', () => activeOverlay?.syncPosition?.(), true);
+    window.addEventListener('resize', () => activeOverlay?.syncPosition?.());
   }
 
   function unique(items) {
@@ -203,10 +440,14 @@
   return {
     closeActiveSelect,
     createCustomSelect,
+    createDropdownController,
     createModalController,
+    enhanceNativeSelect,
+    enhanceNativeSelects,
     getFocusable,
     lockBody,
     observeFadeUp,
+    positionFloatingMenu,
     safeImage,
     unique,
     unlockBody,

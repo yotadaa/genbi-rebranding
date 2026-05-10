@@ -5,9 +5,19 @@
   const Admin = window.GenBIAdmin;
   const API = window.GenBIAPI;
   const Core = window.GenBIAPICore;
+  const UI = window.GenBIUI;
   const { adminUrl } = window.GenBIApp;
+  const programIconChoices = Admin.programIconChoices || ['sparkles', 'users', 'bank', 'chart', 'academic', 'calendar', 'heart', 'news', 'grid'];
   const page = document.body.dataset.cmsPage || 'news';
   const mode = document.body.dataset.cmsMode || 'list';
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  if (csrfMeta && API && !API.getCsrfToken) {
+    API.getCsrfToken = () => csrfMeta;
+  }
+
+  function route(name, params = {}) {
+    return Core.routeUrl(name, params, window.location);
+  }
 
   const categories = [
     { id: 1, name: 'BANK INDONESIA', banner: 'https://genbijambi.com/public/uploads/banner-1.png' },
@@ -58,15 +68,22 @@
     comment: () => { Admin.renderAdminShell('comment'); renderCommentSetup(); },
     news: () => { Admin.renderAdminShell('news-list'); mode === 'editor' ? renderNewsEditor(false) : renderNewsList(); },
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
+    prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
+    'prestasi-add': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(false); },
+    'prestasi-edit': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(true); },
+    'prestasi-token': () => { Admin.renderAdminShell('prestasi'); renderPrestasiTokenList(); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
     feature: () => { Admin.renderAdminShell('feature'); mode === 'editor' ? renderFeatureEditor() : renderFeatureList(); },
+    'feature-edit': () => { Admin.renderAdminShell('feature'); renderFeatureEditor(); },
     why: () => { Admin.renderAdminShell('why'); mode === 'editor' ? renderWhyChooseEditor() : renderWhyChooseList(); },
     faq: () => { Admin.renderAdminShell('faq'); mode === 'editor' ? renderFaqEditor() : renderFaqList(); },
     social: () => { Admin.renderAdminShell('social'); renderSocialMedia(); },
     photo: () => { Admin.renderAdminShell('gallery'); mode === 'editor' ? renderPhotoEditor() : renderPhotoList(); },
   };
+
+  const teamSelection = new Set();
 
   (routes[page] || routes.news)();
 
@@ -87,6 +104,24 @@
       </section>
     `;
     return document.querySelector('#cms-body');
+  }
+
+  function selectControl({ id, options, value = '', className = 'config-input', attrs = '' }) {
+    return `<select class="${className} js-admin-custom-select" id="${id}" ${attrs}>${options.map((option) => {
+      const optionValue = typeof option === 'object' ? option.value : option;
+      const optionLabel = typeof option === 'object' ? option.label : option;
+      return `<option value="${escape(optionValue)}" ${String(optionValue) === String(value) ? 'selected' : ''}>${escape(optionLabel)}</option>`;
+    }).join('')}</select>`;
+  }
+
+  function enhanceAdminSelects(root = document) {
+    UI?.enhanceNativeSelects(root, 'select.js-admin-custom-select', {
+      buttonClass: 'admin-select-button',
+      iconHtml: Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-neutral-500'),
+      menuClass: 'admin-select-menu',
+      portal: true,
+      wrapperClass: 'admin-custom-select',
+    });
   }
 
   function renderLanguage() {
@@ -127,48 +162,202 @@
         </div>
       </section>
     `;
+    enhanceAdminSelects(body);
     bindDeleteButtons('Kategori akan dihapus dari daftar simulasi.');
   }
 
-  function renderNewsList() {
-    const body = renderShell('View News', 'Daftar berita tampil lebih bersih. Aksi hapus memakai custom confirmation modal.', `<a href="${adminUrl('news-add')}" class="btn btn-primary">Add News</a>`);
+  async function renderNewsList() {
+    // Check if SSR markup exists - if so, only bind delete behavior and multi-select
+    if (document.querySelector('#admin-news-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      bindNewsDeleteButtons();
+      bindAdminMultiSelect();
+      return;
+    }
+
+    const body = renderShell('View News', 'Daftar berita dari database. Aksi hapus memakai custom confirmation modal.', `<a href="${adminUrl('news-add')}" class="btn btn-primary">Add News</a>`);
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data berita...</div>';
+
+    let items = news; // fallback to static data
+    try {
+      const res = await fetch(route('admin.newsList'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = json.data || [];
+      }
+    } catch (e) { /* use fallback */ }
+
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         ${renderSearchToolbar('News')}
         <div class="admin-responsive-table mt-5">
           <table class="cms-table">
-            <thead><tr><th>SL</th><th>News Title</th><th>News Short Content</th><th>Photo</th><th>Category</th><th>Action</th></tr></thead>
-            <tbody>${news.map((item, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td><strong>${escape(item.title)}</strong><p class="mt-1 text-xs text-neutral-500">${item.date}</p></td>
-                <td><p class="news-caption-cell">${escape(item.excerpt)}</p></td>
-                <td><img src="${item.image}" class="table-thumb" alt="${escape(item.title)}" /></td>
-                <td><span class="cms-pill">${item.category}</span></td>
-                <td>
-                  <div class="flex gap-2"><a href="${adminUrl('news-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-delete>Delete</button></div>
-                </td>
-              </tr>
-            `).join('')}</tbody>
+            <thead><tr><th>SL</th><th>News Title</th><th>News Short Content</th><th>Photo</th><th>Category</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="news-tbody"></tbody>
           </table>
         </div>
+        <div class="admin-pagination mt-5" id="news-pagination" aria-label="Pagination berita"></div>
       </section>
     `;
-    bindDeleteButtons('Berita akan dihapus dari daftar simulasi.');
+    let currentPage = 1;
+    const allItems = items;
+    const renderPage = () => {
+      const search = (body.querySelector('.cms-search input')?.value || '').toLowerCase();
+      const perPage = Number(document.querySelector('#news-per-page')?.value) || 10;
+      const filtered = allItems.filter((item) => {
+        const title = (item.title || item.news_title || '').toLowerCase();
+        const excerpt = (item.excerpt || item.news_content_short || '').toLowerCase();
+        const category = (item.category || item.category_name || '').toLowerCase();
+        return !search || title.includes(search) || excerpt.includes(search) || category.includes(search);
+      });
+      const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+      currentPage = Math.min(currentPage, totalPages);
+      const start = (currentPage - 1) * perPage;
+      const pageItems = filtered.slice(start, start + perPage);
+      const tbody = document.querySelector('#news-tbody');
+      if (tbody) tbody.innerHTML = renderNewsRows(pageItems, start);
+      renderAdminPagination('#news-pagination', totalPages, currentPage, (page) => {
+        currentPage = page;
+        renderPage();
+      });
+      bindNewsDeleteButtons();
+    };
+    enhanceAdminSelects(body);
+    document.querySelector('#news-per-page')?.addEventListener('change', () => { currentPage = 1; renderPage(); });
+    body.querySelector('.cms-search input')?.addEventListener('input', () => { currentPage = 1; renderPage(); });
+    renderPage();
   }
 
-  function renderNewsEditor(isEdit) {
-    const id = Number(new URLSearchParams(location.search).get('id')) || 100;
-    const item = isEdit ? (news.find((entry) => entry.id === id) || news[0]) : {
+  function renderNewsRows(items, offset = 0) {
+    if (items.length === 0) {
+      return '<tr><td colspan="7" class="text-center text-neutral-500 py-8">Belum ada berita.</td></tr>';
+    }
+    return items.map((item, index) => `
+      <tr>
+        <td>${offset + index + 1}</td>
+        <td><strong>${escape(item.title || item.news_title || '')}</strong><p class="mt-1 text-xs text-neutral-500">${item.date || item.published_at || ''}</p></td>
+        <td><p class="news-caption-cell">${escape(item.excerpt || item.news_content_short || '')}</p></td>
+        <td>${item.photo ? `<img src="${item.photo.startsWith('http') || item.photo.startsWith('/') ? item.photo : 'https://genbijambi.com/public/uploads/' + item.photo}" class="table-thumb" alt="${escape(item.title || '')}" />` : '<span class="text-neutral-400">-</span>'}</td>
+        <td><span class="cms-pill">${escape(item.category || item.category_name || '')}</span></td>
+        <td><span class="cms-pill ${item.status === 'published' ? 'cms-pill-green' : item.status === 'draft' ? 'cms-pill-yellow' : ''}">${item.status || 'published'}</span></td>
+        <td>
+          <div class="flex gap-2"><a href="${adminUrl('news-edit')}?id=${item.id || item.news_id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-delete data-news-id="${item.id || item.news_id}">Delete</button></div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function bindNewsDeleteButtons() {
+    document.querySelectorAll('[data-delete][data-news-id], [data-delete-news]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.newsId || button.dataset.deleteNews;
+        const ok = await Admin.showConfirm({ title: 'Hapus berita?', message: 'Berita akan dihapus (soft delete). Data masih bisa dipulihkan.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.newsDelete', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Berita berhasil dihapus.');
+            button.closest('tr')?.remove();
+          } else {
+            Admin.showToast('Gagal menghapus berita.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal menghapus berita.');
+        }
+      });
+    });
+  }
+
+  async function renderNewsEditor(isEdit) {
+    const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+
+    // Check if SSR form markup exists - if so, hydrate instead of rebuilding
+    const ssrForm = document.querySelector('#news-editor-form[data-ssr="true"]');
+    if (ssrForm) {
+      const ssrIsEdit = ssrForm.dataset.edit === '1';
+      const ssrItemId = Number(ssrForm.dataset.itemId) || 0;
+      const ssrContent = document.querySelector('#editor-fallback article')?.innerHTML || '';
+      const ssrItem = {
+        id: ssrItemId,
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: ssrContent,
+      };
+      const editor = initMediumEditor(ssrItem, ssrIsEdit);
+      bindMediumEditorActions(editor);
+      bindNewsImageUploads();
+      enhanceAdminSelects(document.querySelector('#cms-body') || document);
+      bindNewsFormSubmit(ssrIsEdit, ssrItemId, editor);
+      return;
+    }
+
+    let item = {
       title: '',
       excerpt: '',
       body: [''],
-      date: '2026-05-05',
+      date: new Date().toISOString().slice(0, 10),
       category: 'BANK INDONESIA',
+      category_id: 4,
       image: '',
       author: 'Redaksi GenBI Jambi',
-      editor: 'Editor GenBI Jambi'
+      editor: 'Editor GenBI Jambi',
+      content: '',
+      meta_title: '',
+      meta_keyword: '',
+      meta_description: '',
+      contributor_pewarta: '',
+      contributor_editor: '',
     };
+
+    // Load from backend if editing
+    if (isEdit && id > 0) {
+      try {
+        const res = await fetch(route('admin.newsShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          const d = json.data || {};
+          item = {
+            ...item,
+            id: d.id || d.news_id,
+            title: d.title || d.news_title || '',
+            excerpt: d.excerpt || d.news_content_short || '',
+            content: d.content || d.news_content || '',
+            date: (d.date || d.published_at || '').slice(0, 10),
+            category: d.category || d.category_name || '',
+            category_id: d.category_id || 0,
+            image: d.photo || d.image || '',
+            author: d.contributor_pewarta || d.author || '',
+            editor: d.contributor_editor || d.editor || '',
+            meta_title: d.meta_title || '',
+            meta_keyword: d.meta_keyword || '',
+            meta_description: d.meta_description || '',
+            contributor_pewarta: d.contributor_pewarta || '',
+            contributor_editor: d.contributor_editor || '',
+          };
+        }
+      } catch (e) {
+        // Fallback to static data
+        const staticItem = news.find((entry) => entry.id === id) || news[0];
+        if (staticItem) item = { ...item, ...staticItem };
+      }
+    }
+
+    // Load categories from backend
+    let backendCategories = categories;
+    try {
+      const catRes = await fetch(route('admin.newsCategories'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (catRes.ok) {
+        const catJson = await catRes.json();
+        if (catJson.data && catJson.data.length > 0) {
+          backendCategories = catJson.data.map(c => ({ id: c.category_id, name: c.category_name }));
+        }
+      }
+    } catch (e) { /* use fallback */ }
     const body = renderShell(
       isEdit ? 'Edit News' : 'Add News',
       'Ruang tulis sekarang memakai Editor.js. Judul, paragraf, quote, list, dan gambar disusun sebagai blok seperti editor Medium.',
@@ -192,7 +381,7 @@
           </div>
           <div id="news-editor" class="medium-editor-host"></div>
           <div id="editor-fallback" class="editor-fallback hidden">
-            <article contenteditable="true">${(item.body || ['']).map((p) => `<p>${escape(p)}</p>`).join('')}</article>
+            <article contenteditable="true">${item.content || (item.body || ['']).map((p) => `<p>${escape(p)}</p>`).join('')}</article>
           </div>
           <p class="medium-editor-help">Tekan <strong>Enter</strong> untuk membuat blok baru. Sisipkan gambar di antara paragraf lewat tombol plus Editor.js atau panel kanan.</p>
         </main>
@@ -207,24 +396,35 @@
             <button type="button" id="insert-image-url" class="btn btn-primary w-full mt-2">Insert Image URL</button>
             <input id="inline-image-file" class="hidden" type="file" accept="image/*" />
             <button type="button" id="insert-image-file" class="btn btn-secondary w-full mt-2">Upload Image Block</button>
+            <p id="news-inline-upload-status" class="config-hint mt-3 hidden">Mengupload gambar...</p>
           </section>
           <section class="config-card medium-config-card">
             <h2>Publishing</h2>
             ${control('News Publish Date', `<input class="config-input" type="date" value="${dateInput(item.date)}" />`)}
-            ${control('Category', `<select class="config-input">${categories.map((cat) => `<option ${cat.name === item.category ? 'selected' : ''}>${cat.name}</option>`).join('')}</select>`)}
-            ${control('Comment', '<select class="config-input"><option>On</option><option>Off</option></select>')}
+            ${control('Category', selectControl({ id: 'news-category-select', value: item.category_id || backendCategories.find((cat) => cat.name === item.category)?.id || '', options: backendCategories.map((cat) => ({ value: cat.id, label: cat.name })) }))}
+            ${control('Comment', selectControl({ id: 'news-comment-select', value: 'On', options: ['On', 'Off'] }))}
           </section>
           <section class="config-card medium-config-card">
-            <h2>Photo and Banner</h2>
+            <h2>Featured Photo</h2>
             ${item.image ? `<img src="${item.image}" class="config-preview" alt="Featured photo" />` : '<div class="config-empty">Belum ada foto utama</div>'}
-            ${control('Featured Photo', '<input class="config-input" type="file" />')}
-            ${control('Banner', '<input class="config-input" type="file" />')}
+            <input id="news-photo-file" class="hidden" type="file" accept="image/*" />
+            <button type="button" id="news-photo-upload-btn" class="btn btn-secondary w-full mt-2">Upload Featured Photo</button>
+            <input class="config-input mt-2" id="news-photo-url" value="${escape(item.image)}" placeholder="URL foto utama" />
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Contributors</h2>
+            ${control('Pewarta', `<input class="config-input" id="news-pewarta" value="${escape(item.contributor_pewarta || item.author || '')}" />`)}
+            ${control('Editor', `<input class="config-input" id="news-editor-name" value="${escape(item.contributor_editor || item.editor || '')}" />`)}
           </section>
           <section class="config-card medium-config-card">
             <h2>SEO Information</h2>
-            ${control('Meta Title', `<input class="config-input" value="${escape(item.title)}" />`)}
-            ${control('Meta Keywords', `<textarea class="config-input" rows="4">${escape(`${item.category}, GenBI Jambi, berita Jambi`)}</textarea>`)}
-            ${control('Meta Description', `<textarea class="config-input" rows="5">${escape(item.excerpt)}</textarea>`)}
+            ${control('Meta Title', `<input class="config-input" id="news-meta-title" value="${escape(item.meta_title || item.title)}" />`)}
+            ${control('Meta Keywords', `<textarea class="config-input" id="news-meta-keyword" rows="4">${escape(item.meta_keyword || `${item.category}, GenBI Jambi, berita Jambi`)}</textarea>`)}
+            ${control('Meta Description', `<textarea class="config-input" id="news-meta-desc" rows="5">${escape(item.meta_description || item.excerpt)}</textarea>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Status</h2>
+            ${control('Publish Status', selectControl({ id: 'news-status', value: item.status || 'draft', options: [{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }] }))}
           </section>
           <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update News' : 'Submit News'}</button>
         </aside>
@@ -233,18 +433,136 @@
 
     const editor = initMediumEditor(item, isEdit);
     bindMediumEditorActions(editor);
+    bindNewsImageUploads();
+    enhanceAdminSelects(body);
 
     document.querySelector('#news-editor-form').addEventListener('submit', async (event) => {
       event.preventDefault();
+      let editorContent = '';
       if (editor?.save) {
-        try { await editor.save(); } catch (error) { console.warn('Editor save skipped in preview mode', error); }
+        try {
+          const outputData = await editor.save();
+          editorContent = blocksToNewsHtml(outputData.blocks);
+        } catch (error) {
+          // Fallback: get content from fallback editor
+          const fallbackEl = document.querySelector('#editor-fallback article');
+          if (fallbackEl) editorContent = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#editor-fallback article');
+        if (fallbackEl) editorContent = fallbackEl.innerHTML;
       }
+
       const ok = await Admin.showConfirm({
         title: isEdit ? 'Update berita?' : 'Submit berita?',
-        message: 'Konten editor dan konfigurasi akan disimpan pada mode simulasi frontend.',
+        message: isEdit ? 'Berita akan diperbarui di database.' : 'Berita baru akan disimpan ke database.',
         confirmText: isEdit ? 'Update' : 'Submit'
       });
-      if (ok) Admin.showToast(isEdit ? 'Berita diperbarui pada mode simulasi.' : 'Berita ditambahkan pada mode simulasi.');
+      if (!ok) return;
+
+      // Gather form data
+      const payload = {
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: editorContent || item.content || '',
+        date: document.querySelector('[type="date"]')?.value || '',
+        category_id: Number(document.querySelector('#news-category-select')?.value) || 0,
+        status: document.querySelector('#news-status')?.value || 'draft',
+        contributor_pewarta: document.querySelector('#news-pewarta')?.value?.trim() || '',
+        contributor_editor: document.querySelector('#news-editor-name')?.value?.trim() || '',
+        meta_title: document.querySelector('#news-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
+        photo: document.querySelector('#news-photo-url')?.value?.trim() || '',
+      };
+
+      const token = getAdminCsrfToken();
+      const url = isEdit ? route('admin.newsUpdate', { id }) : route('admin.newsStore');
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ ...payload, _csrf_token: token })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
+            // Redirect to edit page for the new article
+            setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+      }
+    });
+  }
+
+  function bindNewsFormSubmit(isEdit, id, editor) {
+    document.querySelector('#news-editor-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      let editorContent = '';
+      if (editor?.save) {
+        try {
+          const outputData = await editor.save();
+          editorContent = blocksToNewsHtml(outputData.blocks);
+        } catch (error) {
+          const fallbackEl = document.querySelector('#editor-fallback article');
+          if (fallbackEl) editorContent = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#editor-fallback article');
+        if (fallbackEl) editorContent = fallbackEl.innerHTML;
+      }
+
+      const ok = await Admin.showConfirm({
+        title: isEdit ? 'Update berita?' : 'Submit berita?',
+        message: isEdit ? 'Berita akan diperbarui di database.' : 'Berita baru akan disimpan ke database.',
+        confirmText: isEdit ? 'Update' : 'Submit'
+      });
+      if (!ok) return;
+
+      const payload = {
+        title: document.querySelector('#news-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#news-short-content-field')?.textContent?.trim() || '',
+        content: editorContent || '',
+        date: document.querySelector('[type="date"]')?.value || '',
+        category_id: Number(document.querySelector('#news-category-select')?.value) || 0,
+        status: document.querySelector('#news-status')?.value || 'draft',
+        contributor_pewarta: document.querySelector('#news-pewarta')?.value?.trim() || '',
+        contributor_editor: document.querySelector('#news-editor-name')?.value?.trim() || '',
+        meta_title: document.querySelector('#news-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
+        photo: document.querySelector('#news-photo-url')?.value?.trim() || '',
+      };
+
+      const token = getAdminCsrfToken();
+      const url = isEdit ? route('admin.newsUpdate', { id }) : route('admin.newsStore');
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ ...payload, _csrf_token: token })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
+            setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+      }
     });
   }
 
@@ -271,8 +589,16 @@
         class: window.ImageTool,
         config: {
           uploader: {
-            uploadByFile(file) {
-              return readFileAsDataUrl(file).then((url) => ({ success: 1, file: { url } }));
+            async uploadByFile(file) {
+              try {
+                Admin.showToast('Mengupload gambar...');
+                const url = await uploadNewsImageFile(file);
+                Admin.showToast('Gambar berhasil diupload.');
+                return { success: 1, file: { url } };
+              } catch (e) {
+                Admin.showToast('Gagal upload gambar.');
+                return { success: 0 };
+              }
             },
             uploadByUrl(url) {
               return Promise.resolve({ success: 1, file: { url } });
@@ -296,15 +622,93 @@
   }
 
   function buildNewsBlocks(item, isEdit) {
+    const htmlBlocks = htmlToNewsBlocks(item.content || item.news_content || '');
+    if (htmlBlocks.length) return htmlBlocks;
+
+    return (item.body || []).filter(Boolean).map((paragraph) => ({
+      type: 'paragraph',
+      data: { text: paragraph },
+    }));
+  }
+
+  function htmlToNewsBlocks(html = '') {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = String(html || '').trim();
     const blocks = [];
-    (item.body || []).filter(Boolean).forEach((paragraph) => {
-      blocks.push({ type: 'paragraph', data: { text: paragraph } });
-    });
-    if (isEdit) {
-      blocks.push({ type: 'paragraph', data: { text: `PEWARTA : ${item.author || 'Muhammad David'}` } });
-      blocks.push({ type: 'paragraph', data: { text: `EDITOR : ${item.editor || 'Mukhtada Billah Nst'}` } });
+    const nodes = wrapper.children.length ? Array.from(wrapper.children) : [];
+
+    if (!nodes.length && wrapper.textContent.trim()) {
+      return [{ type: 'paragraph', data: { text: wrapper.textContent.trim() } }];
     }
+
+    nodes.forEach((node) => {
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'p') blocks.push({ type: 'paragraph', data: { text: node.innerHTML.trim() } });
+      else if (/^h[1-6]$/.test(tag)) blocks.push({ type: 'header', data: { text: node.innerHTML.trim(), level: Number(tag.slice(1)) } });
+      else if (tag === 'ul' || tag === 'ol') blocks.push({ type: 'list', data: { style: tag === 'ol' ? 'ordered' : 'unordered', items: Array.from(node.querySelectorAll(':scope > li')).map((li) => li.innerHTML.trim()) } });
+      else if (tag === 'blockquote') blocks.push({ type: 'quote', data: { text: node.querySelector('p')?.innerHTML.trim() || node.textContent.trim(), caption: node.querySelector('cite')?.textContent.trim() || '', alignment: 'left' } });
+      else if (tag === 'figure') {
+        const image = node.querySelector('img');
+        if (image?.getAttribute('src')) blocks.push({ type: 'image', data: { file: { url: image.getAttribute('src') }, caption: node.querySelector('figcaption')?.textContent.trim() || image.getAttribute('alt') || '', withBorder: false, withBackground: false, stretched: false } });
+      } else if (tag === 'img' && node.getAttribute('src')) {
+        blocks.push({ type: 'image', data: { file: { url: node.getAttribute('src') }, caption: node.getAttribute('alt') || '', withBorder: false, withBackground: false, stretched: false } });
+      } else if (node.textContent.trim()) {
+        blocks.push({ type: 'paragraph', data: { text: node.innerHTML.trim() } });
+      }
+    });
+
     return blocks;
+  }
+
+  function blocksToNewsHtml(blocks = []) {
+    return blocks.map((block) => {
+      if (block.type === 'paragraph') return block.data.text ? `<p>${block.data.text}</p>` : '';
+      if (block.type === 'header') {
+        const level = Math.min(Math.max(Number(block.data.level) || 2, 1), 6);
+        return block.data.text ? `<h${level}>${block.data.text}</h${level}>` : '';
+      }
+      if (block.type === 'list') {
+        const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
+        return `<${tag}>${(block.data.items || []).map((item) => `<li>${item}</li>`).join('')}</${tag}>`;
+      }
+      if (block.type === 'quote') return block.data.text ? `<blockquote><p>${block.data.text}</p>${block.data.caption ? `<cite>${block.data.caption}</cite>` : ''}</blockquote>` : '';
+      if (block.type === 'image') {
+        const src = block.data.file?.url || block.data.url || '';
+        if (!src) return '';
+        return `<figure><img src="${escape(src)}" alt="${escape(block.data.caption || '')}" />${block.data.caption ? `<figcaption>${escape(block.data.caption)}</figcaption>` : ''}</figure>`;
+      }
+      return block.data.text ? `<p>${block.data.text}</p>` : '';
+    }).filter(Boolean).join('\n');
+  }
+
+  function bindNewsImageUploads() {
+    bindNewsImageUpload('#news-photo-upload-btn', '#news-photo-file', '#news-photo-url');
+  }
+
+  function bindNewsImageUpload(buttonSelector, fileSelector, urlSelector) {
+    const button = document.querySelector(buttonSelector);
+    const fileInput = document.querySelector(fileSelector);
+    const urlInput = document.querySelector(urlSelector);
+
+    button?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      try {
+        Admin.showToast('Mengupload gambar...');
+        const url = await uploadNewsImageFile(file);
+
+        if (urlInput) urlInput.value = url;
+        const preview = document.querySelector('.config-preview');
+        if (preview && buttonSelector === '#news-photo-upload-btn') preview.src = url;
+        Admin.showToast('Gambar berhasil diupload.');
+      } catch (err) {
+        Admin.showToast('Gagal upload gambar.');
+      } finally {
+        fileInput.value = '';
+      }
+    });
   }
 
   function bindMediumEditorActions(editor) {
@@ -329,24 +733,56 @@
     imageFile?.addEventListener('change', async () => {
       const file = imageFile.files?.[0];
       if (!file) return;
-      const url = await readFileAsDataUrl(file);
-      insertEditorBlock(editor, 'image', { file: { url }, caption: file.name, withBorder: false, withBackground: false, stretched: false });
-      imageFile.value = '';
+      const status = document.querySelector('#news-inline-upload-status');
+      const buttonText = insertImageFile?.textContent || 'Upload Image Block';
+      try {
+        if (status) status.classList.remove('hidden');
+        if (insertImageFile) {
+          insertImageFile.disabled = true;
+          insertImageFile.textContent = 'Uploading...';
+        }
+        Admin.showToast('Mengupload gambar...');
+        const url = await uploadNewsImageFile(file);
+        insertEditorBlock(editor, 'image', { file: { url }, caption: file.name, withBorder: false, withBackground: false, stretched: false });
+        Admin.showToast('Gambar berhasil diupload dan ditambahkan.');
+      } catch (error) {
+        Admin.showToast(error.message || 'Gagal upload gambar.');
+      } finally {
+        if (status) status.classList.add('hidden');
+        if (insertImageFile) {
+          insertImageFile.disabled = false;
+          insertImageFile.textContent = buttonText;
+        }
+        imageFile.value = '';
+      }
     });
+  }
+
+  async function uploadNewsImageFile(file) {
+    const token = getAdminCsrfToken();
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('_csrf_token', token);
+
+    const res = await fetch(route('admin.newsUpload'), {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json' },
+      credentials: 'same-origin',
+      body: formData,
+    });
+    const json = await res.json();
+    const url = json.data?.url || '';
+    if (!res.ok || !url) throw new Error(json.error || 'Gagal upload gambar.');
+    return url;
+  }
+
+  function getAdminCsrfToken() {
+    return (API && API.getCsrfToken && API.getCsrfToken()) || document.querySelector('meta[name="csrf-token"]')?.content || '';
   }
 
   function insertEditorBlock(editor, type, data) {
     if (!editor?.blocks?.insert) return Admin.showToast('Editor belum siap.');
     editor.blocks.insert(type, data);
-  }
-
-  function readFileAsDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
   }
 
   async function renderCommentSetup() {
@@ -521,7 +957,7 @@
           </div>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Slider Config</h2>${control('Photo', '<input class="config-input" type="file" />')}${control('Position', '<select class="config-input"><option>Left</option><option>Right</option></select>')}</section>
+          <section class="config-card"><h2>Slider Config</h2>${control('Photo', '<input class="config-input" type="file" />')}${control('Position', selectControl({ id: 'slider-position', value: 'Left', options: ['Left', 'Right'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Slider</button>
         </aside>
       </form>
@@ -529,83 +965,204 @@
     document.querySelector('#slider-form').addEventListener('submit', async (event) => { event.preventDefault(); if (await Admin.showConfirm({ title: 'Submit slider?', message: 'Slider akan ditambahkan pada mode simulasi.' })) Admin.showToast('Slider ditambahkan pada mode simulasi.'); });
   }
 
-  function renderTeamList() {
-    const body = renderShell('View Team Members', 'Direktori anggota memakai mode card. Bisa berpindah antara grid dan list tanpa tabel sempit.', `<a href="${adminUrl('team-member-add')}" class="btn btn-primary">Add Team Member</a>`);
+  async function renderTeamList() {
+    // Check if SSR markup exists - if so, bind delete, batch, and home toggle
+    if (document.querySelector('#admin-team-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      bindTeamDeleteButtons();
+      bindTeamBatchMode();
+      bindTeamHomeToggle();
+      return;
+    }
+
+    const body = renderShell('View Team Members', 'Direktori anggota memakai mode card. Bisa berpindah antara grid dan list tanpa tabel sempit. Beranda memakai periode terbaru lalu bisa dioverride lewat aksi BPI Beranda.', '');
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data anggota...</div>';
+
+    const state = { view: 'grid', query: '', division: '', campus: '', year: '', page: 1, perPage: 12, total: 0, items: [], batchMode: false, filters: { divisions: [], campuses: [], years: [] } };
+    // Hydrate state from URL
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('page')) state.page = Math.max(1, Number(urlParams.get('page')) || 1);
+    if (urlParams.get('per_page')) state.perPage = Number(urlParams.get('per_page')) || 12;
+    if (urlParams.get('q')) state.query = urlParams.get('q');
+    if (urlParams.get('division')) state.division = urlParams.get('division');
+    if (urlParams.get('campus')) state.campus = urlParams.get('campus');
+    if (urlParams.get('year')) state.year = urlParams.get('year');
+    const syncUrl = () => {
+      const params = new URLSearchParams();
+      if (state.query) params.set('q', state.query);
+      if (state.division) params.set('division', state.division);
+      if (state.campus) params.set('campus', state.campus);
+      if (state.year) params.set('year', state.year);
+      if (state.page > 1) params.set('page', String(state.page));
+      if (state.perPage !== 12) params.set('per_page', String(state.perPage));
+      const qs = params.toString();
+      const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+      history.replaceState({}, '', url);
+    };
+    const load = async () => {
+      const endpoint = Core.buildEndpoint(route('admin.teamMembers'), { q: state.query, division: state.division, campus: state.campus, year: state.year, page: state.page, per_page: state.perPage });
+      try {
+        const res = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          state.items = json.data || [];
+          state.total = Number(json.meta?.total || state.items.length);
+          state.page = Number(json.meta?.page || state.page);
+          state.filters = json.filters || state.filters;
+          return;
+        }
+      } catch (e) { /* fallback below */ }
+      state.filters = {
+        divisions: Array.from(new Set(teamMembers.map((item) => item.division).filter(Boolean))),
+        campuses: Array.from(new Set(teamMembers.map((item) => item.commission || item.campus).filter(Boolean))),
+        years: Array.from(new Set(teamMembers.map((item) => item.year).filter(Boolean))),
+      };
+      const filtered = teamMembers.filter((item) => {
+        const haystack = `${item.name} ${item.role} ${item.commission} ${item.division}`.toLowerCase();
+        if (state.query && !haystack.includes(state.query.toLowerCase())) return false;
+        if (state.division && item.division !== state.division) return false;
+        if (state.campus && (item.commission || item.campus) !== state.campus) return false;
+        if (state.year && String(item.year) !== String(state.year)) return false;
+        return true;
+      });
+      state.total = filtered.length;
+      state.items = filtered.slice((state.page - 1) * state.perPage, state.page * state.perPage);
+    };
+
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         <div class="cms-toolbar">
-          <label class="cms-search">${Admin.icon('search')}<input id="team-search" placeholder="Cari nama, jabatan, komisariat, divisi..." /></label>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm text-neutral-600">Show ${selectControl({ id: 'team-per-page', className: 'admin-inline-select', value: '12', options: ['12', '24', '48'] })} entries</label>
+            <label class="cms-search">${Admin.icon('search')}<input id="team-search" placeholder="Cari nama, jabatan, komisariat, divisi..." /></label>
+          </div>
           <div class="view-toggle" role="group" aria-label="Mode tampilan">
             <button type="button" class="is-active" data-view="grid">${Admin.icon('grid')} Grid</button>
             <button type="button" data-view="list">${Admin.icon('list')} List</button>
           </div>
         </div>
+        <div class="team-action-row mt-5">
+          <a href="${adminUrl('team-member-add')}" class="cms-action edit">Add Team Member</a>
+          <button type="button" class="cms-action edit" id="team-batch-toggle">Batch Operation</button>
+        </div>
+        <div class="team-batch-bar mt-3 hidden" id="team-batch-bar"></div>
+        <div class="team-filter-row mt-5" aria-label="Filter anggota">
+          <label class="team-filter-field">Divisi<select class="config-input js-admin-custom-select" id="team-division-filter"></select></label>
+          <label class="team-filter-field">Komisariat<select class="config-input js-admin-custom-select" id="team-campus-filter"></select></label>
+          <label class="team-filter-field">Tahun<select class="config-input js-admin-custom-select" id="team-year-filter"></select></label>
+        </div>
         <div id="team-cards" class="team-card-grid mt-6"></div>
+        <div class="admin-pagination mt-5" id="team-pagination" aria-label="Pagination anggota"></div>
       </section>
     `;
-    const state = { view: 'grid', query: '' };
-    const render = () => {
-      const root = document.querySelector('#team-cards');
-      const items = teamMembers.filter((item) => `${item.name} ${item.role} ${item.commission} ${item.division}`.toLowerCase().includes(state.query.toLowerCase()));
-      root.className = state.view === 'grid' ? 'team-card-grid mt-6' : 'team-card-list mt-6';
-      root.innerHTML = items.map((item, index) => teamCard(item, index)).join('');
-      bindDeleteButtons('Anggota akan dihapus dari daftar simulasi.');
+    const updateSelectionCount = () => {
+      const count = document.querySelector('#team-selection-count');
+      if (count) count.textContent = String(teamSelection.size);
     };
+    const render = async () => {
+      syncUrl();
+      await load();
+      const root = document.querySelector('#team-cards');
+      root.className = state.view === 'grid' ? 'team-card-grid mt-6' : 'team-card-list mt-6';
+      root.innerHTML = state.items.length ? state.items.map((item, index) => teamCard(item, index, state.batchMode)).join('') : '<div class="rounded-2xl border border-neutral-900/10 bg-white p-6 text-sm text-neutral-500">Belum ada anggota.</div>';
+      bindTeamCardActions(render);
+      renderTeamFilterButtons(state, render);
+      renderTeamBatchBar(state, render);
+      renderAdminPagination('#team-pagination', Math.max(1, Math.ceil(state.total / state.perPage)), state.page, (page) => { state.page = page; render(); });
+      updateSelectionCount();
+    };
+    enhanceAdminSelects(body);
     document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
       state.view = button.dataset.view;
       document.querySelectorAll('[data-view]').forEach((item) => item.classList.toggle('is-active', item === button));
       render();
     }));
-    document.querySelector('#team-search').addEventListener('input', (event) => { state.query = event.target.value; render(); });
+    document.querySelector('#team-search').addEventListener('input', (event) => { state.query = event.target.value; state.page = 1; render(); });
+    document.querySelector('#team-per-page')?.addEventListener('change', (event) => { state.perPage = Number(event.target.value) || 12; state.page = 1; render(); });
+    document.querySelector('#team-batch-toggle')?.addEventListener('click', () => { state.batchMode = !state.batchMode; render(); });
     render();
   }
 
-  function renderTeamEditor() {
+  async function renderTeamEditor() {
     const id = Number(new URLSearchParams(location.search).get('id')) || 4;
     const isEdit = location.pathname.includes('edit');
-    const item = isEdit ? (teamMembers.find((entry) => entry.id === id) || teamMembers[0]) : { name: '', role: '', division: '', commission: '', campus: '', status: '', bio: '' };
+    let item = isEdit ? (teamMembers.find((entry) => entry.id === id) || teamMembers[0]) : { name: '', role: '', division: '', commission: '', campus: '', status: '', bio: '', year: new Date().getFullYear() };
+    if (isEdit) {
+      try {
+        const res = await fetch(route('admin.teamMemberShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) item = (await res.json()).data || item;
+      } catch (e) { /* fallback */ }
+    }
+    const options = await loadTeamFormOptions();
     const body = renderShell(isEdit ? 'Edit Team Member' : 'Add Team Member', 'Form tambah dan edit dibuat sama. Field tambahan: Komisariat, Divisi, Jabatan, dan Divisi Lain.', `<a href="${adminUrl('team-member')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
       <form class="editor-workspace compact" id="team-form">
         <main class="block-writing-surface">
-          <div class="news-title-block" contenteditable="true" data-placeholder="Nama anggota...">${escape(item.name)}</div>
+          <input id="team-name" class="news-title-block" placeholder="Nama anggota..." value="${escape(item.name)}" />
           <div class="team-form-grid">
-            ${miniBlock('Jabatan', item.role)}
-            ${miniSelectBlock('Komisariat', ['Universitas Jambi', 'UIN Sultan Thaha', 'Alumni'], normalizeCommission(item))}
-            ${miniBlock('Divisi', item.division)}
-            ${miniBlock('Divisi Lain', '')}
-            ${miniBlock('Kampus', item.campus)}
-            ${miniBlock('Status', item.status)}
+            ${control('Jabatan', `<input id="team-designation" class="config-input" value="${escape(item.role || item.designation || '')}" />`)}
+            ${control('Komisariat', selectControl({ id: 'team-komsat-id', value: item.komsat_id || '', options: [{ value: '', label: 'Pilih Komisariat' }, ...options.commissions.map((option) => ({ value: option.id, label: option.nama }))] }))}
+            ${control('Divisi', selectControl({ id: 'team-divisi-id', value: item.divisi_id || item.division_id || '', options: [{ value: '', label: 'Pilih Divisi' }, ...options.divisions.map((option) => ({ value: option.id, label: option.nama }))] }))}
+            ${control('Tahun', `<input id="team-year" class="config-input" type="number" value="${escape(item.year || item.tahun || new Date().getFullYear())}" />`)}
+            ${control('Email', `<input id="team-email" class="config-input" type="email" value="${escape(item.email || '')}" />`)}
+            ${control('Phone', `<input id="team-phone" class="config-input" value="${escape(item.phone || '')}" />`)}
           </div>
-          <article class="news-body-block smaller" contenteditable="true" data-placeholder="Bio singkat anggota...">${escape(item.bio)}</article>
+          <textarea id="team-detail" class="news-body-block smaller" placeholder="Description / bio singkat anggota...">${escape(item.detail || item.bio || '')}</textarea>
         </main>
         <aside class="editor-config-sidebar">
           <section class="config-card">
             <h2>Photo</h2>
-            <div class="member-preview-avatar">${Admin.initials(item.name || 'Member')}</div>
-            ${control('Profile Photo', '<input class="config-input" type="file" />')}
+            <div class="member-preview-avatar" id="team-photo-preview">${item.photo ? `<img src="${escape(item.photo)}" alt="${escape(item.name)}" />` : Admin.initials(item.name || 'Member')}</div>
+            ${control('Photo URL', `<input id="team-photo" class="config-input" value="${escape(item.photo_raw || item.photo || '')}" />`)}
+            ${control('Upload Photo', '<input class="config-input" id="team-photo-upload" type="file" accept="image/*" />')}
           </section>
-          <section class="config-card"><h2>Visibility</h2>${control('Show on Public Page', '<select class="config-input"><option>Show</option><option>Hide</option></select>')}${control('Year', '<input class="config-input" value="2026" />')}</section>
+          <section class="config-card"><h2>Visibility</h2>${control('Tampilkan di BPI Beranda', selectControl({ id: 'team-show-home', value: item.show_on_home ? '1' : '0', options: [{ value: '1', label: 'Show' }, { value: '0', label: 'Hide' }] }))}</section>
           <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Member' : 'Submit Member'}</button>
         </aside>
       </form>
     `;
-    document.querySelector('#team-form').addEventListener('submit', async (event) => { event.preventDefault(); if (await Admin.showConfirm({ title: isEdit ? 'Update anggota?' : 'Submit anggota?', message: 'Data anggota akan disimpan pada mode simulasi.' })) Admin.showToast(isEdit ? 'Anggota diperbarui pada mode simulasi.' : 'Anggota ditambahkan pada mode simulasi.'); });
+    enhanceAdminSelects(body);
+    document.querySelector('#team-photo-upload')?.addEventListener('change', uploadTeamPhoto);
+    document.querySelector('#team-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = teamEditorPayload();
+      const res = await fetch(isEdit ? route('admin.teamMemberUpdate', { id }) : route('admin.teamMembers'), {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        Admin.showToast(isEdit ? 'Anggota diperbarui.' : 'Anggota ditambahkan.');
+        if (!isEdit && json.data?.id) setTimeout(() => { window.location.href = `${adminUrl('team-member-edit')}?id=${json.data.id}`; }, 900);
+      } else {
+        const json = await res.json().catch(() => ({}));
+        Admin.showToast(json.error || 'Gagal menyimpan anggota.');
+      }
+    });
   }
 
 
   function renderFeatureList() {
-    const body = renderShell('View Features', 'Program utama tampil sebagai daftar editorial. Isi dapat dipindai tanpa visual yang ramai.', `<a href="${adminUrl('feature-add')}" class="btn btn-primary">Add New</a>`);
+    const ssrList = document.querySelector('#admin-feature-list[data-ssr="true"]');
+    if (ssrList) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      hydrateFeatureIcons(ssrList);
+      bindFeatureDeleteButtons();
+      return;
+    }
+    const body = renderShell('Program Utama', 'Program utama tampil sebagai daftar editorial. Isi dapat dipindai tanpa visual yang ramai.', `<a href="${adminUrl('feature-add')}" class="btn btn-primary">Add Program Utama</a>`);
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('Feature')}
+        ${renderSearchToolbar('Program Utama')}
         <div class="simple-card-grid mt-5">
           ${programs.map((item) => `
             <article class="simple-admin-card">
               <div class="meta">${escape(item.focus)}</div>
               <h2>${escape(item.title)} · ${escape(item.name)}</h2>
               <p>${escape(item.description)}</p>
-              <div class="mt-4 flex gap-2">${rowActions('Feature')}</div>
+              <div class="mt-4 flex gap-2">${rowActions('Program Utama')}</div>
             </article>
           `).join('')}
         </div>
@@ -615,7 +1172,16 @@
   }
 
   function renderFeatureEditor() {
-    const body = renderShell('Add Feature', 'Tambah program dengan field besar dan tombol input custom.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
+    const form = document.querySelector('#feature-editor-form[data-ssr="true"]');
+    if (form) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      setupFeatureIconPicker(form);
+      bindFeatureImageBoard(form);
+      bindFeatureForm(form);
+      hydrateFeatureIcons(document.querySelector('#admin-content') || document);
+      return;
+    }
+    const body = renderShell('Add Program Utama', 'Tambah program dengan field besar dan tombol input custom.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
       <form class="editor-workspace compact" id="feature-form">
         <main class="block-writing-surface">
@@ -624,12 +1190,261 @@
           <article class="news-body-block smaller" contenteditable="true" data-placeholder="Manfaat program untuk anggota dan publik..."></article>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', '<select class="config-input"><option>Show</option><option>Hide</option></select>')}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit Feature</button>
+          <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', selectControl({ id: 'feature-show-home', value: 'Show', options: ['Show', 'Hide'] }))}</section>
+          <button type="submit" class="btn btn-primary w-full">Submit Program Utama</button>
         </aside>
       </form>
     `;
     bindSimpleSubmit('#feature-form', 'Submit program?', 'Program ditambahkan pada mode simulasi.');
+  }
+
+  function hydrateFeatureIcons(root = document) {
+    root.querySelectorAll('[data-program-icon]').forEach((node) => {
+      const iconKey = node.dataset.programIcon || 'sparkles';
+      node.innerHTML = Admin.icon(iconKey, 'h-4 w-4');
+    });
+    root.querySelectorAll('[data-feature-icon-preview]').forEach((node) => {
+      const iconKey = node.dataset.featureIconPreview || 'sparkles';
+      node.innerHTML = Admin.icon(iconKey, 'h-5 w-5');
+    });
+  }
+
+  function setupFeatureIconPicker(form) {
+    const picker = form.querySelector('#feature-icon-picker');
+    const button = form.querySelector('#feature-icon-button');
+    const menu = form.querySelector('#feature-icon-menu');
+    const label = form.querySelector('#feature-icon-label');
+    if (!picker || !button || !menu || !label) return;
+
+    const closeAdminSelectMenus = () => {
+      document.querySelectorAll('.admin-select-button[aria-expanded="true"]').forEach((openButton) => openButton.click());
+    };
+    const closeAllFeatureMenus = () => {
+      document.querySelectorAll('.feature-icon-picker.is-open').forEach((openPicker) => {
+        openPicker.classList.remove('is-open');
+        openPicker.querySelector('.feature-icon-menu')?.classList.add('hidden');
+        openPicker.querySelector('.feature-icon-button')?.setAttribute('aria-expanded', 'false');
+      });
+    };
+    const closeMenu = () => {
+      picker.classList.remove('is-open');
+      menu.classList.add('hidden');
+      button.setAttribute('aria-expanded', 'false');
+    };
+    const openMenu = () => {
+      closeAdminSelectMenus();
+      closeAllFeatureMenus();
+      picker.classList.add('is-open');
+      menu.classList.remove('hidden');
+      button.setAttribute('aria-expanded', 'true');
+    };
+
+    if (!menu.children.length) {
+      menu.innerHTML = programIconChoices.map((iconKey) => `
+        <button type="button" class="feature-icon-option ${picker.dataset.selectedIcon === iconKey ? 'is-active' : ''}" data-icon-key="${iconKey}">
+          <span>${Admin.icon(iconKey, 'h-4 w-4')}</span>
+          <span>${escape(iconKey)}</span>
+        </button>
+      `).join('');
+    }
+
+    const updateSelection = (iconKey) => {
+      picker.dataset.selectedIcon = iconKey;
+      const preview = button.querySelector('[data-feature-icon-preview]');
+      if (preview) preview.dataset.featureIconPreview = iconKey;
+      label.textContent = iconKey;
+      hydrateFeatureIcons(button);
+      menu.querySelectorAll('[data-icon-key]').forEach((option) => option.classList.toggle('is-active', option.dataset.iconKey === iconKey));
+    };
+
+    button.setAttribute('aria-expanded', 'false');
+    menu.classList.add('hidden');
+    picker.classList.remove('is-open');
+
+    button.addEventListener('click', () => (menu.classList.contains('hidden') ? openMenu() : closeMenu()));
+    menu.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-icon-key]');
+      if (!option) return;
+      updateSelection(option.dataset.iconKey || 'sparkles');
+      closeMenu();
+    });
+    document.addEventListener('click', (event) => {
+      if (!picker.contains(event.target)) closeMenu();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+    updateSelection(picker.dataset.selectedIcon || 'sparkles');
+  }
+
+  function collectFeatureImages(form) {
+    return Array.from(form.querySelectorAll('.feature-image-card')).map((card, index) => ({
+      id: Number(card.dataset.imageId || 0) || 0,
+      path: card.dataset.imagePath || '',
+      sort_order: index,
+    })).filter((image) => image.path);
+  }
+
+  function bindFeatureImageBoard(form) {
+    const board = form.querySelector('#feature-image-board');
+    const empty = form.querySelector('#feature-image-empty');
+    const fileInput = form.querySelector('#feature-image-files');
+    const uploadButton = form.querySelector('#feature-upload-btn');
+    if (!board || !fileInput || !uploadButton) return;
+
+    const syncState = () => {
+      const cards = board.querySelectorAll('.feature-image-card');
+      cards.forEach((card, index) => {
+        const badge = card.querySelector('.feature-image-card-meta span');
+        if (badge) badge.textContent = `#${index + 1}`;
+      });
+      if (empty) empty.classList.toggle('hidden', cards.length > 0);
+    };
+
+    const createCard = (image) => {
+      const card = document.createElement('article');
+      card.className = 'feature-image-card';
+      card.dataset.imageId = String(image.id || 0);
+      card.dataset.imagePath = image.path || image.url || '';
+      card.innerHTML = `
+        <img src="${escape(image.url || image.path || '')}" alt="Preview Program Utama" />
+        <div class="feature-image-card-meta">
+          <span>#1</span>
+          <div class="flex gap-2">
+            <button type="button" class="feature-image-move" data-direction="up" aria-label="Geser ke atas">↑</button>
+            <button type="button" class="feature-image-move" data-direction="down" aria-label="Geser ke bawah">↓</button>
+            <button type="button" class="feature-image-remove" aria-label="Hapus gambar">Hapus</button>
+          </div>
+        </div>
+      `;
+      board.appendChild(card);
+      syncState();
+    };
+
+    uploadButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files || []);
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch(route('admin.featureUpload'), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: formData,
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.data?.url) {
+          Admin.showToast(json.error || 'Gagal mengunggah gambar Program Utama.');
+          continue;
+        }
+        createCard(json.data);
+      }
+      fileInput.value = '';
+    });
+
+    board.addEventListener('click', async (event) => {
+      const removeButton = event.target.closest('.feature-image-remove');
+      const moveButton = event.target.closest('.feature-image-move');
+      const card = event.target.closest('.feature-image-card');
+      if (!card) return;
+
+      if (moveButton) {
+        const sibling = moveButton.dataset.direction === 'up' ? card.previousElementSibling : card.nextElementSibling;
+        if (sibling && sibling.classList.contains('feature-image-card')) {
+          if (moveButton.dataset.direction === 'up') {
+            board.insertBefore(card, sibling);
+          } else {
+            board.insertBefore(sibling, card);
+          }
+          syncState();
+        }
+        return;
+      }
+
+      if (removeButton) {
+        const featureId = Number(form.dataset.itemId || 0);
+        const imageId = Number(card.dataset.imageId || 0);
+        if (featureId > 0 && imageId > 0) {
+          const ok = await Admin.showConfirm({ title: 'Hapus gambar?', message: 'Gambar akan dihapus dari slideshow Program Utama.', confirmText: 'Hapus', danger: true });
+          if (!ok) return;
+          const res = await fetch(route('admin.featureImageDelete', { id: featureId, imageId }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+            credentials: 'same-origin',
+          });
+          if (!res.ok) {
+            Admin.showToast('Gagal menghapus gambar Program Utama.');
+            return;
+          }
+        }
+        card.remove();
+        syncState();
+      }
+    });
+
+    syncState();
+  }
+
+  function featurePayload(form) {
+    return {
+      title: form.querySelector('#feature-title')?.value?.trim() || '',
+      name: form.querySelector('#feature-name')?.value?.trim() || '',
+      focus: form.querySelector('#feature-focus')?.value?.trim() || '',
+      description: form.querySelector('#feature-description')?.value?.trim() || '',
+      icon_key: form.querySelector('#feature-icon-picker')?.dataset.selectedIcon || 'sparkles',
+      show_on_home: form.querySelector('#feature-show-home')?.value === '1',
+      status: form.querySelector('#feature-status')?.value || 'draft',
+      sort_order: Number(form.querySelector('#feature-sort-order')?.value || 0),
+      images: collectFeatureImages(form),
+    };
+  }
+
+  function bindFeatureForm(form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const isEdit = form.dataset.edit === '1';
+      const featureId = Number(form.dataset.itemId || 0);
+      const endpoint = isEdit ? route('admin.featureUpdate', { id: featureId }) : route('admin.featureStore');
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        credentials: 'same-origin',
+        body: JSON.stringify(featurePayload(form)),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Admin.showToast(json.error || 'Gagal menyimpan Program Utama.');
+        return;
+      }
+      Admin.showToast(isEdit ? 'Program Utama diperbarui.' : 'Program Utama ditambahkan.');
+      const nextId = json.data?.id || featureId;
+      if (!isEdit && nextId) {
+        window.setTimeout(() => { window.location.href = `${adminUrl('feature-edit')}?id=${nextId}`; }, 800);
+      }
+    });
+  }
+
+  function bindFeatureDeleteButtons() {
+    document.querySelectorAll('[data-delete-feature]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const featureId = Number(button.dataset.deleteFeature || 0);
+        if (!featureId) return;
+        const ok = await Admin.showConfirm({ title: 'Hapus Program Utama?', message: 'Program akan disembunyikan dari landing page dan daftar admin.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+        const res = await fetch(route('admin.featureDelete', { id: featureId }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+        });
+        if (!res.ok) {
+          Admin.showToast('Gagal menghapus Program Utama.');
+          return;
+        }
+        button.closest('tr')?.remove();
+        Admin.showToast('Program Utama berhasil dihapus.');
+      });
+    });
   }
 
   function renderWhyChooseList() {
@@ -702,7 +1517,7 @@
           <article class="news-body-block smaller" contenteditable="true" data-placeholder="Tulis jawaban FAQ..."></article>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', '<select class="config-input"><option>Yes</option><option>No</option></select>')}</section>
+          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', selectControl({ id: 'faq-show-home', value: 'Yes', options: ['Yes', 'No'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit FAQ</button>
         </aside>
       </form>
@@ -756,7 +1571,7 @@
           </div>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Photo Info</h2>${control('Caption', '<input class="config-input" placeholder="Caption foto..." />')}${control('Visibility', '<select class="config-input"><option>Show</option><option>Hide</option></select>')}</section>
+          <section class="config-card"><h2>Photo Info</h2>${control('Caption', '<input class="config-input" placeholder="Caption foto..." />')}${control('Visibility', selectControl({ id: 'photo-visibility', value: 'Show', options: ['Show', 'Hide'] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Photo</button>
         </aside>
       </form>
@@ -771,25 +1586,225 @@
     });
   }
 
-  function teamCard(item, index) {
-    const photo = memberPhotos[index % memberPhotos.length];
+  function teamCard(item, index, batchMode = false) {
+    const photo = item.photo || memberPhotos[index % memberPhotos.length];
+    const checked = teamSelection.has(Number(item.id)) ? 'checked' : '';
+    const homeClass = item.show_on_home ? 'is-home' : '';
+    const batchClass = batchMode ? 'is-batch' : '';
     return `
-      <article class="team-admin-card">
+      <article class="team-admin-card ${homeClass} ${batchClass}" data-team-id="${item.id}">
+        <label class="team-select-check ${batchMode ? '' : 'hidden'}"><input type="checkbox" data-team-select="${item.id}" ${checked} /> Select</label>
+        <button type="button" class="team-home-toggle ${batchMode ? '' : 'hidden'}" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? '-' : '+'}</button>
         <div class="team-admin-photo"><img src="${photo}" alt="${escape(item.name)}" onerror="this.remove(); this.parentElement.textContent='${Admin.initials(item.name)}';" /></div>
         <div class="team-admin-content">
           <h2>${escape(item.name)}</h2>
           <p>${escape(item.role)}</p>
           <div class="team-tags"><span>${escape(item.commission)}</span><span>${escape(item.division)}</span><span>${escape(item.status)}</span></div>
         </div>
-        <div class="team-card-actions"><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-delete>Delete</button></div>
+        <div class="team-card-actions"><a href="${adminUrl('team-member-add')}" class="cms-action">Add</a><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
       </article>
     `;
+  }
+
+  function bindTeamDeleteButtons() {
+    document.querySelectorAll('[data-delete-team]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.deleteTeam);
+        const ok = await Admin.showConfirm({ title: 'Hapus anggota?', message: 'Anggota akan dihapus dari database.', confirmText: 'Delete', danger: true });
+        if (!ok) return;
+        const token = getAdminCsrfToken();
+        const res = await fetch(route('admin.teamMemberDelete', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ _csrf_token: token }),
+        });
+        if (res.ok) {
+          Admin.showToast('Anggota dihapus.');
+          button.closest('tr')?.remove();
+        } else {
+          Admin.showToast('Gagal menghapus anggota.');
+        }
+      });
+    });
+  }
+
+  function bindTeamCardActions(render) {
+    document.querySelectorAll('[data-team-select]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const id = Number(input.dataset.teamSelect);
+        if (input.checked) teamSelection.add(id); else teamSelection.delete(id);
+        const count = document.querySelector('#team-selection-count');
+        if (count) count.textContent = String(teamSelection.size);
+      });
+    });
+    document.querySelectorAll('[data-team-home]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamHome);
+        const adding = button.textContent.trim() === '+';
+        const res = await fetch(route('admin.teamMemberHome', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ show_on_home: adding }),
+        });
+        Admin.showToast(res.ok ? (adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.') : 'Gagal memperbarui BPI Beranda.');
+        if (res.ok) render();
+      });
+    });
+    document.querySelectorAll('[data-team-delete]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamDelete);
+        const ok = await Admin.showConfirm({ title: 'Hapus anggota?', message: 'Anggota akan dihapus dari database.', confirmText: 'Delete', danger: true });
+        if (!ok) return;
+        const res = await fetch(route('admin.teamMemberDelete', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ _csrf_token: API.getCsrfToken?.() || '' }),
+        });
+        if (res.ok) {
+          teamSelection.delete(id);
+          Admin.showToast('Anggota dihapus.');
+          render();
+        } else {
+          Admin.showToast('Gagal menghapus anggota.');
+        }
+      });
+    });
+  }
+
+  function renderTeamFilterButtons(state, render) {
+    const groups = [
+      ['division', '#team-division-filter', 'Semua Divisi', state.filters.divisions || []],
+      ['campus', '#team-campus-filter', 'Semua Komisariat', state.filters.campuses || []],
+      ['year', '#team-year-filter', 'Semua Tahun', state.filters.years || []],
+    ];
+
+    groups.forEach(([key, selector, emptyLabel, values]) => {
+      const select = document.querySelector(selector);
+      if (!select) return;
+      select.innerHTML = `<option value="">${escape(emptyLabel)}</option>${values.map((value) => `<option value="${escape(value)}">${escape(value)}</option>`).join('')}`;
+      select.value = state[key] || '';
+      if (select.dataset.customSelectReady !== '1') enhanceAdminSelects(select.parentElement || document);
+      const wrapper = select.closest('.admin-custom-select');
+      const label = select.options[select.selectedIndex]?.text || emptyLabel;
+      wrapper?.querySelector('.admin-select-button span')?.replaceChildren(document.createTextNode(label));
+      wrapper?.querySelectorAll('.admin-select-menu button').forEach((button) => {
+        button.classList.toggle('is-active', String(button.dataset.value) === String(select.value));
+      });
+      select.addEventListener('change', () => {
+        state[key] = select.value || '';
+        state.page = 1;
+        render();
+      });
+    });
+  }
+
+  function renderTeamBatchBar(state, render) {
+    const bar = document.querySelector('#team-batch-bar');
+    if (!bar) return;
+
+    bar.classList.toggle('hidden', !state.batchMode);
+    if (!state.batchMode) {
+      bar.innerHTML = '';
+      return;
+    }
+
+    bar.innerHTML = `
+      <strong><span id="team-selection-count">${teamSelection.size}</span> dipilih</strong>
+      <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah Anggota ke Beranda</button>
+      <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
+      <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
+    `;
+
+    bar.querySelector('#team-selection-clear')?.addEventListener('click', () => {
+      teamSelection.clear();
+      render();
+    });
+
+    bar.querySelectorAll('[data-team-bulk]').forEach((button) => button.addEventListener('click', async () => {
+      if (teamSelection.size < 1) {
+        Admin.showToast('Pilih minimal satu anggota.');
+        return;
+      }
+
+      const action = button.dataset.teamBulk;
+      const ok = await Admin.showConfirm({
+        title: 'Jalankan batch operation?',
+        message: `${teamSelection.size} anggota akan diproses.`,
+        confirmText: 'Proses',
+      });
+      if (!ok) return;
+
+      const token = API.getCsrfToken?.() || '';
+      const res = await fetch(route('admin.teamMembersBulk'), {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action, ids: Array.from(teamSelection), _csrf_token: token }),
+      });
+
+      if (res.ok) {
+        Admin.showToast('Batch operation berhasil.');
+        render();
+      } else {
+        Admin.showToast('Batch operation gagal.');
+      }
+    }));
+  }
+
+  function teamEditorPayload() {
+    const komsatSelect = document.querySelector('#team-komsat-id');
+    const komsatLabel = komsatSelect?.selectedOptions?.[0]?.textContent || '';
+    return {
+      name: document.querySelector('#team-name')?.value || '',
+      designation: document.querySelector('#team-designation')?.value || '',
+      komsat_id: document.querySelector('#team-komsat-id')?.value || '',
+      komsat: komsatLabel === 'Pilih Komisariat' ? '' : komsatLabel,
+      divisi_id: document.querySelector('#team-divisi-id')?.value || '',
+      email: document.querySelector('#team-email')?.value || '',
+      phone: document.querySelector('#team-phone')?.value || '',
+      detail: document.querySelector('#team-detail')?.value || '',
+      photo: document.querySelector('#team-photo')?.value || '',
+      tahun: document.querySelector('#team-year')?.value || '',
+      show_on_home: document.querySelector('#team-show-home')?.value === '1',
+    };
+  }
+
+  async function loadTeamFormOptions() {
+    try {
+      const res = await fetch(route('admin.teamMemberOptions'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || { divisions: [], commissions: [] };
+      }
+    } catch (e) { /* fallback */ }
+    return { divisions: [], commissions: [] };
+  }
+
+  async function uploadTeamPhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const token = API.getCsrfToken?.() || '';
+    const form = new FormData();
+    form.append('image', file);
+    form.append('_csrf_token', token);
+    const res = await fetch(route('admin.teamMembersUpload'), { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin', body: form });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok && json.data?.url) {
+      document.querySelector('#team-photo').value = json.data.url;
+      document.querySelector('#team-photo-preview').innerHTML = `<img src="${json.data.url}" alt="Preview" />`;
+      Admin.showToast('Foto berhasil diupload.');
+    } else {
+      Admin.showToast(json.error || 'Upload foto gagal.');
+    }
   }
 
   function renderSearchToolbar(label) {
     return `
       <div class="cms-toolbar">
-        <label class="text-sm text-neutral-600">Show <select class="rounded-xl border border-neutral-900/10 bg-white px-3 py-2"><option>10</option><option>25</option></select> entries</label>
+        <label class="text-sm text-neutral-600">Show ${selectControl({ id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-per-page`, className: 'admin-inline-select', value: '10', options: ['10', '25'] })} entries</label>
         <label class="cms-search">${Admin.icon('search')}<input placeholder="Search ${label.toLowerCase()}..." /></label>
       </div>
     `;
@@ -821,7 +1836,7 @@
   }
 
   function miniSelectBlock(label, options, selected = '') {
-    return `<section class="mini-block"><span>${label}</span><select class="team-commission-select">${options.map((option) => `<option ${option === selected ? 'selected' : ''}>${option}</option>`).join('')}</select></section>`;
+    return `<section class="mini-block"><span>${label}</span>${selectControl({ id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-select`, className: 'team-commission-select', value: selected, options })}</section>`;
   }
 
   function miniBlock(label, value = '') {
@@ -848,4 +1863,1011 @@
   }
 
   function escape(value = '') { return Admin.escapeHtml(value); }
+
+  // ─── Prestasi CMS ───────────────────────────────────────────────────────────
+
+  const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
+
+  async function renderPrestasiList() {
+    // Check if SSR markup exists - if so, only bind delete/detail behavior
+    if (document.querySelector('#admin-prestasi-list[data-ssr="true"]')) {
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      bindPrestasiDeleteButtons();
+      bindPrestasiDetailButtons();
+      // Bind search form Enter key
+      const searchInput = document.querySelector('#prestasi-search');
+      if (searchInput) {
+        searchInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            document.querySelector('#prestasi-filter-form')?.submit();
+          }
+        });
+      }
+      return;
+    }
+
+    const body = renderShell(
+      'View Prestasi',
+      'Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.',
+      `<a href="${adminUrl('prestasi-token')}" class="btn btn-secondary">Buat Link Form Prestasi</a><a href="${adminUrl('prestasi-add')}" class="btn btn-primary">Add Prestasi</a>`
+    );
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data prestasi...</div>';
+
+    // Hydrate state from URL
+    const prestasiUrlParams = new URLSearchParams(location.search);
+    const prestasiState = {
+      page: Math.max(1, Number(prestasiUrlParams.get('page')) || 1),
+      perPage: Number(prestasiUrlParams.get('per_page')) || 25,
+      search: prestasiUrlParams.get('q') || '',
+      category: prestasiUrlParams.get('category') || '',
+      status: prestasiUrlParams.get('status') || '',
+      total: 0,
+      totalPages: 1,
+      items: [],
+    };
+
+    const syncPrestasiUrl = () => {
+      const params = new URLSearchParams();
+      if (prestasiState.search) params.set('q', prestasiState.search);
+      if (prestasiState.category) params.set('category', prestasiState.category);
+      if (prestasiState.status) params.set('status', prestasiState.status);
+      if (prestasiState.page > 1) params.set('page', String(prestasiState.page));
+      if (prestasiState.perPage !== 25) params.set('per_page', String(prestasiState.perPage));
+      const qs = params.toString();
+      const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+      history.replaceState({}, '', url);
+    };
+
+    const loadPrestasiPage = async () => {
+      try {
+        const endpoint = Core.buildEndpoint(route('admin.prestasiList'), { page: prestasiState.page, per_page: prestasiState.perPage, status: prestasiState.status });
+        const res = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          prestasiState.items = json.data || [];
+          prestasiState.total = Number(json.meta?.total || prestasiState.items.length);
+          prestasiState.totalPages = Number(json.meta?.total_pages || 1);
+          prestasiState.page = Number(json.meta?.page || prestasiState.page);
+          return;
+        }
+      } catch (e) { /* fallback */ }
+      // Fallback to static data
+      if (window.GenBIData && window.GenBIData.prestasi) {
+        prestasiState.items = window.GenBIData.prestasi;
+        prestasiState.total = prestasiState.items.length;
+        prestasiState.totalPages = 1;
+      }
+    };
+
+    body.innerHTML = `
+      <section class="admin-card p-4 md:p-6">
+        <div class="cms-toolbar">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-sm text-neutral-600">Show ${selectControl({ id: 'prestasi-per-page', className: 'admin-inline-select', value: String(prestasiState.perPage), options: ['10', '25', '50'] })} entries</label>
+            ${selectControl({ id: 'prestasi-filter-category', className: 'admin-toolbar-select', value: prestasiState.category, options: [{ value: '', label: 'Semua Kategori' }, ...prestasiCategories.map((category) => ({ value: category, label: category }))] })}
+            ${selectControl({ id: 'prestasi-filter-status', className: 'admin-toolbar-select', value: prestasiState.status, options: [{ value: '', label: 'Semua Status' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }, { value: 'archived', label: 'Archived' }] })}
+          </div>
+          <label class="cms-search">${Admin.icon('search')}<input id="prestasi-search" placeholder="Search prestasi..." value="${escape(prestasiState.search)}" /></label>
+        </div>
+        <div class="admin-responsive-table mt-5">
+          <table class="cms-table" id="prestasi-table">
+            <thead>
+              <tr>
+                <th>SL</th>
+                <th>Judul</th>
+                <th>Nama Anggota</th>
+                <th>Peringkat</th>
+                <th>Tahun</th>
+                <th>Penyelenggara</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="prestasi-tbody"></tbody>
+          </table>
+        </div>
+        <div class="admin-pagination mt-5" id="prestasi-pagination" aria-label="Pagination prestasi"></div>
+      </section>
+    `;
+
+    const filterAndRender = async () => {
+      syncPrestasiUrl();
+      await loadPrestasiPage();
+
+      // Client-side filter for search and category (backend doesn't support q/category filter yet)
+      let displayed = prestasiState.items;
+      const search = prestasiState.search.toLowerCase();
+      const category = prestasiState.category.toLowerCase();
+      if (search || category) {
+        displayed = displayed.filter(item => {
+          const title = (item.title || '').toLowerCase();
+          const name = (item.name || '').toLowerCase();
+          const itemCategory = (item.category || '').toLowerCase();
+          if (search && !title.includes(search) && !name.includes(search) && !itemCategory.includes(search)) return false;
+          if (category && itemCategory !== category) return false;
+          return true;
+        });
+      }
+
+      const offset = (prestasiState.page - 1) * prestasiState.perPage;
+      const tbody = document.querySelector('#prestasi-tbody');
+      if (tbody) tbody.innerHTML = renderPrestasiRows(displayed, offset);
+      renderAdminPagination('#prestasi-pagination', prestasiState.totalPages, prestasiState.page, (pg) => {
+        prestasiState.page = pg;
+        filterAndRender();
+      });
+      bindPrestasiDeleteButtons();
+    };
+
+    enhanceAdminSelects(body);
+    document.querySelector('#prestasi-search')?.addEventListener('input', (event) => { prestasiState.search = event.target.value; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-per-page')?.addEventListener('change', (event) => { prestasiState.perPage = Number(event.target.value) || 25; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-filter-category')?.addEventListener('change', (event) => { prestasiState.category = event.target.value; prestasiState.page = 1; filterAndRender(); });
+    document.querySelector('#prestasi-filter-status')?.addEventListener('change', (event) => { prestasiState.status = event.target.value; prestasiState.page = 1; filterAndRender(); });
+    filterAndRender();
+  }
+
+  function renderPrestasiRows(items, offset = 0) {
+    if (items.length === 0) {
+      return '<tr><td colspan="8" class="text-center text-neutral-500 py-8">Belum ada data prestasi.</td></tr>';
+    }
+    return items.map((item, index) => {
+      const id = item.id || item.prestasi_id || 0;
+      const title = item.title || item.judul_prestasi || '';
+      const name = item.name || item.nama_anggota || '';
+      const category = item.category || item.kategori || '';
+      const year = item.year || item.tahun || '';
+      const institution = item.institution || item.institusi_penyelenggara || '';
+      const status = item.status || 'draft';
+      const image = item.image || item.foto_prestasi || '';
+      const statusClass = status === 'published' ? 'cms-pill-green' : status === 'draft' ? 'cms-pill-yellow' : '';
+
+      return `
+        <tr>
+          <td>${offset + index + 1}</td>
+          <td>
+            <div class="flex items-center gap-3">
+              ${image ? `<img src="${image.startsWith('http') || image.startsWith('/') ? image : '/uploads/prestasi/' + image}" class="table-thumb rounded" alt="${escape(title)}" />` : ''}
+              <div>
+                <strong>${escape(title)}</strong>
+                <p class="mt-1 text-xs text-neutral-500">${escape(item.description || item.deskripsi_singkat || '').slice(0, 60)}</p>
+              </div>
+            </div>
+          </td>
+          <td>${escape(name)}</td>
+          <td><span class="cms-pill">${escape(category)}</span></td>
+          <td>${escape(year)}</td>
+          <td>${escape(institution)}</td>
+          <td><span class="cms-pill ${statusClass}">${status}</span></td>
+          <td>
+            <div class="flex gap-2">
+              <a href="${adminUrl('prestasi-edit')}?id=${id}" class="cms-action edit">Edit</a>
+              <button class="cms-action delete" data-delete data-prestasi-id="${id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderAdminPagination(selector, totalPages, currentPage, onPageChange) {
+    const root = document.querySelector(selector);
+    if (!root) return;
+    if (totalPages <= 1) {
+      root.innerHTML = '';
+      return;
+    }
+    const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+    root.innerHTML = `
+      <button class="pager-button" type="button" data-page="${Math.max(1, currentPage - 1)}" ${currentPage === 1 ? 'disabled' : ''}>Sebelumnya</button>
+      ${pages.map((page) => `<button class="pager-button ${page === currentPage ? 'is-active' : ''}" type="button" data-page="${page}">${page}</button>`).join('')}
+      <button class="pager-button" type="button" data-page="${Math.min(totalPages, currentPage + 1)}" ${currentPage === totalPages ? 'disabled' : ''}>Berikutnya</button>
+    `;
+    root.querySelectorAll('[data-page]').forEach((button) => {
+      button.addEventListener('click', () => onPageChange(Number(button.dataset.page) || 1));
+    });
+  }
+
+  function bindPrestasiDeleteButtons() {
+    document.querySelectorAll('[data-delete][data-prestasi-id], [data-delete-prestasi]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.prestasiId || button.dataset.deletePrestasi;
+        const ok = await Admin.showConfirm({
+          title: 'Hapus prestasi?',
+          message: 'Prestasi akan dihapus (soft delete). Data masih bisa dipulihkan.',
+          confirmText: 'Hapus',
+          danger: true
+        });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.prestasiDelete', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Prestasi berhasil dihapus.');
+            button.closest('tr')?.remove();
+          } else {
+            const json = await res.json().catch(() => ({}));
+            Admin.showToast(json.error || 'Gagal menghapus prestasi.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal menghapus prestasi.');
+        }
+      });
+    });
+  }
+
+  async function loadPrestasiMemberOptions(currentName = '') {
+    try {
+      const payload = await API.getTeamList({ per_page: 200 });
+      const members = Array.isArray(payload?.members) ? payload.members : [];
+      const uniqueMembers = [];
+      const seen = new Set();
+      members.forEach((member) => {
+        const name = String(member.name || '').trim();
+        const key = name.toLowerCase();
+        if (!name || seen.has(key)) return;
+        seen.add(key);
+        uniqueMembers.push(member);
+      });
+      if (currentName && !seen.has(currentName.toLowerCase())) {
+        uniqueMembers.unshift({ name: currentName, role: 'Data tersimpan' });
+      }
+      return uniqueMembers;
+    } catch (error) {
+      return currentName ? [{ name: currentName, role: 'Data tersimpan' }] : [];
+    }
+  }
+
+  function buildPrestasiTitle() {
+    const name = document.querySelector('#prestasi-member-search')?.value?.trim() || '';
+    const rank = document.querySelector('#prestasi-category')?.value?.trim() || '';
+    const institution = document.querySelector('#prestasi-institution')?.value?.trim() || '';
+    return [rank, institution, name ? `- ${name}` : ''].filter(Boolean).join(' ');
+  }
+
+  async function renderPrestasiEditor(isEdit) {
+    const id = Number(new URLSearchParams(location.search).get('id')) || 0;
+
+    // Check if SSR form markup exists - if so, hydrate instead of rebuilding
+    const ssrForm = document.querySelector('#prestasi-editor-form[data-ssr="true"]');
+    if (ssrForm) {
+      const ssrIsEdit = ssrForm.dataset.edit === '1';
+      const ssrItemId = Number(ssrForm.dataset.itemId) || 0;
+
+      // Load member options for datalist
+      const memberOptions = await loadPrestasiMemberOptions(
+        document.querySelector('#prestasi-member-search')?.value?.trim() || ''
+      );
+      const datalist = document.querySelector('#prestasi-member-list');
+      if (datalist) {
+        datalist.innerHTML = memberOptions.map(member =>
+          `<option value="${escape(member.name)}">${escape(member.role || member.division || '')}</option>`
+        ).join('');
+      }
+
+      // Bind image upload
+      document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
+        document.querySelector('#prestasi-image-file')?.click();
+      });
+      document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+          const res = await fetch(route('admin.prestasiUpload'), {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: formData
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const url = json.data?.url || '';
+            document.querySelector('#prestasi-image-url').value = url;
+            const preview = document.querySelector('.config-preview');
+            if (preview) { preview.src = url; }
+            else {
+              const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
+              const empty = container?.querySelector('.config-empty');
+              if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
+            }
+            Admin.showToast('Foto berhasil diupload.');
+          } else {
+            Admin.showToast('Gagal upload foto.');
+          }
+        } catch (err) {
+          Admin.showToast('Gagal upload foto.');
+        }
+      });
+
+      // Enhance custom selects
+      enhanceAdminSelects(document.querySelector('#cms-body') || document);
+
+      // Bind form submission
+      bindPrestasiFormSubmit(ssrIsEdit, ssrItemId);
+      return;
+    }
+
+    let item = {
+      title: '',
+      name: '',
+      category: '',
+      year: new Date().getFullYear().toString(),
+      description: '',
+      content: '',
+      image: '',
+      institution: '',
+      status: 'draft',
+      meta_title: '',
+      meta_description: '',
+      meta_keyword: '',
+    };
+
+    // Load from backend if editing
+    if (isEdit && id > 0) {
+      try {
+        const res = await fetch(route('admin.prestasiShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          const d = json.data || {};
+          item = {
+            ...item,
+            id: d.id || d.prestasi_id,
+            title: d.title || d.judul_prestasi || '',
+            name: d.name || d.nama_anggota || '',
+            category: d.category || d.kategori || '',
+            year: d.year || d.tahun || '',
+            description: d.description || d.deskripsi_singkat || '',
+            content: d.content || d.deskripsi_detail || '',
+            image: d.image || d.foto_prestasi || '',
+            institution: d.institution || '',
+            status: d.status || 'draft',
+            meta_title: d.meta_title || '',
+            meta_description: d.meta_description || '',
+            meta_keyword: d.meta_keyword || '',
+          };
+        }
+      } catch (e) {
+        // Fallback: use empty form
+      }
+    }
+
+    const body = renderShell(
+      isEdit ? 'Edit Prestasi' : 'Add Prestasi',
+      'Kelola data prestasi anggota GenBI Jambi.',
+      `<a href="${adminUrl('prestasi')}" class="btn btn-secondary">View All</a>`
+    );
+
+    const memberOptions = await loadPrestasiMemberOptions(item.name);
+
+    body.innerHTML = `
+      <form class="prestasi-editor-form" id="prestasi-editor-form">
+        <div class="editor-config-sidebar prestasi-config-panel">
+          <section class="config-card medium-config-card">
+            <h2>Informasi Prestasi</h2>
+            ${control('Nama', `<input class="config-input" id="prestasi-member-search" list="prestasi-member-list" value="${escape(item.name)}" placeholder="Cari nama anggota..." autocomplete="off" />
+              <datalist id="prestasi-member-list">${memberOptions.map(member => `<option value="${escape(member.name)}">${escape(member.role || member.division || '')}</option>`).join('')}</datalist>`)}
+            ${control('Penyelenggara', `<input class="config-input" id="prestasi-institution" value="${escape(item.institution)}" placeholder="Nama penyelenggara" />`)}
+            ${control('Tahun', `<input class="config-input" id="prestasi-year" type="number" min="1900" max="2099" step="1" value="${escape(item.year)}" placeholder="2026" />`)}
+            ${control('Peringkat', `<input class="config-input" id="prestasi-category" value="${escape(item.category)}" list="prestasi-rank-list" placeholder="Contoh: Juara 1" />
+              <datalist id="prestasi-rank-list">${prestasiCategories.map(c => `<option value="${escape(c)}"></option>`).join('')}</datalist>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Deskripsi</h2>
+            ${control('Deskripsi Singkat', `<textarea class="config-input" id="prestasi-desc-field" rows="5" placeholder="Tulis deskripsi singkat prestasi...">${escape(item.description)}</textarea>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Foto Prestasi</h2>
+            ${item.image ? `<img src="${item.image}" class="config-preview rounded" alt="Foto prestasi" />` : '<div class="config-empty">Belum ada foto</div>'}
+            <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" />
+            <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full mt-2">Upload Foto</button>
+            <input class="config-input mt-2" id="prestasi-image-url" value="${escape(item.image)}" placeholder="URL gambar (opsional)" />
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>SEO Information</h2>
+            ${control('Meta Title', `<input class="config-input" id="prestasi-meta-title" value="${escape(item.meta_title || item.title)}" />`)}
+            ${control('Meta Keywords', `<textarea class="config-input" id="prestasi-meta-keyword" rows="3">${escape(item.meta_keyword || `${item.category}, GenBI Jambi, prestasi`)}</textarea>`)}
+            ${control('Meta Description', `<textarea class="config-input" id="prestasi-meta-desc" rows="4">${escape(item.meta_description || item.description)}</textarea>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>Status</h2>
+            ${control('Publish Status', selectControl({ id: 'prestasi-status', value: item.status || 'draft', options: [{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }] }))}
+          </section>
+          <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Prestasi' : 'Submit Prestasi'}</button>
+        </div>
+      </form>
+    `;
+
+    // Image upload handler
+    enhanceAdminSelects(body);
+
+    document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
+      document.querySelector('#prestasi-image-file')?.click();
+    });
+    document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await fetch(route('admin.prestasiUpload'), {
+          method: 'POST',
+          headers: { 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: formData
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const url = json.data?.url || '';
+          document.querySelector('#prestasi-image-url').value = url;
+          const preview = document.querySelector('.config-preview');
+          if (preview) { preview.src = url; }
+          else {
+            const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
+            const empty = container?.querySelector('.config-empty');
+            if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
+          }
+          Admin.showToast('Foto berhasil diupload.');
+        } else {
+          Admin.showToast('Gagal upload foto.');
+        }
+      } catch (err) {
+        Admin.showToast('Gagal upload foto.');
+      }
+    });
+
+    // Form submission
+    bindPrestasiFormSubmit(isEdit, id);
+  }
+
+  function bindPrestasiFormSubmit(isEdit, itemId) {
+    document.querySelector('#prestasi-editor-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const ok = await Admin.showConfirm({
+        title: isEdit ? 'Update prestasi?' : 'Submit prestasi?',
+        message: isEdit ? 'Data prestasi akan diperbarui di database.' : 'Prestasi baru akan disimpan ke database.',
+        confirmText: isEdit ? 'Update' : 'Submit'
+      });
+      if (!ok) return;
+
+      const contentField = document.querySelector('#prestasi-content-field');
+      const descField = document.querySelector('#prestasi-desc-field');
+
+      const payload = {
+        name: document.querySelector('#prestasi-member-search')?.value?.trim() || '',
+        title: buildPrestasiTitle(),
+        category: document.querySelector('#prestasi-category')?.value || '',
+        year: document.querySelector('#prestasi-year')?.value || '',
+        description: descField?.value?.trim() || '',
+        content: contentField?.value?.trim() || descField?.value?.trim() || '',
+        image: document.querySelector('#prestasi-image-url')?.value?.trim() || '',
+        institution: document.querySelector('#prestasi-institution')?.value?.trim() || '',
+        status: document.querySelector('#prestasi-status')?.value || 'draft',
+        meta_title: document.querySelector('#prestasi-meta-title')?.value?.trim() || '',
+        meta_keyword: document.querySelector('#prestasi-meta-keyword')?.value?.trim() || '',
+        meta_description: document.querySelector('#prestasi-meta-desc')?.value?.trim() || '',
+      };
+
+      const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const url = isEdit ? route('admin.prestasiUpdate', { id: itemId }) : route('admin.prestasiStore');
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+          credentials: 'same-origin',
+          body: JSON.stringify({ ...payload, _csrf_token: csrfToken })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Prestasi berhasil diperbarui.' : 'Prestasi berhasil ditambahkan.');
+          if (!isEdit && result.data?.id) {
+            setTimeout(() => { window.location.href = `${adminUrl('prestasi-edit')}?id=${result.data.id}`; }, 1200);
+          }
+        } else {
+          const details = result.details ? result.details.join(', ') : '';
+          Admin.showToast(result.error || 'Gagal menyimpan prestasi.' + (details ? ' ' + details : ''));
+        }
+      } catch (e) {
+        Admin.showToast('Gagal menyimpan prestasi. Periksa koneksi.');
+      }
+    });
+  }
+
+  function bindPrestasiDetailButtons() {
+    document.querySelectorAll('[data-detail-prestasi]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.detailPrestasi;
+        if (!id) return;
+        try {
+          const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.prestasiShow', { id }), {
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin'
+          });
+          if (!res.ok) {
+            Admin.showToast('Gagal memuat detail prestasi.');
+            return;
+          }
+          const json = await res.json();
+          const item = json.data;
+          if (!item) {
+            Admin.showToast('Data prestasi tidak ditemukan.');
+            return;
+          }
+          const statusClass = (item.status || 'draft') === 'published' ? 'cms-pill-green' : (item.status || 'draft') === 'draft' ? 'cms-pill-yellow' : '';
+          await Admin.showConfirm({
+            title: 'Detail Prestasi',
+            message: `<div class="text-left mt-3">
+              ${item.image ? `<img src="${escape(item.image)}" class="w-full max-h-48 object-cover rounded-xl mb-4" alt="${escape(item.title || '')}" />` : ''}
+              <h3 class="text-lg font-bold text-neutral-950">${escape(item.title || '')}</h3>
+              <div class="mt-3 grid gap-2 text-sm">
+                <div><strong>Nama:</strong> ${escape(item.name || '')}</div>
+                <div><strong>Peringkat:</strong> ${escape(item.category || '')}</div>
+                <div><strong>Tahun:</strong> ${escape(item.year || '')}</div>
+                <div><strong>Penyelenggara:</strong> ${escape(item.institution || '')}</div>
+                <div><strong>Komisariat:</strong> ${escape(item.campus || '')}</div>
+                <div><strong>Status:</strong> <span class="cms-pill ${statusClass}">${escape(item.status || 'draft')}</span></div>
+              </div>
+              ${item.description ? `<div class="mt-4 text-sm text-neutral-600">${escape(item.description)}</div>` : ''}
+              ${item.content && item.content !== item.description ? `<div class="prose-soft mt-4 border-t border-neutral-900/10 pt-4">${item.content}</div>` : ''}
+            </div>`,
+            confirmText: 'Edit',
+            cancelText: 'Tutup',
+            html: true,
+            panelClass: 'is-wide'
+          }).then((edit) => {
+            if (edit) {
+              window.location.href = `${adminUrl('prestasi-edit')}?id=${item.id || item.prestasi_id}`;
+            }
+          });
+        } catch (e) {
+          Admin.showToast('Gagal memuat detail prestasi.');
+        }
+      });
+    });
+  }
+
+  // ─── Prestasi Token Management ──────────────────────────────────────────────
+
+  async function renderPrestasiTokenList(generatedLink = '') {
+    const body = renderShell(
+      'Prestasi Token',
+      'Generate dan kelola token form prestasi sekali pakai untuk dibagikan ke anggota yang mengisi dari luar admin.',
+      `<button id="generate-token-btn" class="btn btn-primary">Buat Link Form Prestasi</button>`
+    );
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data token...</div>';
+
+    let items = [];
+    try {
+      const res = await fetch(route('admin.prestasiTokens'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = json.data || [];
+      }
+    } catch (e) { /* fallback empty */ }
+
+    body.innerHTML = `
+      <section class="admin-card p-4 md:p-6">
+        <div class="admin-responsive-table">
+          <table class="cms-table" id="token-table">
+            <thead>
+              <tr>
+                <th>SL</th>
+                <th>Label</th>
+                <th>Status</th>
+                <th>Dibuat</th>
+                <th>Kedaluwarsa</th>
+                <th>Digunakan</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="token-tbody">
+              ${renderTokenRows(items)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <div id="generated-token-display" class="mt-6 ${generatedLink ? '' : 'hidden'}">
+        <section class="admin-card p-6 border-2 border-green-200 bg-green-50">
+          <h3 class="text-lg font-bold text-green-900">Token Berhasil Dibuat</h3>
+          <p class="mt-2 text-sm text-green-800">Salin link di bawah. Token hanya ditampilkan sekali dan tidak bisa dilihat lagi.</p>
+          <div class="mt-4 flex items-center gap-3">
+            <input id="generated-token-url" class="config-input flex-1 font-mono text-sm" readonly />
+            <button id="copy-token-url" class="btn btn-primary">Copy</button>
+          </div>
+        </section>
+      </div>
+    `;
+
+    // Bind generate button
+    document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
+
+    if (generatedLink) {
+      const urlInput = document.querySelector('#generated-token-url');
+      if (urlInput) {
+        urlInput.value = generatedLink;
+      }
+      document.querySelector('#copy-token-url')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(generatedLink);
+          Admin.showToast('Link token disalin ke clipboard.');
+        } catch (e) {
+          Admin.showToast('Gagal menyalin. Salin manual dari input.');
+        }
+      });
+    }
+
+    // Bind revoke buttons
+    bindTokenRevokeButtons();
+  }
+
+  function renderTokenRows(items) {
+    if (items.length === 0) {
+      return '<tr><td colspan="7" class="text-center text-neutral-500 py-8">Belum ada token.</td></tr>';
+    }
+    return items.map((item, index) => {
+      const status = item.status || 'active';
+      const statusClass = status === 'active' ? 'cms-pill-green' : status === 'used' ? 'cms-pill-yellow' : 'cms-pill-red';
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td><strong>${escape(item.label || '')}</strong></td>
+          <td><span class="cms-pill ${statusClass}">${status}</span></td>
+          <td class="text-xs">${item.created_at || '-'}</td>
+          <td class="text-xs">${item.expires_at || 'Tidak ada'}</td>
+          <td class="text-xs">${item.used_at || '-'}</td>
+          <td>
+            ${status === 'active' ? `<button class="cms-action delete" data-revoke data-token-id="${item.id || item.token_id}">Revoke</button>` : '<span class="text-neutral-400 text-xs">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function bindTokenRevokeButtons() {
+    document.querySelectorAll('[data-revoke][data-token-id]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.tokenId;
+        const ok = await Admin.showConfirm({
+          title: 'Revoke token?',
+          message: 'Token akan dinonaktifkan dan tidak bisa digunakan lagi.',
+          confirmText: 'Revoke',
+          danger: true
+        });
+        if (!ok) return;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.prestasiTokenRevoke', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            Admin.showToast('Token berhasil direvoke.');
+            renderPrestasiTokenList(); // Refresh list
+          } else {
+            Admin.showToast('Gagal merevoke token.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal merevoke token.');
+        }
+      });
+    });
+  }
+
+  async function showGenerateModal() {
+    const ok = await Admin.showConfirm({
+      title: 'Generate Token Baru',
+      message: `<div class="text-left mt-3">
+        <label class="config-field"><span>Label / Keterangan</span><input id="token-label-input" class="config-input" placeholder="Contoh: Form prestasi KTI 2025" /></label>
+        <label class="config-field mt-3"><span>Kedaluwarsa (opsional)</span><input id="token-expires-input" class="config-input" type="datetime-local" /></label>
+      </div>`,
+      confirmText: 'Generate',
+      cancelText: 'Batal',
+      html: true,
+      panelClass: 'is-wide'
+    });
+    if (!ok) return;
+
+    const label = document.querySelector('#token-label-input')?.value?.trim() || '';
+    const expiresAt = document.querySelector('#token-expires-input')?.value || '';
+
+    if (!label) {
+      Admin.showToast('Label wajib diisi.');
+      return;
+    }
+
+    try {
+      const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const res = await fetch(route('admin.prestasiTokens'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        credentials: 'same-origin',
+        body: JSON.stringify({ label, expires_at: expiresAt || null })
+      });
+      const result = await res.json();
+      if (res.ok && result.data?.token) {
+        const baseUrl = window.location.origin;
+        const submitUrl = `${baseUrl}${route('public.prestasiSubmit', { token: result.data.token })}`;
+        await renderPrestasiTokenList(submitUrl);
+        Admin.showToast('Token berhasil dibuat. Salin link sekarang!');
+      } else {
+        Admin.showToast(result.error || 'Gagal membuat token.');
+      }
+    } catch (e) {
+      Admin.showToast('Gagal membuat token. Periksa koneksi.');
+    }
+  }
+
+  function initPrestasiEditor(item) {
+    const holder = document.querySelector('#prestasi-editor');
+    const fallback = document.querySelector('#prestasi-editor-fallback');
+    if (!holder) return null;
+
+    if (!window.EditorJS) {
+      holder.classList.add('hidden');
+      fallback?.classList.remove('hidden');
+      return null;
+    }
+
+    // Parse existing content into blocks
+    const initialBlocks = [];
+    if (item.content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = item.content;
+      tempDiv.childNodes.forEach(node => {
+        if (node.nodeType === 3 && node.textContent.trim()) {
+          initialBlocks.push({ type: 'paragraph', data: { text: node.textContent.trim() } });
+        } else if (node.nodeType === 1) {
+          const tag = node.tagName.toLowerCase();
+          if (['h1', 'h2', 'h3', 'h4'].includes(tag)) {
+            initialBlocks.push({ type: 'header', data: { text: node.innerHTML, level: parseInt(tag[1]) } });
+          } else if (tag === 'blockquote') {
+            initialBlocks.push({ type: 'quote', data: { text: node.textContent } });
+          } else if (tag === 'figure' || tag === 'img') {
+            const img = tag === 'img' ? node : node.querySelector('img');
+            if (img) initialBlocks.push({ type: 'image', data: { file: { url: img.src }, caption: img.alt || '' } });
+          } else if (['ul', 'ol'].includes(tag)) {
+            const listItems = Array.from(node.querySelectorAll('li')).map(li => li.innerHTML);
+            initialBlocks.push({ type: 'list', data: { style: tag === 'ol' ? 'ordered' : 'unordered', items: listItems } });
+          } else {
+            initialBlocks.push({ type: 'paragraph', data: { text: node.innerHTML || node.textContent } });
+          }
+        }
+      });
+    }
+    if (initialBlocks.length === 0) {
+      initialBlocks.push({ type: 'paragraph', data: { text: '' } });
+    }
+
+    const tools = {};
+    if (window.Header) tools.header = { class: window.Header, inlineToolbar: true, config: { levels: [2, 3, 4], defaultLevel: 3 } };
+    const ListTool = window.EditorjsList || window.List;
+    if (ListTool) tools.list = { class: ListTool, inlineToolbar: true };
+    if (window.Quote) tools.quote = { class: window.Quote, inlineToolbar: true };
+    if (window.ImageTool) {
+      tools.image = {
+        class: window.ImageTool,
+        config: {
+          uploader: {
+            async uploadByFile(file) {
+              const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+              const formData = new FormData();
+              formData.append('image', file);
+              try {
+                const res = await fetch(route('admin.prestasiUpload'), {
+                  method: 'POST',
+                  headers: { 'X-CSRF-TOKEN': token },
+                  credentials: 'same-origin',
+                  body: formData
+                });
+                if (res.ok) {
+                  const json = await res.json();
+                  return { success: 1, file: { url: json.data.url } };
+                }
+              } catch (e) { /* fallback */ }
+              return { success: 0 };
+            },
+            async uploadByUrl(url) {
+              return { success: 1, file: { url } };
+            }
+          }
+        }
+      };
+    }
+
+    try {
+      return new window.EditorJS({
+        holder: 'prestasi-editor',
+        tools,
+        data: { blocks: initialBlocks },
+        placeholder: 'Tulis detail prestasi...',
+      });
+    } catch (e) {
+      holder.classList.add('hidden');
+      fallback?.classList.remove('hidden');
+      return null;
+    }
+  }
+
+  // Bind multi-select dropdown for SSR pages
+  function bindAdminMultiSelect() {
+    const multiSelect = document.querySelector('.admin-multi-select[data-ssr="true"]');
+    if (!multiSelect) return;
+
+    const button = multiSelect.querySelector('.admin-multi-select-button');
+    const menu = multiSelect.querySelector('.admin-multi-select-menu');
+    const label = multiSelect.querySelector('#category-label');
+    const checkboxes = multiSelect.querySelectorAll('input[type="checkbox"]');
+    const clearBtn = multiSelect.querySelector('.admin-multi-select-clear');
+    const applyBtn = multiSelect.querySelector('.admin-multi-select-apply');
+
+    if (!button || !menu) return;
+
+    if (multiSelect.dataset.dropdownReady !== '1' && UI?.createDropdownController) {
+      multiSelect.dataset.dropdownReady = '1';
+      UI.createDropdownController({
+        root: multiSelect,
+        button,
+        menu,
+        portalTarget: document.body,
+        offset: 8,
+      });
+    }
+
+    // Update label when checkboxes change
+    const updateLabel = () => {
+      const checked = Array.from(checkboxes).filter(cb => cb.checked);
+      if (label) {
+        label.textContent = checked.length === 0 ? 'Semua Kategori' : `${checked.length} dipilih`;
+      }
+    };
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateLabel));
+
+    // Clear button
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkboxes.forEach(cb => cb.checked = false);
+        updateLabel();
+      });
+    }
+
+    // Apply button submits the form
+    if (applyBtn) {
+      applyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = multiSelect.closest('form');
+        if (form) form.submit();
+      });
+    }
+  }
+
+  // Bind team batch mode toggle for SSR pages
+  function bindTeamBatchMode() {
+    const batchToggle = document.querySelector('#team-batch-toggle');
+    const batchBar = document.querySelector('#team-batch-bar');
+    const teamList = document.querySelector('#admin-team-list[data-ssr="true"]');
+    const selectionCount = document.querySelector('#team-selection-count');
+    const clearBtn = document.querySelector('#team-selection-clear');
+    
+    if (!batchToggle || !batchBar || !teamList) return;
+
+    let batchMode = false;
+    const selection = new Set();
+
+    const updateCount = () => {
+      if (selectionCount) selectionCount.textContent = String(selection.size);
+    };
+
+    const toggleBatchMode = () => {
+      batchMode = !batchMode;
+      batchBar.classList.toggle('hidden', !batchMode);
+      teamList.querySelectorAll('.team-admin-card').forEach((card) => {
+        card.classList.toggle('is-batch', batchMode);
+      });
+      teamList.querySelectorAll('.team-select-check, .team-home-toggle').forEach((control) => {
+        control.classList.toggle('hidden', !batchMode);
+      });
+      if (!batchMode) {
+        selection.clear();
+        teamList.querySelectorAll('[data-team-select]').forEach((cb) => { cb.checked = false; });
+        updateCount();
+      } else {
+        updateCount();
+      }
+    };
+
+    batchToggle.addEventListener('click', toggleBatchMode);
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        selection.clear();
+        teamList.querySelectorAll('[data-team-select]').forEach((cb) => { cb.checked = false; });
+        updateCount();
+      });
+    }
+
+    teamList.querySelectorAll('[data-team-select]').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const id = Number(checkbox.dataset.teamSelect);
+        if (checkbox.checked) {
+          selection.add(id);
+        } else {
+          selection.delete(id);
+        }
+        updateCount();
+      });
+    });
+
+    batchBar.querySelectorAll('[data-team-bulk]').forEach(button => {
+      button.addEventListener('click', async () => {
+        if (selection.size < 1) {
+          Admin.showToast('Pilih minimal satu anggota.');
+          return;
+        }
+
+        const action = button.dataset.teamBulk;
+        const adding = action === 'home_add';
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+
+        for (const id of selection) {
+          try {
+            await fetch(route('admin.teamMemberHome', { id }), {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+              credentials: 'same-origin',
+              body: JSON.stringify({ show_on_home: adding }),
+            });
+          } catch (e) { /* continue */ }
+        }
+
+        Admin.showToast(adding ? 'Anggota ditambahkan ke BPI Beranda.' : 'Anggota dihapus dari BPI Beranda.');
+        setTimeout(() => location.reload(), 800);
+      });
+    });
+  }
+
+  // Bind team home toggle for SSR pages
+  function bindTeamHomeToggle() {
+    document.querySelectorAll('[data-team-home]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamHome);
+        const card = button.closest('.team-admin-card');
+        const adding = button.textContent.trim() === '+';
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+
+        try {
+          const res = await fetch(route('admin.teamMemberHome', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ show_on_home: adding }),
+          });
+
+          if (res.ok) {
+            Admin.showToast(adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.');
+            button.textContent = adding ? '−' : '+';
+            button.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda';
+            card?.classList.toggle('is-home', adding);
+          } else {
+            Admin.showToast('Gagal memperbarui BPI Beranda.');
+          }
+        } catch (e) {
+          Admin.showToast('Gagal memperbarui BPI Beranda.');
+        }
+      });
+    });
+  }
 })();

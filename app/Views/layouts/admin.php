@@ -7,7 +7,7 @@
   <meta name="csrf-token" content="<?= $e($csrfToken ?? '') ?>">
   <title><?= $e($title ?? 'Admin GenBI') ?></title>
   <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260508e">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=20260508e">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20260510a">
 </head>
 <body class="admin-body" data-cms-page="<?= $e($cmsPage ?? '') ?>" data-cms-mode="<?= $e($cmsMode ?? '') ?>">
   <div class="admin-shell">
@@ -21,11 +21,13 @@
   </div>
   <div id="admin-mobile-backdrop" class="fixed inset-0 z-[70] hidden bg-neutral-950/35 backdrop-blur-sm lg:hidden"></div>
   <div id="admin-toast" class="admin-toast rounded-2xl bg-blue-950 px-5 py-4 text-sm font-semibold text-white shadow-2xl">Perubahan disimpan.</div>
+  <div id="admin-modal-root"></div>
   <script src="/assets/js/data.js?v=20260508e"></script>
   <script src="/assets/js/api-core.js?v=20260508e"></script>
   <script src="/assets/js/api.js?v=20260508e"></script>
   <script src="/assets/js/app.js?v=20260508e"></script>
-  <script src="/assets/js/admin/admin.js?v=20260508e"></script>
+  <script src="/assets/js/lib/ui.js?v=20260510a"></script>
+  <script src="/assets/js/admin/admin.js?v=20260510a"></script>
   <?= $scripts ?? '' ?>
 </body>
 </html>

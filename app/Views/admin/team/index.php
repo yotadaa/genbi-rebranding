@@ -24,10 +24,7 @@ $filterParams = array_filter([
     <div>
       <p class="eyebrow">Admin CMS</p>
       <h1 class="section-title mt-3">View Team Members</h1>
-      <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Direktori anggota GenBI. Aksi hapus memakai custom confirmation modal.</p>
-    </div>
-    <div class="cms-actions">
-      <a href="/admin/team-member-add" class="btn btn-primary">Add Team Member</a>
+      <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Direktori anggota GenBI. Listing beranda memakai periode terbaru, lalu bisa dioverride dari Team Members lewat aksi BPI Beranda.</p>
     </div>
   </header>
 
@@ -67,6 +64,7 @@ $filterParams = array_filter([
       </form>
 
       <div class="team-action-row mt-5">
+        <a href="/admin/team-member-add" class="cms-action edit">Add Team Member</a>
         <button type="button" class="cms-action edit" id="team-batch-toggle">Batch Operation</button>
       </div>
 
@@ -114,6 +112,7 @@ $filterParams = array_filter([
               </div>
             </div>
             <div class="team-card-actions">
+              <a href="/admin/team-member-add" class="cms-action">Add</a>
               <a href="/admin/team-member-edit?id=<?= (int) $item['id'] ?>" class="cms-action edit">Edit</a>
               <button class="cms-action delete" data-delete-team="<?= (int) $item['id'] ?>">Delete</button>
             </div>

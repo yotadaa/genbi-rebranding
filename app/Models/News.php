@@ -253,7 +253,7 @@ final class News
             ':excerpt' => $data['news_content_short'] ?? $data['excerpt'] ?? '',
             ':date' => $data['news_date'] ?? $data['date'] ?? date('Y-m-d'),
             ':photo' => $data['photo'] ?? '',
-            ':banner' => $data['banner'] ?? '',
+            ':banner' => $data['banner'] ?? $data['photo'] ?? '',
             ':category_id' => (int) ($data['category_id'] ?? 0),
             ':comment' => $data['comment'] ?? 'On',
             ':meta_title' => $data['meta_title'] ?? '',

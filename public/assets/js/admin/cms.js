@@ -5,6 +5,7 @@
   const Admin = window.GenBIAdmin;
   const API = window.GenBIAPI;
   const Core = window.GenBIAPICore;
+  const UI = window.GenBIUI;
   const { adminUrl } = window.GenBIApp;
   const programIconChoices = Admin.programIconChoices || ['sparkles', 'users', 'bank', 'chart', 'academic', 'calendar', 'heart', 'news', 'grid'];
   const page = document.body.dataset.cmsPage || 'news';
@@ -114,74 +115,13 @@
   }
 
   function enhanceAdminSelects(root = document) {
-    root.querySelectorAll('select.js-admin-custom-select').forEach((select) => {
-      if (select.dataset.customSelectReady === '1') return;
-      select.dataset.customSelectReady = '1';
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'admin-custom-select';
-      select.parentNode.insertBefore(wrapper, select);
-      wrapper.appendChild(select);
-
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'admin-select-button';
-      button.setAttribute('aria-expanded', 'false');
-      button.innerHTML = `<span>${escape(select.options[select.selectedIndex]?.text || 'Pilih')}</span>${Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-neutral-500')}`;
-
-      const menu = document.createElement('div');
-      menu.className = 'admin-select-menu hidden';
-      Array.from(select.options).forEach((option) => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.dataset.value = option.value;
-        item.textContent = option.text;
-        item.className = option.selected ? 'is-active' : '';
-        item.addEventListener('click', () => {
-          select.value = option.value;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          button.querySelector('span').textContent = option.text;
-          menu.querySelectorAll('button').forEach((entry) => entry.classList.toggle('is-active', entry === item));
-          close();
-        });
-        menu.appendChild(item);
-      });
-
-      const close = () => {
-        button.setAttribute('aria-expanded', 'false');
-        menu.classList.add('hidden');
-        menu.style.removeProperty('--select-button-width');
-      };
-      const open = () => {
-        document.querySelectorAll('.admin-select-button[aria-expanded="true"]').forEach((openButton) => openButton.click());
-        positionAdminSelectMenu(button, menu);
-        button.setAttribute('aria-expanded', 'true');
-        menu.classList.remove('hidden');
-      };
-
-      button.addEventListener('click', () => button.getAttribute('aria-expanded') === 'true' ? close() : open());
-      document.addEventListener('click', (event) => { if (!wrapper.contains(event.target)) close(); }, { signal: window.AdminSelectAbortSignal });
-      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); }, { signal: window.AdminSelectAbortSignal });
-
-      wrapper.appendChild(button);
-      document.body.appendChild(menu);
+    UI?.enhanceNativeSelects(root, 'select.js-admin-custom-select', {
+      buttonClass: 'admin-select-button',
+      iconHtml: Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-neutral-500'),
+      menuClass: 'admin-select-menu',
+      portal: true,
+      wrapperClass: 'admin-custom-select',
     });
-  }
-
-  function positionAdminSelectMenu(button, menu) {
-    const rect = button.getBoundingClientRect();
-    const gap = 6;
-    const maxMenuHeight = Math.min(256, window.innerHeight - 24);
-    const spaceBelow = window.innerHeight - rect.bottom - gap;
-    const spaceAbove = rect.top - gap;
-    const estimatedHeight = Math.min(maxMenuHeight, Math.max(48, menu.scrollHeight || 180));
-    const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
-
-    menu.style.setProperty('--select-button-width', `${rect.width}px`);
-    menu.style.left = `${rect.left + window.scrollX}px`;
-    menu.style.width = `${rect.width}px`;
-    menu.style.maxHeight = `${Math.max(120, Math.min(maxMenuHeight, openUp ? spaceAbove : spaceBelow))}px`;
-    menu.style.top = `${(openUp ? rect.top - Math.min(estimatedHeight, spaceAbove) - gap : rect.bottom + gap) + window.scrollY}px`;
   }
 
   function renderLanguage() {
@@ -465,14 +405,11 @@
             ${control('Comment', selectControl({ id: 'news-comment-select', value: 'On', options: ['On', 'Off'] }))}
           </section>
           <section class="config-card medium-config-card">
-            <h2>Photo and Banner</h2>
+            <h2>Featured Photo</h2>
             ${item.image ? `<img src="${item.image}" class="config-preview" alt="Featured photo" />` : '<div class="config-empty">Belum ada foto utama</div>'}
             <input id="news-photo-file" class="hidden" type="file" accept="image/*" />
             <button type="button" id="news-photo-upload-btn" class="btn btn-secondary w-full mt-2">Upload Featured Photo</button>
             <input class="config-input mt-2" id="news-photo-url" value="${escape(item.image)}" placeholder="URL foto utama" />
-            <input id="news-banner-file" class="hidden" type="file" accept="image/*" />
-            <button type="button" id="news-banner-upload-btn" class="btn btn-secondary w-full mt-2">Upload Banner</button>
-            <input class="config-input mt-2" id="news-banner-url" value="${escape(item.banner || '')}" placeholder="URL banner" />
           </section>
           <section class="config-card medium-config-card">
             <h2>Contributors</h2>
@@ -537,7 +474,6 @@
         meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
         meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
         photo: document.querySelector('#news-photo-url')?.value?.trim() || '',
-        banner: document.querySelector('#news-banner-url')?.value?.trim() || '',
       };
 
       const token = getAdminCsrfToken();
@@ -603,7 +539,6 @@
         meta_keyword: document.querySelector('#news-meta-keyword')?.value?.trim() || '',
         meta_description: document.querySelector('#news-meta-desc')?.value?.trim() || '',
         photo: document.querySelector('#news-photo-url')?.value?.trim() || '',
-        banner: document.querySelector('#news-banner-url')?.value?.trim() || '',
       };
 
       const token = getAdminCsrfToken();
@@ -748,7 +683,6 @@
 
   function bindNewsImageUploads() {
     bindNewsImageUpload('#news-photo-upload-btn', '#news-photo-file', '#news-photo-url');
-    bindNewsImageUpload('#news-banner-upload-btn', '#news-banner-file', '#news-banner-url');
   }
 
   function bindNewsImageUpload(buttonSelector, fileSelector, urlSelector) {
@@ -1041,7 +975,7 @@
       return;
     }
 
-    const body = renderShell('View Team Members', 'Direktori anggota memakai mode card. Bisa berpindah antara grid dan list tanpa tabel sempit.', `<a href="${adminUrl('team-member-add')}" class="btn btn-primary">Add Team Member</a>`);
+    const body = renderShell('View Team Members', 'Direktori anggota memakai mode card. Bisa berpindah antara grid dan list tanpa tabel sempit. Beranda memakai periode terbaru lalu bisa dioverride lewat aksi BPI Beranda.', '');
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data anggota...</div>';
 
     const state = { view: 'grid', query: '', division: '', campus: '', year: '', page: 1, perPage: 12, total: 0, items: [], batchMode: false, filters: { divisions: [], campuses: [], years: [] } };
@@ -1108,6 +1042,7 @@
           </div>
         </div>
         <div class="team-action-row mt-5">
+          <a href="${adminUrl('team-member-add')}" class="cms-action edit">Add Team Member</a>
           <button type="button" class="cms-action edit" id="team-batch-toggle">Batch Operation</button>
         </div>
         <div class="team-batch-bar mt-3 hidden" id="team-batch-bar"></div>
@@ -1666,7 +1601,7 @@
           <p>${escape(item.role)}</p>
           <div class="team-tags"><span>${escape(item.commission)}</span><span>${escape(item.division)}</span><span>${escape(item.status)}</span></div>
         </div>
-        <div class="team-card-actions"><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
+        <div class="team-card-actions"><a href="${adminUrl('team-member-add')}" class="cms-action">Add</a><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
       </article>
     `;
   }
@@ -1955,7 +1890,7 @@
     const body = renderShell(
       'View Prestasi',
       'Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.',
-      `<a href="${adminUrl('prestasi-add')}" class="btn btn-primary">Add Prestasi</a>`
+      `<a href="${adminUrl('prestasi-token')}" class="btn btn-secondary">Buat Link Form Prestasi</a><a href="${adminUrl('prestasi-add')}" class="btn btn-primary">Add Prestasi</a>`
     );
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data prestasi...</div>';
 
@@ -2483,11 +2418,13 @@
                 <div><strong>Komisariat:</strong> ${escape(item.campus || '')}</div>
                 <div><strong>Status:</strong> <span class="cms-pill ${statusClass}">${escape(item.status || 'draft')}</span></div>
               </div>
-              <div class="mt-4 text-sm text-neutral-600">${escape(item.description || '')}</div>
-              ${item.content && item.content !== item.description ? `<div class="mt-3 text-sm text-neutral-500 border-t pt-3">${escape(item.content).slice(0, 500)}</div>` : ''}
+              ${item.description ? `<div class="mt-4 text-sm text-neutral-600">${escape(item.description)}</div>` : ''}
+              ${item.content && item.content !== item.description ? `<div class="prose-soft mt-4 border-t border-neutral-900/10 pt-4">${item.content}</div>` : ''}
             </div>`,
             confirmText: 'Edit',
-            cancelText: 'Tutup'
+            cancelText: 'Tutup',
+            html: true,
+            panelClass: 'is-wide'
           }).then((edit) => {
             if (edit) {
               window.location.href = `${adminUrl('prestasi-edit')}?id=${item.id || item.prestasi_id}`;
@@ -2502,11 +2439,11 @@
 
   // ─── Prestasi Token Management ──────────────────────────────────────────────
 
-  async function renderPrestasiTokenList() {
+  async function renderPrestasiTokenList(generatedLink = '') {
     const body = renderShell(
       'Prestasi Token',
-      'Generate dan kelola token form prestasi sekali pakai.',
-      `<button id="generate-token-btn" class="btn btn-primary">Generate Token</button>`
+      'Generate dan kelola token form prestasi sekali pakai untuk dibagikan ke anggota yang mengisi dari luar admin.',
+      `<button id="generate-token-btn" class="btn btn-primary">Buat Link Form Prestasi</button>`
     );
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data token...</div>';
 
@@ -2540,7 +2477,7 @@
           </table>
         </div>
       </section>
-      <div id="generated-token-display" class="mt-6 hidden">
+      <div id="generated-token-display" class="mt-6 ${generatedLink ? '' : 'hidden'}">
         <section class="admin-card p-6 border-2 border-green-200 bg-green-50">
           <h3 class="text-lg font-bold text-green-900">Token Berhasil Dibuat</h3>
           <p class="mt-2 text-sm text-green-800">Salin link di bawah. Token hanya ditampilkan sekali dan tidak bisa dilihat lagi.</p>
@@ -2554,6 +2491,21 @@
 
     // Bind generate button
     document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
+
+    if (generatedLink) {
+      const urlInput = document.querySelector('#generated-token-url');
+      if (urlInput) {
+        urlInput.value = generatedLink;
+      }
+      document.querySelector('#copy-token-url')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(generatedLink);
+          Admin.showToast('Link token disalin ke clipboard.');
+        } catch (e) {
+          Admin.showToast('Gagal menyalin. Salin manual dari input.');
+        }
+      });
+    }
 
     // Bind revoke buttons
     bindTokenRevokeButtons();
@@ -2621,7 +2573,9 @@
         <label class="config-field mt-3"><span>Kedaluwarsa (opsional)</span><input id="token-expires-input" class="config-input" type="datetime-local" /></label>
       </div>`,
       confirmText: 'Generate',
-      html: true
+      cancelText: 'Batal',
+      html: true,
+      panelClass: 'is-wide'
     });
     if (!ok) return;
 
@@ -2645,22 +2599,8 @@
       if (res.ok && result.data?.token) {
         const baseUrl = window.location.origin;
         const submitUrl = `${baseUrl}${route('public.prestasiSubmit', { token: result.data.token })}`;
-        const display = document.querySelector('#generated-token-display');
-        const urlInput = document.querySelector('#generated-token-url');
-        if (display && urlInput) {
-          urlInput.value = submitUrl;
-          display.classList.remove('hidden');
-        }
-        document.querySelector('#copy-token-url')?.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(submitUrl);
-            Admin.showToast('Link token disalin ke clipboard.');
-          } catch (e) {
-            Admin.showToast('Gagal menyalin. Salin manual dari input.');
-          }
-        });
+        await renderPrestasiTokenList(submitUrl);
         Admin.showToast('Token berhasil dibuat. Salin link sekarang!');
-        renderPrestasiTokenList(); // Refresh table
       } else {
         Admin.showToast(result.error || 'Gagal membuat token.');
       }
@@ -2774,21 +2714,16 @@
 
     if (!button || !menu) return;
 
-    // Toggle dropdown
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = button.getAttribute('aria-expanded') === 'true';
-      button.setAttribute('aria-expanded', !isOpen);
-      menu.classList.toggle('hidden');
-    });
-
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!multiSelect.contains(e.target)) {
-        button.setAttribute('aria-expanded', 'false');
-        menu.classList.add('hidden');
-      }
-    });
+    if (multiSelect.dataset.dropdownReady !== '1' && UI?.createDropdownController) {
+      multiSelect.dataset.dropdownReady = '1';
+      UI.createDropdownController({
+        root: multiSelect,
+        button,
+        menu,
+        portalTarget: document.body,
+        offset: 8,
+      });
+    }
 
     // Update label when checkboxes change
     const updateLabel = () => {

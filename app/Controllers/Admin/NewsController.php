@@ -278,12 +278,9 @@ final class NewsController
             $sanitized['category_id'] = (int) $body['category_id'];
         }
 
-        // Photo/Banner (filenames only, no paths)
+        // Featured photo only (filenames only, no paths)
         if (isset($body['photo'])) {
             $sanitized['photo'] = strip_tags(mb_substr(trim((string) $body['photo']), 0, 500));
-        }
-        if (isset($body['banner'])) {
-            $sanitized['banner'] = strip_tags(mb_substr(trim((string) $body['banner']), 0, 500));
         }
 
         // Comment toggle

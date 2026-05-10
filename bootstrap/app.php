@@ -96,7 +96,7 @@ try {
 $pageController = new PageController($renderer);
 $contactController = new ContactController($viewRenderer, $contactSettingModel);
 $homeController = new HomeController($renderer, $featureModel, $newsModel, $viewRenderer);
-$newsController = new NewsController($renderer, $newsModel, $viewRenderer);
+$newsController = new NewsController($renderer, $newsModel, $commentModel, $viewRenderer);
 $commentController = new CommentController($newsModel, $commentModel);
 $prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel, $viewRenderer);
 $eventController = new EventController($renderer, $eventModel, $viewRenderer);

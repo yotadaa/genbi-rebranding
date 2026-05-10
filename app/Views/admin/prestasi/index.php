@@ -28,6 +28,7 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.</p>
     </div>
     <div class="cms-actions">
+      <a href="/admin/prestasi-token" class="btn btn-secondary">Buat Link Form Prestasi</a>
       <a href="/admin/prestasi-add" class="btn btn-primary">Add Prestasi</a>
     </div>
   </header>

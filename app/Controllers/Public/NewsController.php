@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Models\NewsComment;
 use App\Services\HtmlSanitizer;
 use App\Services\SeoService;
 use App\Services\StructuredData;
@@ -20,6 +21,7 @@ final class NewsController
     public function __construct(
         private StaticPageRenderer $renderer,
         private ?News $news = null,
+        private ?NewsComment $comments = null,
         private ?ViewRenderer $viewRenderer = null,
     ) {
     }
@@ -109,8 +111,16 @@ final class NewsController
 
         // Fetch news from DB for SEO meta injection (HTML rendering)
         $item = $this->readFromDatabase(static fn (News $news): ?array => $news->findPublicBySlug($slug));
+        $comments = [];
         if (is_array($item)) {
             $item = $this->sanitizePublicItem($item);
+            if ($this->comments instanceof NewsComment) {
+                try {
+                    $comments = $this->comments->forNews((int) ($item['id'] ?? 0));
+                } catch (Throwable) {
+                    $comments = [];
+                }
+            }
         }
         if (is_array($item)) {
             $seo = SeoService::forNews($item);
@@ -129,6 +139,7 @@ final class NewsController
         if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/news/show.php', 'layouts/public.php', [
                 'item' => $item,
+                'comments' => $comments,
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news-detail',

@@ -189,12 +189,13 @@
 
   function ensureConfirmModal() {
     if (document.querySelector('#admin-confirm-modal')) return;
-    document.body.insertAdjacentHTML('beforeend', `
+    const modalRoot = document.querySelector('#admin-modal-root') || document.body;
+    modalRoot.insertAdjacentHTML('beforeend', `
       <div id="admin-confirm-modal" class="admin-confirm hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="admin-confirm-panel">
           <div class="admin-confirm-icon">${icon('trash')}</div>
           <h2 id="confirm-title" class="serif text-3xl font-semibold tracking-tight text-neutral-950">Konfirmasi tindakan</h2>
-          <p id="confirm-message" class="mt-3 text-sm leading-7 text-neutral-600">Apakah kamu yakin?</p>
+          <div id="confirm-message" class="admin-confirm-message mt-3 text-sm leading-7 text-neutral-600">Apakah kamu yakin?</div>
           <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button type="button" id="confirm-cancel" class="btn btn-secondary">Batal</button>
             <button type="button" id="confirm-ok" class="btn btn-primary">Ya, lanjutkan</button>
@@ -204,19 +205,32 @@
     `);
   }
 
-  function showConfirm({ title = 'Konfirmasi tindakan', message = 'Apakah kamu yakin?', confirmText = 'Ya, lanjutkan', danger = false } = {}) {
+  function showConfirm({
+    title = 'Konfirmasi tindakan',
+    message = 'Apakah kamu yakin?',
+    confirmText = 'Ya, lanjutkan',
+    cancelText = 'Batal',
+    danger = false,
+    html = false,
+    panelClass = '',
+  } = {}) {
     ensureConfirmModal();
     return new Promise((resolve) => {
+      window.GenBIUI?.closeActiveSelect?.();
       const modal = document.querySelector('#admin-confirm-modal');
       const panel = modal.querySelector('.admin-confirm-panel');
       const ok = modal.querySelector('#confirm-ok');
       const cancel = modal.querySelector('#confirm-cancel');
+      const messageNode = modal.querySelector('#confirm-message');
       modal.querySelector('#confirm-title').textContent = title;
-      modal.querySelector('#confirm-message').textContent = message;
+      messageNode[html ? 'innerHTML' : 'textContent'] = message;
       ok.textContent = confirmText;
+      cancel.textContent = cancelText;
       ok.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+      panel.className = `admin-confirm-panel ${panelClass}`.trim();
       const close = (value) => {
         panel.classList.remove('is-open');
+        panel.classList.remove('is-wide');
         window.setTimeout(() => modal.classList.add('hidden'), 120);
         ok.removeEventListener('click', onOk);
         cancel.removeEventListener('click', onCancel);
@@ -233,6 +247,7 @@
       modal.addEventListener('click', onBackdrop);
       window.addEventListener('keydown', onKey);
       modal.classList.remove('hidden');
+      if (panelClass.includes('is-wide')) panel.classList.add('is-wide');
       window.setTimeout(() => panel.classList.add('is-open'), 20);
       cancel.focus();
     });
