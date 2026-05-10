@@ -21,7 +21,7 @@
         <div class="lg:col-span-2">
           <?php if (!empty($item['image'])): ?>
             <div class="soft-card overflow-hidden p-0">
-              <img src="<?= $e($item['image']) ?>" alt="<?= $e($item['title'] ?? '') ?>" class="aspect-video w-full object-cover" width="800" height="450" loading="eager" />
+              <img src="<?= $e($item['image']) ?>" alt="<?= $e($item['title'] ?? '') ?>" class="aspect-video w-full max-h-96 object-cover" width="800" height="450" loading="eager" />
             </div>
           <?php endif; ?>
           <?php if (!empty($item['content'])): ?>
