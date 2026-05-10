@@ -2387,6 +2387,17 @@ body.page-leaving {
   flex-wrap: wrap;
 }
 
+.team-card-actions .cms-action:not(.edit):not(.delete) {
+  background: white;
+  color: var(--admin-blue-deep);
+  border: 1px solid rgb(17 79 137 / 0.18);
+}
+
+.team-card-actions .cms-action:not(.edit):not(.delete):hover {
+  background: rgb(220 238 255 / 0.58);
+  color: var(--admin-blue-deep);
+}
+
 .view-toggle {
   display: flex;
   flex-wrap: wrap;

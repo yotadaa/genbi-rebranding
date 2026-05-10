@@ -70,7 +70,6 @@ $filterParams = array_filter([
 
       <div class="team-batch-bar mt-3 hidden" id="team-batch-bar">
         <strong><span id="team-selection-count">0</span> dipilih</strong>
-        <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah Anggota ke Beranda</button>
         <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
         <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
       </div>
@@ -92,9 +91,6 @@ $filterParams = array_filter([
             <label class="team-select-check hidden">
               <input type="checkbox" data-team-select="<?= (int) $item['id'] ?>"> Select
             </label>
-            <button type="button" class="team-home-toggle hidden" data-team-home="<?= (int) $item['id'] ?>" title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda' ?>">
-              <?= !empty($item['show_on_home']) ? '-' : '+' ?>
-            </button>
             <div class="team-admin-photo">
               <?php if (!empty($item['photo'])): ?>
                 <img src="<?= $e($item['photo']) ?>" alt="<?= $e($item['name']) ?>" onerror="this.remove(); this.parentElement.textContent='<?= $e(mb_substr($item['name'] ?? '', 0, 2)) ?>';">
@@ -112,7 +108,7 @@ $filterParams = array_filter([
               </div>
             </div>
             <div class="team-card-actions">
-              <a href="/admin/team-member-add" class="cms-action">Add</a>
+              <button type="button" class="cms-action" data-team-home="<?= (int) $item['id'] ?>" title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda' ?>"><?= !empty($item['show_on_home']) ? 'Remove' : 'Add' ?></button>
               <a href="/admin/team-member-edit?id=<?= (int) $item['id'] ?>" class="cms-action edit">Edit</a>
               <button class="cms-action delete" data-delete-team="<?= (int) $item['id'] ?>">Delete</button>
             </div>
@@ -145,4 +141,3 @@ $filterParams = array_filter([
     <?php endif; ?>
   </div>
 </section>
-

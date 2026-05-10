@@ -1118,7 +1118,7 @@
             ${control('Photo URL', `<input id="team-photo" class="config-input" value="${escape(item.photo_raw || item.photo || '')}" />`)}
             ${control('Upload Photo', '<input class="config-input" id="team-photo-upload" type="file" accept="image/*" />')}
           </section>
-          <section class="config-card"><h2>Visibility</h2>${control('Tampilkan di BPI Beranda', selectControl({ id: 'team-show-home', value: item.show_on_home ? '1' : '0', options: [{ value: '1', label: 'Show' }, { value: '0', label: 'Hide' }] }))}</section>
+          <section class="config-card"><h2>Visibility</h2>${control('Tampilkan di Beranda', selectControl({ id: 'team-show-home', value: item.show_on_home ? '1' : '0', options: [{ value: '1', label: 'Show' }, { value: '0', label: 'Hide' }] }))}</section>
           <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Member' : 'Submit Member'}</button>
         </aside>
       </form>
@@ -1596,14 +1596,13 @@
     return `
       <article class="team-admin-card ${homeClass} ${batchClass}" data-team-id="${item.id}">
         <label class="team-select-check ${batchMode ? '' : 'hidden'}"><input type="checkbox" data-team-select="${item.id}" ${checked} /> Select</label>
-        <button type="button" class="team-home-toggle ${batchMode ? '' : 'hidden'}" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? '-' : '+'}</button>
         <div class="team-admin-photo"><img src="${photo}" alt="${escape(item.name)}" onerror="this.remove(); this.parentElement.textContent='${Admin.initials(item.name)}';" /></div>
         <div class="team-admin-content">
           <h2>${escape(item.name)}</h2>
           <p>${escape(item.role)}</p>
           <div class="team-tags"><span>${escape(item.commission)}</span><span>${escape(item.division)}</span><span>${escape(item.status)}</span></div>
         </div>
-        <div class="team-card-actions"><a href="${adminUrl('team-member-add')}" class="cms-action">Add</a><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
+        <div class="team-card-actions"><button type="button" class="cms-action" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? 'Remove' : 'Add'}</button><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
       </article>
     `;
   }
@@ -1643,7 +1642,8 @@
     document.querySelectorAll('[data-team-home]').forEach((button) => {
       button.addEventListener('click', async () => {
         const id = Number(button.dataset.teamHome);
-        const adding = button.textContent.trim() === '+';
+        const card = button.closest('.team-admin-card');
+        const adding = !(card?.classList.contains('is-home'));
         const res = await fetch(route('admin.teamMemberHome', { id }), {
           method: 'POST',
           headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
@@ -1715,7 +1715,6 @@
 
     bar.innerHTML = `
       <strong><span id="team-selection-count">${teamSelection.size}</span> dipilih</strong>
-      <button type="button" class="cms-action edit" data-team-bulk="home_add">Tambah Anggota ke Beranda</button>
       <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
       <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
     `;
@@ -2777,7 +2776,7 @@
       teamList.querySelectorAll('.team-admin-card').forEach((card) => {
         card.classList.toggle('is-batch', batchMode);
       });
-      teamList.querySelectorAll('.team-select-check, .team-home-toggle').forEach((control) => {
+      teamList.querySelectorAll('.team-select-check').forEach((control) => {
         control.classList.toggle('hidden', !batchMode);
       });
       if (!batchMode) {
@@ -2845,7 +2844,7 @@
       button.addEventListener('click', async () => {
         const id = Number(button.dataset.teamHome);
         const card = button.closest('.team-admin-card');
-        const adding = button.textContent.trim() === '+';
+        const adding = !(card?.classList.contains('is-home'));
         const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
 
         try {
@@ -2858,9 +2857,11 @@
 
           if (res.ok) {
             Admin.showToast(adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.');
-            button.textContent = adding ? '−' : '+';
-            button.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda';
             card?.classList.toggle('is-home', adding);
+            card?.querySelectorAll('[data-team-home]').forEach((teamHomeButton) => {
+              teamHomeButton.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda';
+              teamHomeButton.textContent = adding ? 'Remove' : 'Add';
+            });
           } else {
             Admin.showToast('Gagal memperbarui BPI Beranda.');
           }
