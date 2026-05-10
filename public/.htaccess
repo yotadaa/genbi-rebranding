@@ -1,5 +1,9 @@
 Options -Indexes
 
+# Upload limits
+php_value upload_max_filesize 10M
+php_value post_max_size 12M
+
 # Compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml

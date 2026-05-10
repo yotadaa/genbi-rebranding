@@ -719,7 +719,7 @@
         if (preview && buttonSelector === '#news-photo-upload-btn') preview.src = url;
         Admin.showToast('Gambar berhasil diupload.');
       } catch (err) {
-        Admin.showToast('Gagal upload gambar.');
+        Admin.showToast(err.message || 'Gagal upload gambar.');
       } finally {
         fileInput.value = '';
       }
@@ -787,7 +787,7 @@
     });
     const json = await res.json();
     const url = json.data?.url || '';
-    if (!res.ok || !url) throw new Error(json.error || 'Gagal upload gambar.');
+    if (!res.ok || !url) throw new Error(json.error || 'Upload gagal. Pastikan file berupa gambar (max 5MB).');
     return url;
   }
 
