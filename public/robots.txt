@@ -27,7 +27,6 @@ Disallow: /*?token=
 Disallow: /search?
 Disallow: /*?q=
 Disallow: /*?keyword=
-Disallow: /*?page=*
 Disallow: /*?sort=
 Disallow: /*?filter=
 

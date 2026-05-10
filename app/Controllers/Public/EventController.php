@@ -101,11 +101,31 @@ final class EventController
         }
 
         if (is_array($item)) {
-            $seo = SeoService::forPage('event.html');
-            // Override with event-specific meta
-            $seo['title'] = ($item['title'] ?? 'Event') . ' | GenBI Provinsi Jambi';
-            $seo['description'] = mb_substr(strip_tags($item['excerpt'] ?? ''), 0, 160);
-            $seo['canonical'] = '/event/' . ($item['slug'] ?? $slug);
+            $eventTitle = ($item['title'] ?? 'Event') . ' | GenBI Provinsi Jambi';
+            $eventDesc = SeoService::cleanDescription($item['excerpt'] ?? '');
+            $eventUrl = SeoService::absoluteUrl('/event/' . ($item['slug'] ?? $slug));
+            $eventImage = !empty($item['image'] ?? $item['photo'] ?? '')
+                ? SeoService::imageUrl($item['image'] ?? $item['photo'] ?? '')
+                : SeoService::absoluteUrl(\App\Services\SeoConfig::DEFAULT_OG_IMAGE);
+
+            $seo = [
+                'title' => $eventTitle,
+                'description' => $eventDesc,
+                'canonical' => $eventUrl,
+                'robots' => 'index, follow',
+                'og_type' => 'article',
+                'og_title' => $eventTitle,
+                'og_description' => $eventDesc,
+                'og_url' => $eventUrl,
+                'og_image' => $eventImage,
+                'og_image_width' => '1200',
+                'og_image_height' => '630',
+                'og_image_alt' => $item['title'] ?? 'Event',
+                'twitter_card' => 'summary_large_image',
+                'twitter_title' => $eventTitle,
+                'twitter_description' => $eventDesc,
+                'twitter_image' => $eventImage,
+            ];
         } else {
             $seo = SeoService::forPage('event.html');
         }

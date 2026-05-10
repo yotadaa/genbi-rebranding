@@ -61,6 +61,7 @@ class FeedController
             }
 
             if (!empty($image)) {
+                $image = preg_replace('#^/?uploads/#', '', $image);
                 $imageUrl = str_starts_with($image, 'http') ? $image : $base . '/uploads/' . ltrim($image, '/');
                 $xml .= '    <enclosure url="' . $this->e($imageUrl) . '" type="image/jpeg" />' . PHP_EOL;
             }

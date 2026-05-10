@@ -6,6 +6,7 @@ namespace App\Controllers\Public;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Models\Event;
 use App\Models\News;
 use App\Models\Prestasi;
 use App\Services\SeoConfig;
@@ -15,6 +16,7 @@ class SitemapController
     public function __construct(
         private ?News $news = null,
         private ?Prestasi $prestasi = null,
+        private ?Event $event = null,
     ) {}
 
     public function index(Request $request, Response $response): void
@@ -26,6 +28,7 @@ class SitemapController
         $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
         $xml .= $this->sitemapEntry($base . '/sitemap-pages.xml', $now);
         $xml .= $this->sitemapEntry($base . '/sitemap-news.xml', $now);
+        $xml .= $this->sitemapEntry($base . '/sitemap-events.xml', $now);
         $xml .= $this->sitemapEntry($base . '/sitemap-prestasi.xml', $now);
         $xml .= '</sitemapindex>';
 
@@ -79,6 +82,7 @@ class SitemapController
             $xml .= '    <priority>0.8</priority>' . PHP_EOL;
 
             if (!empty($image)) {
+                $image = preg_replace('#^/?uploads/#', '', $image);
                 $imageUrl = str_starts_with($image, 'http') ? $image : $base . '/uploads/' . ltrim($image, '/');
                 $xml .= '    <image:image>' . PHP_EOL;
                 $xml .= '      <image:loc>' . $this->e($imageUrl) . '</image:loc>' . PHP_EOL;
@@ -116,6 +120,36 @@ class SitemapController
             }
             $xml .= '    <changefreq>monthly</changefreq>' . PHP_EOL;
             $xml .= '    <priority>0.6</priority>' . PHP_EOL;
+            $xml .= '  </url>' . PHP_EOL;
+        }
+
+        $xml .= '</urlset>';
+        $response->xml($xml);
+    }
+
+    public function events(Request $request, Response $response): void
+    {
+        $base = SeoConfig::BASE_URL;
+        $items = $this->event?->paginate([], 100, 0) ?? [];
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+
+        foreach ($items as $item) {
+            $slug = $item['slug'] ?? '';
+            if (empty($slug)) {
+                continue;
+            }
+
+            $lastmod = $item['updated_at'] ?? $item['event_start_date'] ?? $item['start_date'] ?? '';
+
+            $xml .= '  <url>' . PHP_EOL;
+            $xml .= '    <loc>' . $this->e($base . '/event/' . $slug) . '</loc>' . PHP_EOL;
+            if (!empty($lastmod)) {
+                $xml .= '    <lastmod>' . $this->e(substr($lastmod, 0, 10)) . '</lastmod>' . PHP_EOL;
+            }
+            $xml .= '    <changefreq>monthly</changefreq>' . PHP_EOL;
+            $xml .= '    <priority>0.7</priority>' . PHP_EOL;
             $xml .= '  </url>' . PHP_EOL;
         }
 

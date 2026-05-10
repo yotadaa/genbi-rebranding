@@ -70,7 +70,7 @@ final class StructuredData
         $description = $news['excerpt'] ?? $news['news_content_short'] ?? $news['meta_description'] ?? '';
         $image = $news['image'] ?? $news['photo'] ?? $news['banner'] ?? '';
         $published = $news['published_at'] ?? $news['date'] ?? '';
-        $author = $news['author'] ?? $news['contributor_pewarta'] ?? 'Redaksi GenBI Jambi';
+        $author = !empty($news['author']) ? $news['author'] : (!empty($news['contributor_pewarta']) ? $news['contributor_pewarta'] : 'Redaksi GenBI Jambi');
 
         $data = [
             '@context' => 'https://schema.org',

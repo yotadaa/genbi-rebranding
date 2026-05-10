@@ -21,7 +21,7 @@ $endItem = min($page * $perPage, $total);
 <section class="bg-cream py-12 md:py-16">
   <div class="article-container">
     <form class="news-filter mb-8 grid gap-3 md:grid-cols-[1fr_220px]" method="get" action="/news" id="news-filter-form">
-      <input id="news-search" name="q" class="input-soft" placeholder="Cari berita, kategori, atau topik" value="<?= $e($activeQ) ?>" />
+      <input id="news-search" name="q" class="input-soft" placeholder="Cari berita, kategori, atau topik" value="<?= $e($activeQ) ?>" aria-label="Cari berita" />
       <div id="news-category"><?php if ($activeCategory !== ''): ?><input type="hidden" name="category" value="<?= $e($activeCategory) ?>" /><?php endif; ?></div>
     </form>
     <div class="mb-4 text-sm text-neutral-600" id="news-count">
@@ -32,6 +32,7 @@ $endItem = min($page * $perPage, $total);
       <?php endif; ?>
     </div>
     <div id="news-list" data-ssr="true">
+      <h2 class="sr-only">Daftar Berita</h2>
       <?php if (!empty($items)): ?>
         <?php foreach ($items as $index => $item): ?>
           <a data-transition href="/news/<?= rawurlencode((string) $item['slug']) ?>" class="article-link <?= $index === 0 ? 'pt-0 border-t-0' : '' ?>">

@@ -8,7 +8,7 @@ use App\Core\Env;
 
 final class App
 {
-    public const DEFAULT_URL = 'https://official.genbijambi.com';
+    public const DEFAULT_URL = 'https://genbijambi.com';
 
     /** @return array{env: string, url: string} */
     public static function config(): array

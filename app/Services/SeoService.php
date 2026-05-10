@@ -172,6 +172,7 @@ final class SeoService
         $lines[] = '<meta name="robots" content="' . $e($seo['robots'] ?? 'index, follow') . '">';
 
         // Open Graph
+        $lines[] = '<meta property="og:locale" content="id_ID">';
         $lines[] = '<meta property="og:type" content="' . $e($seo['og_type'] ?? 'website') . '">';
         $lines[] = '<meta property="og:site_name" content="' . $e(SeoConfig::SITE_NAME) . '">';
         $lines[] = '<meta property="og:title" content="' . $e($seo['og_title'] ?? '') . '">';

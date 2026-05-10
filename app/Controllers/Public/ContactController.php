@@ -10,6 +10,7 @@ use App\Core\ViewRenderer;
 use App\Models\ContactSetting;
 use App\Services\SeoService;
 use App\Services\SiteSettings;
+use App\Services\StructuredData;
 
 final class ContactController
 {
@@ -42,9 +43,15 @@ final class ContactController
             'twitter_image' => SeoService::absoluteUrl('/uploads/slider-1.png'),
         ];
 
+        $jsonld = StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
+            ['name' => 'Beranda', 'url' => '/'],
+            ['name' => 'Contact', 'url' => '/contact'],
+        ]);
+
         $response->html($this->viewRenderer->renderWithLayout('public/contact/index.php', 'layouts/public.php', [
             'title' => 'Contact | GenBI Provinsi Jambi',
             'meta' => SeoService::renderMetaBlock($seo),
+            'jsonld' => $jsonld,
             'contact' => $contact,
             'site' => $this->siteSettings?->site() ?? [],
             'scripts' => '<script defer src="/assets/js/dist/pages/contact.js?v=20260508f"></script>',

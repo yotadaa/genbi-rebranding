@@ -25,11 +25,12 @@ $content = $content ?? '';
   <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
 <body class="<?= $e($bodyClass ?? '') ?>">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg">Langsung ke konten</a>
   <div id="site-header"><?php require __DIR__ . '/../partials/public-header.php'; ?></div>
   <main id="main-content">
     <?= $content ?>
   </main>
-  <div id="site-footer"><?php require __DIR__ . '/../partials/public-footer.php'; ?></div>
+  <footer id="site-footer"><?php require __DIR__ . '/../partials/public-footer.php'; ?></footer>
   <div id="modal-root"></div>
   <script>window.GenBISiteSettings = <?= $settingsJson ?>;</script>
   <script defer src="/assets/js/dist/data.js?v=20260508e"></script>
