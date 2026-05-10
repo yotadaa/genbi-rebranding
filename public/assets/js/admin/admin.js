@@ -62,7 +62,7 @@
       { key: 'prestasi-list', label: 'Prestasi', href: adminUrl('prestasi') },
       { key: 'prestasi-token', label: 'Token Form', href: adminUrl('prestasi-token') }
     ] },
-    { key: 'event', label: 'Event', href: adminUrl('event'), icon: 'event' },
+    { key: 'event', label: 'Agenda', href: adminUrl('event'), icon: 'event' },
     { key: 'subscriber', label: 'Subscriber', href: '#', icon: 'subscriber' },
     { key: 'slider', label: 'Slider', href: adminUrl('slider'), icon: 'slider' },
     { key: 'testimonial', label: 'Testimonial', href: '#', icon: 'social' },

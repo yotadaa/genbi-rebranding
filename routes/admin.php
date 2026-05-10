@@ -8,6 +8,7 @@ use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
+use App\Controllers\Admin\EventController as AdminEventController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\FeatureController as AdminFeatureController;
@@ -20,6 +21,7 @@ use App\Middleware\CsrfMiddleware;
 /** @var AdminPageController $adminPageController */
 /** @var AdminNewsController $adminNewsController */
 /** @var NewsCommentController $adminNewsCommentController */
+/** @var AdminEventController $adminEventController */
 /** @var AdminPrestasiController $adminPrestasiController */
 /** @var PrestasiTokenController $adminPrestasiTokenController */
 /** @var AdminTeamMemberController $adminTeamMemberController */
@@ -42,6 +44,7 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $adminPageController,
     $adminNewsController,
     $adminNewsCommentController,
+    $adminEventController,
     $adminPrestasiController,
     $adminPrestasiTokenController,
     $adminTeamMemberController,
@@ -60,6 +63,13 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $router->post('/admin/news/{id}/update', static fn(Request $request, Response $response, array $params) => $adminNewsController->update($request, $response, $params));
     $router->post('/admin/news/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminNewsController->delete($request, $response, $params));
     $router->post('/admin/news/upload', static fn(Request $request, Response $response) => $adminNewsController->upload($request, $response));
+
+    // Agenda CMS
+    $router->get('/admin/events', static fn(Request $request, Response $response) => $adminEventController->index($request, $response));
+    $router->get('/admin/events/{id}', static fn(Request $request, Response $response, array $params) => $adminEventController->show($request, $response, $params));
+    $router->post('/admin/events', static fn(Request $request, Response $response) => $adminEventController->store($request, $response));
+    $router->post('/admin/events/{id}/update', static fn(Request $request, Response $response, array $params) => $adminEventController->update($request, $response, $params));
+    $router->post('/admin/events/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminEventController->delete($request, $response, $params));
 
     // News Comments
     $router->get('/admin/news-comments', static fn(Request $request, Response $response) => $adminNewsCommentController->index($request, $response));

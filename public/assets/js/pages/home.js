@@ -156,17 +156,34 @@ function eventIcon(type) {
   return map[type] || map.calendar;
 }
 
-function renderHomeEvents() {
+async function renderHomeEvents() {
   const root = document.querySelector('#home-events');
   if (!root) return;
-  root.innerHTML = publicEvents.map((event, index) => `
-    <article class="editorial-slide-card event-slide-card" role="group" aria-roledescription="slide" aria-label="Agenda ${index + 1} dari ${publicEvents.length}">
-      <span class="event-icon mx-auto">${eventIcon(event.icon)}</span>
-      <div class="event-meta justify-center"><span>${event.type}</span><span>${event.date}</span></div>
+  let agendaItems = publicEvents;
+  try {
+    const payload = await API.getEventList();
+    if (Array.isArray(payload) && payload.length) agendaItems = payload;
+  } catch (e) { /* fallback */ }
+
+  root.innerHTML = agendaItems.map((event, index) => {
+    const slides = Array.isArray(event.images) && event.images.length
+      ? event.images
+      : [site.heroSlides[index % site.heroSlides.length]?.image || site.heroSlides[0]?.image || 'https://genbijambi.com/public/uploads/slider-1.png'];
+    const type = event.type || event.category || 'Agenda Komunitas';
+    const date = event.date || event.start_date || event.start || '-';
+    const description = event.description || event.excerpt || '';
+    return `
+    <article class="editorial-slide-card program-slide-card agenda-slide-card" role="group" aria-roledescription="slide" aria-label="Agenda ${index + 1} dari ${agendaItems.length}" data-program-slides='${JSON.stringify(slides)}' style="--program-bg-image: url('${slides[0]}');">
+      <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
+      <span class="program-icon mx-auto">${eventIcon(event.icon || 'calendar')}</span>
+      <p class="slide-kicker">${type}</p>
       <h3>${event.title}</h3>
-      <p>${event.description}</p>
+      <p>${description}</p>
+      <span class="blue-badge mx-auto mt-5">${date}</span>
     </article>
-  `).join('');
+  `;
+  }).join('');
+  hydrateProgramCards(root);
 }
 
 function renderHomeContact() {

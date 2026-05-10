@@ -3376,7 +3376,8 @@ input[type="file"].config-input::file-selector-button:hover {
   padding: clamp(1.15rem, 2.4vw, 1.8rem);
 }
 
-.program-slide-card {
+.program-slide-card,
+.agenda-slide-card {
   position: relative;
   isolation: isolate;
   align-items: center;
@@ -3386,7 +3387,8 @@ input[type="file"].config-input::file-selector-button:hover {
   background: linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.92));
 }
 
-.program-slide-card::before {
+.program-slide-card::before,
+.agenda-slide-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -3398,7 +3400,8 @@ input[type="file"].config-input::file-selector-button:hover {
   transform: scale(1.01);
 }
 
-.program-slide-card::after {
+.program-slide-card::after,
+.agenda-slide-card::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -3414,7 +3417,8 @@ input[type="file"].config-input::file-selector-button:hover {
   text-align: center;
 }
 
-.program-slide-card:hover {
+.program-slide-card:hover,
+.agenda-slide-card:hover {
   border-color: rgb(17 75 154 / 0.28);
   box-shadow: 0 28px 90px rgb(17 75 154 / 0.16);
 }
@@ -3445,7 +3449,8 @@ input[type="file"].config-input::file-selector-button:hover {
   margin-inline: auto;
 }
 
-.program-slide-card p:not(.slide-kicker) {
+.program-slide-card p:not(.slide-kicker),
+.agenda-slide-card p:not(.slide-kicker) {
   max-width: 18.25rem;
   color: rgba(247, 251, 255, 0.92);
   margin-inline: auto;
@@ -3463,7 +3468,8 @@ input[type="file"].config-input::file-selector-button:hover {
   text-transform: uppercase;
 }
 
-.program-slide-card h3 {
+.program-slide-card h3,
+.agenda-slide-card h3 {
   max-width: 17rem;
   margin-inline: auto;
   color: #ffffff;
@@ -3488,13 +3494,15 @@ input[type="file"].config-input::file-selector-button:hover {
   font-weight: 900;
 }
 
-.program-slide-card .slide-index {
+.program-slide-card .slide-index,
+.agenda-slide-card .slide-index {
   background: rgb(238 246 255 / 0.95);
   color: var(--blue-800);
   box-shadow: inset 0 0 0 1px rgb(17 75 154 / 0.10);
 }
 
-.program-slide-card .blue-badge {
+.program-slide-card .blue-badge,
+.agenda-slide-card .blue-badge {
   margin-top: 0.85rem;
   background: rgba(247, 251, 255, 0.16);
   color: #f7fbff;
@@ -3503,6 +3511,17 @@ input[type="file"].config-input::file-selector-button:hover {
   font-weight: 800;
   letter-spacing: 0;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.agenda-slide-card .program-icon {
+  background: rgba(247, 251, 255, 0.14);
+  color: #f7fbff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.agenda-slide-card .program-icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
 }
 
 .bpi-slide-card {

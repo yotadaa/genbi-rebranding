@@ -42,14 +42,7 @@
     ['SUBJECT', 'Subject'], ['SUBMIT', 'Submit'], ['TEAM', 'Team'], ['TESTIMONIAL', 'Testimonial']
   ];
 
-  const events = [
-    { id: 1, title: 'GenBI PEKA', start: '2025-01-23', end: '2025-01-23', status: 'Past Event', excerpt: 'Kegiatan pengabdian dan edukasi publik.' },
-    { id: 2, title: 'GenBI Ceria', start: '2024-12-21', end: '2024-12-21', status: 'Past Event', excerpt: 'Aktivitas sosial dan literasi untuk komunitas.' },
-    { id: 3, title: 'GenBI for UMKM', start: '2024-12-20', end: '2024-12-20', status: 'Past Event', excerpt: 'Pendampingan literasi digital untuk UMKM.' },
-    { id: 4, title: 'PTBI 2024', start: '2024-11-29', end: '2024-11-29', status: 'Past Event', excerpt: 'Partisipasi GenBI pada agenda tahunan Bank Indonesia.' },
-    { id: 5, title: 'Pelatihan Pencatatan Keuangan dan Literasi SIAPIK', start: '2024-12-02', end: '2024-12-03', status: 'Past Event', excerpt: 'Pelatihan pencatatan keuangan sederhana.' },
-    { id: 6, title: 'SERTIFIKASI GENBI PROVINSI JAMBI', start: '2024-11-02', end: '2024-11-03', status: 'Past Event', excerpt: 'Sertifikasi kompetensi anggota GenBI.' }
-  ];
+  const events = [];
 
   const sliders = [
     { id: 1, photo: 'https://genbijambi.com/public/uploads/slider-1.png', heading: 'WE ARE GENBI PROVINSI JAMBI', button1: 'Read More', url1: 'https://wa.me/6289627896750', button2: 'Contact Us', url2: 'https://wa.me/6289627896750', position: 'Left' },
@@ -75,6 +68,7 @@
     'prestasi-edit': () => { Admin.renderAdminShell('prestasi'); renderPrestasiEditor(true); },
     'prestasi-token': () => { Admin.renderAdminShell('prestasi'); renderPrestasiTokenList(); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
+    'event-edit': () => { Admin.renderAdminShell('event'); renderEventEditor(); },
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
     feature: () => { Admin.renderAdminShell('feature'); mode === 'editor' ? renderFeatureEditor() : renderFeatureList(); },
@@ -885,44 +879,157 @@
     Admin.showToast(`Komentar berhasil ${labels[action]} pada mode integrasi.`);
   }
 
-  function renderEventList() {
-    const body = renderShell('View Event', 'Agenda komunitas tampil sebagai tabel bersih dengan modal konfirmasi.', `<a href="${adminUrl('event-add')}" class="btn btn-primary">Add New</a>`);
+  async function renderEventList() {
+    const body = renderShell('Agenda', 'Agenda komunitas tampil dari data `tbl_event` yang sama dengan halaman publik dan section Agenda Utama di landing page.', `<a href="${adminUrl('event-add')}" class="btn btn-primary">Add Agenda</a>`);
+    body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data agenda...</div>';
+
+    let items = [];
+    try {
+      const res = await fetch(route('admin.events'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        items = (json.data || []).map((item) => Core.normalizeEvent(item));
+      }
+    } catch (e) {
+      items = (publicEvents || []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        excerpt: item.description || '',
+        start_date: item.date || '-',
+        end_date: item.date || '-',
+        location: '',
+        status: 'Fallback',
+      }));
+    }
+
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('Event')}
+        ${renderSearchToolbar('Agenda')}
         <div class="admin-responsive-table mt-5">
           <table class="cms-table">
-            <thead><tr><th>SL</th><th>Title</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>${events.map((item, index) => `
-              <tr><td>${index + 1}</td><td><strong>${item.title}</strong><p class="mt-1 text-xs text-neutral-500">${item.excerpt}</p></td><td>${item.start}</td><td>${item.end}</td><td><span class="cms-pill muted">${item.status}</span></td><td>${rowActions('Event')}</td></tr>
-            `).join('')}</tbody>
+            <thead><tr><th>SL</th><th>Agenda</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="agenda-tbody">
+              ${renderEventRows(items)}
+            </tbody>
           </table>
         </div>
       </section>
     `;
-    bindDeleteButtons('Event akan dihapus dari daftar simulasi.');
+
+    body.querySelector('.cms-search input')?.addEventListener('input', (event) => {
+      const query = String(event.target.value || '').toLowerCase();
+      const filtered = items.filter((item) => [item.title, item.excerpt, item.location].join(' ').toLowerCase().includes(query));
+      const tbody = document.querySelector('#agenda-tbody');
+      if (tbody) tbody.innerHTML = renderEventRows(filtered);
+      bindAgendaActions();
+    });
+
+    bindAgendaActions();
   }
 
-  function renderEventEditor() {
-    const body = renderShell('Add Event', 'Form event dirapikan menjadi blok editor dan konfigurasi terstruktur.', `<a href="${adminUrl('event')}" class="btn btn-secondary">View All</a>`);
+  function renderEventRows(items) {
+    if (!items.length) {
+      return '<tr><td colspan="6" class="py-8 text-center text-neutral-500">Belum ada agenda.</td></tr>';
+    }
+    return items.map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${escape(item.title || '')}</strong><p class="mt-1 text-xs text-neutral-500">${escape(item.excerpt || '')}</p></td>
+        <td>${escape(item.start_date || '-')}</td>
+        <td>${escape(item.end_date || '-')}</td>
+        <td><span class="cms-pill muted">${escape(item.status || '-')}</span></td>
+        <td><div class="flex gap-2"><a href="${adminUrl('event-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-agenda-delete="${item.id}">Delete</button></div></td>
+      </tr>
+    `).join('');
+  }
+
+  function bindAgendaActions() {
+    document.querySelectorAll('[data-agenda-delete]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.agendaDelete);
+        const ok = await Admin.showConfirm({ title: 'Hapus agenda?', message: 'Agenda akan dihapus dari database dan landing page.', confirmText: 'Delete', danger: true });
+        if (!ok) return;
+        const res = await fetch(route('admin.eventDelete', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ _csrf_token: API.getCsrfToken?.() || '' }),
+        });
+        if (res.ok) {
+          Admin.showToast('Agenda berhasil dihapus.');
+          renderEventList();
+        } else {
+          Admin.showToast('Gagal menghapus agenda.');
+        }
+      });
+    });
+  }
+
+  async function renderEventEditor() {
+    const eventId = Number(new URLSearchParams(location.search).get('id')) || 0;
+    const isEdit = page === 'event-edit' || eventId > 0;
+    let item = null;
+    if (isEdit && eventId > 0) {
+      try {
+        const res = await fetch(route('admin.eventShow', { id: eventId }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        if (res.ok) {
+          const json = await res.json();
+          item = Core.normalizeEvent(json.data || {});
+        }
+      } catch (e) { item = null; }
+    }
+
+    const body = renderShell(isEdit ? 'Edit Agenda' : 'Add Agenda', 'Form agenda ini langsung menyimpan data `tbl_event`, sehingga hasilnya sama dengan daftar publik dan Agenda Utama di landing page.', `<a href="${adminUrl('event')}" class="btn btn-secondary">View All Agenda</a>`);
     body.innerHTML = `
       <form class="editor-workspace" id="event-form">
         <main class="block-writing-surface">
-          <div class="news-title-block" contenteditable="true" data-placeholder="Judul event..."></div>
-          <div class="news-excerpt-block" contenteditable="true" data-placeholder="Ringkasan pendek event..."></div>
-          <article class="news-body-block" contenteditable="true" data-placeholder="Deskripsi event..."></article>
-          <div class="news-excerpt-block" contenteditable="true" data-placeholder="Lokasi event..."></div>
-          <div class="news-excerpt-block" contenteditable="true" data-placeholder="Embed map atau URL lokasi..."></div>
+          <div id="event-title" class="news-title-block" contenteditable="true" data-placeholder="Judul agenda...">${escape(item?.title || '')}</div>
+          <div id="event-excerpt" class="news-excerpt-block" contenteditable="true" data-placeholder="Ringkasan pendek agenda...">${escape(item?.excerpt || '')}</div>
+          <article id="event-content" class="news-body-block" contenteditable="true" data-placeholder="Deskripsi agenda...">${item?.content || ''}</article>
+          <div id="event-location" class="news-excerpt-block" contenteditable="true" data-placeholder="Lokasi agenda...">${escape(item?.location || '')}</div>
+          <input id="event-map" class="config-input mt-4" value="${escape(item?.map || '')}" placeholder="Embed map atau URL lokasi..." />
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Event Date</h2>${control('Start Date', '<input class="config-input" type="date" value="2026-05-05" />')}${control('End Date', '<input class="config-input" type="date" value="2026-05-05" />')}</section>
-          <section class="config-card"><h2>Photo and Banner</h2>${control('Featured Photo', '<input class="config-input" type="file" />')}${control('Banner', '<input class="config-input" type="file" />')}</section>
-          <section class="config-card"><h2>SEO Information</h2>${control('Meta Title', '<input class="config-input" />')}${control('Meta Keywords', '<textarea class="config-input" rows="4"></textarea>')}${control('Meta Description', '<textarea class="config-input" rows="5"></textarea>')}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit Event</button>
+          <section class="config-card"><h2>Agenda Date</h2>${control('Start Date', `<input id="event-start-date" class="config-input" type="date" value="${escape(item?.start_date || '2026-05-05')}" />`)}${control('End Date', `<input id="event-end-date" class="config-input" type="date" value="${escape(item?.end_date || '2026-05-05')}" />`)}</section>
+          <section class="config-card"><h2>Photo and Banner</h2>${control('Featured Photo URL', `<input id="event-photo" class="config-input" value="${escape(item?.photo || '')}" placeholder="/uploads/... atau https://..." />`)}${control('Banner URL', `<input id="event-banner" class="config-input" value="${escape(item?.banner || '')}" placeholder="/uploads/... atau https://..." />`)}</section>
+          <section class="config-card"><h2>SEO Information</h2>${control('Meta Title', `<input id="event-meta-title" class="config-input" value="${escape(item?.meta_title || item?.title || '')}" />`)}${control('Meta Description', `<textarea id="event-meta-description" class="config-input" rows="5">${escape(item?.meta_description || item?.excerpt || '')}</textarea>`)}</section>
+          <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Agenda' : 'Submit Agenda'}</button>
         </aside>
       </form>
     `;
-    document.querySelector('#event-form').addEventListener('submit', async (event) => { event.preventDefault(); if (await Admin.showConfirm({ title: 'Submit event?', message: 'Event akan ditambahkan pada mode simulasi.' })) Admin.showToast('Event ditambahkan pada mode simulasi.'); });
+
+    document.querySelector('#event-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        title: document.querySelector('#event-title')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#event-excerpt')?.textContent?.trim() || '',
+        content: document.querySelector('#event-content')?.innerHTML || '',
+        location: document.querySelector('#event-location')?.textContent?.trim() || '',
+        map: document.querySelector('#event-map')?.value?.trim() || '',
+        start_date: document.querySelector('#event-start-date')?.value || '',
+        end_date: document.querySelector('#event-end-date')?.value || '',
+        photo: document.querySelector('#event-photo')?.value?.trim() || '',
+        banner: document.querySelector('#event-banner')?.value?.trim() || '',
+        meta_title: document.querySelector('#event-meta-title')?.value?.trim() || '',
+        meta_description: document.querySelector('#event-meta-description')?.value?.trim() || '',
+      };
+      const url = isEdit ? route('admin.eventUpdate', { id: eventId }) : route('admin.eventStore');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        Admin.showToast(isEdit ? 'Agenda diperbarui.' : 'Agenda ditambahkan.');
+        if (!isEdit && json.data?.id) {
+          window.setTimeout(() => { window.location.href = `${adminUrl('event-edit')}?id=${json.data.id}`; }, 700);
+        }
+      } else {
+        Admin.showToast(json.error || 'Gagal menyimpan agenda.');
+      }
+    });
   }
 
   function renderSliderList() {

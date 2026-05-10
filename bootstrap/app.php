@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\EventController as AdminEventController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
@@ -109,6 +110,7 @@ $authController = new AuthController($authService, $loginThrottle);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
 $adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel);
+$adminEventController = new AdminEventController($eventModel);
 $adminNewsController = new AdminNewsController($newsModel);
 $adminNewsCommentController = new NewsCommentController($commentModel);
 $adminPrestasiController = new AdminPrestasiController($prestasiModel);
