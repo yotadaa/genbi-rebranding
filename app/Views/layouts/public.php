@@ -40,6 +40,6 @@ $content = $content ?? '';
   <script defer src="/assets/js/dist/app.js?v=20260508e"></script>
   <script defer src="/assets/js/dist/lib/ui.js?v=20260510a"></script>
   <?= $scripts ?? '' ?>
-  <script>window.addEventListener('load',function(){document.body.classList.contains('page-ready')||window.GenBIApp?.renderShell?.()})</script>
+  <script>document.body.classList.contains('page-ready')||window.GenBIApp?.renderShell?.()</script>
 </body>
 </html>

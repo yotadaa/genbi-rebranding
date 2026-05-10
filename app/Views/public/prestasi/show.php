@@ -5,7 +5,7 @@
   </section>
 <?php else: ?>
   <section class="public-inner-hero py-16 md:py-24">
-    <div class="article-container fade-up">
+    <div class="article-container">
       <a data-transition href="/prestasi" class="chip chip-dark mb-7">← Kembali ke Prestasi</a>
       <p class="eyebrow"><?= $e($item['category'] ?? 'Prestasi') ?> · <?= $e($item['year'] ?? '') ?></p>
       <h1 class="page-title mt-5"><?= $e($item['title'] ?? '') ?></h1>
@@ -15,7 +15,7 @@
     </div>
   </section>
   <section class="bg-cream py-12 md:py-16">
-    <div class="site-container fade-up">
+    <div class="site-container">
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main card -->
         <div class="lg:col-span-2">
