@@ -26,6 +26,7 @@ final class MigrationRunner
     public function run(): array
     {
         $this->ensureMigrationsTable();
+        $this->ensureMigrationsTableIndexes();
         $pending = $this->pending();
         if ($pending === []) {
             return [];
@@ -35,23 +36,28 @@ final class MigrationRunner
         $applied = [];
 
         foreach ($pending as $file) {
+            $migrationName = basename($file);
+            if ($this->isAlreadyExecuted($migrationName)) {
+                continue;
+            }
+
             $migration = require $file;
             if (!is_array($migration) || !is_callable($migration['up'] ?? null)) {
-                throw new RuntimeException('Invalid migration file: ' . basename($file));
+                throw new RuntimeException('Invalid migration file: ' . $migrationName);
             }
 
             try {
                 $migration['up']($this->db);
                 $statement = $this->db->prepare('INSERT INTO migrations (migration, batch) VALUES (:migration, :batch)');
                 $statement->execute([
-                    'migration' => basename($file),
+                    'migration' => $migrationName,
                     'batch' => $batch,
                 ]);
             } catch (\Throwable $error) {
                 throw $error;
             }
 
-            $applied[] = basename($file);
+            $applied[] = $migrationName;
         }
 
         return $applied;
@@ -68,6 +74,16 @@ final class MigrationRunner
             'PRIMARY KEY (id)' .
             ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
+    }
+
+    private function ensureMigrationsTableIndexes(): void
+    {
+        try {
+            $this->db->exec('ALTER TABLE migrations ADD UNIQUE KEY uq_migrations_migration (migration)');
+        } catch (\Throwable $error) {
+            // Index already exists or legacy DB does not support this alteration.
+            // Keep migration runner non-fatal and continue safely.
+        }
     }
 
     /** @return array<int, string> */
@@ -96,5 +112,13 @@ final class MigrationRunner
         $current = (int) $statement->fetchColumn();
 
         return $current + 1;
+    }
+
+    private function isAlreadyExecuted(string $migration): bool
+    {
+        $statement = $this->db->prepare('SELECT 1 FROM migrations WHERE migration = :migration LIMIT 1');
+        $statement->execute(['migration' => $migration]);
+
+        return (bool) $statement->fetchColumn();
     }
 }
