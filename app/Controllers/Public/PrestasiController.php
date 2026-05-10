@@ -119,7 +119,6 @@ class PrestasiController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-prestasi-detail',
-                'scripts' => '<script defer src="/assets/js/dist/pages/prestasi.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;
