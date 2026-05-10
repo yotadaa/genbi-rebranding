@@ -15,7 +15,7 @@
     </div>
   </section>
   <section class="bg-cream py-12 md:py-16">
-    <div class="site-container">
+    <div class="article-container">
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main card -->
         <div class="lg:col-span-2">
