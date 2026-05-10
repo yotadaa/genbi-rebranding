@@ -931,13 +931,13 @@ body.page-leaving {
 
 
 .hero-section-compact {
-  min-height: clamp(560px, 72vh, 680px);
+  min-height: clamp(500px, 64vh, 620px);
 }
 
 .hero-inner-compact {
-  min-height: clamp(560px, 72vh, 680px);
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  min-height: clamp(500px, 64vh, 620px);
+  padding-top: clamp(1rem, 3vh, 2rem);
+  padding-bottom: clamp(2rem, 5vh, 3rem);
 }
 
 .hero-title-compact {
@@ -992,6 +992,18 @@ body.page-leaving {
   background: transparent;
 }
 
+.error-page-section {
+  padding-top: clamp(8.5rem, 15vh, 11rem);
+  padding-bottom: clamp(5rem, 10vh, 7rem);
+}
+
+@media (max-width: 767px) {
+  .error-page-section {
+    padding-top: 7.5rem;
+    padding-bottom: 4.5rem;
+  }
+}
+
 @media (max-width: 767px) {
 
   .hero-section-compact,
@@ -1000,8 +1012,8 @@ body.page-leaving {
   }
 
   .hero-inner-compact {
-    padding-top: 4rem;
-    padding-bottom: 4rem;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
   }
 
   .home-page-shell::before {
@@ -2981,7 +2993,7 @@ body.page-leaving {
 .admin-confirm-panel {
   width: min(100%, 440px);
   border-radius: 1.6rem;
-  background: var(--cream);
+  background: rgb(var(--cream));
   padding: 1.5rem;
   box-shadow: 0 28px 90px rgb(0 0 0 / 0.25);
   opacity: 0;
@@ -4022,12 +4034,18 @@ input[type="file"].config-input::file-selector-button:hover {
   background: linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.92));
 }
 
+.program-slide-card > *,
+.agenda-slide-card > * {
+  position: relative;
+  z-index: 2;
+}
+
 .program-slide-card::before,
 .agenda-slide-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   border-radius: inherit;
   background-image: var(--program-bg-image);
   background-size: cover;
@@ -4040,7 +4058,7 @@ input[type="file"].config-input::file-selector-button:hover {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   border-radius: inherit;
   background:
     linear-gradient(90deg, rgba(12, 53, 114, .94) 0%, rgba(17, 75, 154, .82) 44%, rgba(17, 75, 154, .68) 74%, rgba(17, 75, 154, .58) 100%),
