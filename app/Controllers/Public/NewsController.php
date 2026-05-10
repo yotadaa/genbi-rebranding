@@ -11,6 +11,8 @@ use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
 use App\Models\NewsComment;
+use App\Models\Setting;
+use App\Services\CommentPolicy;
 use App\Services\HtmlSanitizer;
 use App\Services\SeoService;
 use App\Services\StructuredData;
@@ -77,7 +79,7 @@ final class NewsController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news',
-                'scripts' => '<script src="/assets/js/pages/news.js"></script>',
+                'scripts' => '<script defer src="/assets/js/dist/pages/news.js"></script>',
             ]);
             $response->html($html);
             return;
@@ -114,9 +116,30 @@ final class NewsController
         $comments = [];
         if (is_array($item)) {
             $item = $this->sanitizePublicItem($item);
+            $item['comment_policy'] = [
+                'comments_enabled' => ($item['comment'] ?? 'On') !== 'Off',
+                'voting_enabled' => true,
+                'replies_enabled' => true,
+                'max_reply_depth' => 3,
+                'replies_require_moderation' => true,
+            ];
             if ($this->comments instanceof NewsComment) {
                 try {
-                    $comments = $this->comments->forNews((int) ($item['id'] ?? 0));
+                    $newsId = (int) ($item['id'] ?? 0);
+                    try {
+                        $settings = new Setting(\App\Core\Database::connection());
+                        $policy = new CommentPolicy($settings);
+                        $item['comment_policy'] = $policy->forNews($item);
+                    } catch (Throwable) {
+                        // Keep SSR page resilient when settings are unavailable.
+                    }
+
+                    $comments = $this->comments->treeForNews(
+                        $newsId,
+                        (string) ($item['comment_policy']['root_sort'] ?? 'newest_first'),
+                        (string) ($item['comment_policy']['reply_sort'] ?? 'oldest_first'),
+                        (int) ($item['comment_policy']['max_reply_depth'] ?? 3)
+                    );
                 } catch (Throwable) {
                     $comments = [];
                 }
@@ -143,7 +166,7 @@ final class NewsController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news-detail',
-                'scripts' => '<script src="/assets/js/pages/news-detail.js"></script>',
+                'scripts' => '<script defer src="/assets/js/dist/pages/news-detail.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;

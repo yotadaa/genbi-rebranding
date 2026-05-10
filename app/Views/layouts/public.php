@@ -1,26 +1,42 @@
+<?php
+/** @var callable $e */
+$siteSettings = $siteSettings ?? null;
+$sitePayload = is_object($siteSettings) && method_exists($siteSettings, 'clientPayload') ? $siteSettings->clientPayload() : ($site ?? []);
+$themeKey = is_object($siteSettings) && method_exists($siteSettings, 'themeKey') ? $siteSettings->themeKey('public') : 'genbi';
+$inlineThemeCss = is_object($siteSettings) && method_exists($siteSettings, 'themeInlineCss') ? $siteSettings->themeInlineCss('public') : '';
+$settingsJson = json_encode($sitePayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
+$content = $content ?? '';
+?>
 <!doctype html>
-<html lang="id">
+<html lang="id" data-theme="<?= $e($themeKey) ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= $e(\App\Services\CsrfService::token()) ?>">
   <?= $meta ?? '<title>GenBI Provinsi Jambi</title>' ?>
+  <?php if ($inlineThemeCss !== ''): ?><style><?= $inlineThemeCss ?></style><?php endif; ?>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
   <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260508e">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=20260510a">
+  <link rel="stylesheet" href="/assets/css/theme.css?v=20260510a">
+  <link rel="stylesheet" href="/assets/css/styles.min.css?v=20260511a">
   <?= $jsonld ?? '' ?>
+  <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
 <body class="<?= $e($bodyClass ?? '') ?>">
-  <div id="site-header"></div>
+  <div id="site-header"><?php require __DIR__ . '/../partials/public-header.php'; ?></div>
   <main id="main-content">
     <?= $content ?>
   </main>
-  <div id="site-footer"></div>
+  <div id="site-footer"><?php require __DIR__ . '/../partials/public-footer.php'; ?></div>
   <div id="modal-root"></div>
-  <script src="/assets/js/data.js?v=20260508e"></script>
-  <script src="/assets/js/api-core.js?v=20260508e"></script>
-  <script src="/assets/js/api.js?v=20260508e"></script>
-  <script src="/assets/js/app.js?v=20260508e"></script>
-  <script src="/assets/js/lib/ui.js?v=20260510a"></script>
+  <script>window.GenBISiteSettings = <?= $settingsJson ?>;</script>
+  <script defer src="/assets/js/dist/data.js?v=20260508e"></script>
+  <script defer src="/assets/js/dist/api-core.js?v=20260508e"></script>
+  <script defer src="/assets/js/dist/api.js?v=20260508e"></script>
+  <script defer src="/assets/js/dist/app.js?v=20260508e"></script>
+  <script defer src="/assets/js/dist/lib/ui.js?v=20260510a"></script>
   <?= $scripts ?? '' ?>
 </body>
 </html>

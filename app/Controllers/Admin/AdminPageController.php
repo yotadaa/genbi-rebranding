@@ -45,9 +45,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js?v=20260508e"></script>
+<script src="/assets/js/dist/admin/cms.js?v=20260508e"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260508e"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -151,6 +151,7 @@ HTML;
         $items = $this->teamModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
         $total = $this->teamModel->countPublic($filters);
         $totalPages = Paginator::totalPages($total, $pg['per_page']);
+        $filterOptions = $this->teamModel->filterOptions();
 
         return $this->viewRenderer->renderWithLayout('admin/team/index.php', 'layouts/admin.php', [
             'title' => 'View Team Members | Admin GenBI',
@@ -163,8 +164,9 @@ HTML;
             'total' => $total,
             'totalPages' => $totalPages,
             'filters' => $filters,
+            'filterOptions' => $filterOptions,
             'layout' => $layout,
-            'scripts' => '<script src="/assets/js/admin/cms.js?v=20260508b"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260508b"></script>',
         ]);
     }
 
@@ -180,9 +182,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script src="/assets/js/admin/cms.js?v=20260508e"></script>
+<script src="/assets/js/dist/admin/cms.js?v=20260508e"></script>
 HTML;
-        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260508e"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([
@@ -249,7 +251,7 @@ HTML;
             return null;
         }
 
-        $cmsScript = '<script src="/assets/js/admin/cms.js?v=20260508e"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260508e"></script>';
 
         if ($page === 'feature') {
             $pg = Paginator::resolve([

@@ -68,7 +68,7 @@ final class EventController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-event',
-                'scripts' => '<script src="/assets/js/pages/event.js"></script>',
+                'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
             ]);
             $response->html($html);
             return;
@@ -79,10 +79,10 @@ final class EventController
 
     public function show(Request $request, Response $response, array $params): void
     {
-        $id = (int) ($params['id'] ?? 0);
+        $slug = trim((string) ($params['slug'] ?? ''));
+        $item = $this->findPublicEvent($slug);
 
         if ($request->acceptsJson()) {
-            $item = $id > 0 ? $this->eventModel?->findPublicById($id) : null;
             if (!$item) {
                 $response->json(['error' => 'Event not found'], 404);
                 return;
@@ -91,7 +91,11 @@ final class EventController
             return;
         }
 
-        $item = $id > 0 ? $this->eventModel?->findPublicById($id) : null;
+        if (ctype_digit($slug) && is_array($item) && !empty($item['slug'])) {
+            $response->redirect('/event/' . rawurlencode((string) $item['slug']), 301);
+            return;
+        }
+
         if (is_array($item)) {
             $item = $this->sanitizePublicItem($item);
         }
@@ -101,7 +105,7 @@ final class EventController
             // Override with event-specific meta
             $seo['title'] = ($item['title'] ?? 'Event') . ' | GenBI Provinsi Jambi';
             $seo['description'] = mb_substr(strip_tags($item['excerpt'] ?? ''), 0, 160);
-            $seo['canonical'] = '/event/' . $id;
+            $seo['canonical'] = '/event/' . ($item['slug'] ?? $slug);
         } else {
             $seo = SeoService::forPage('event.html');
         }
@@ -111,7 +115,7 @@ final class EventController
             ? StructuredData::event($item) . PHP_EOL . '  ' . StructuredData::breadcrumbs([
                 ['name' => 'Beranda', 'url' => '/'],
                 ['name' => 'Event', 'url' => '/event'],
-                ['name' => $item['title'] ?? 'Detail', 'url' => '/event/' . $id],
+                ['name' => $item['title'] ?? 'Detail', 'url' => '/event/' . ($item['slug'] ?? $slug)],
             ])
             : '';
 
@@ -121,7 +125,7 @@ final class EventController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-event-detail',
-                'scripts' => '<script src="/assets/js/pages/event.js"></script>',
+                'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;
@@ -141,5 +145,18 @@ final class EventController
         $item['map'] = HtmlSanitizer::sanitizeMapEmbedUrl((string) ($item['map'] ?? ''));
 
         return $item;
+    }
+
+    private function findPublicEvent(string $slug): ?array
+    {
+        if ($slug === '') {
+            return null;
+        }
+
+        if (!ctype_digit($slug)) {
+            return $this->eventModel?->findPublicBySlug($slug);
+        }
+
+        return $this->eventModel?->findPublicById((int) $slug);
     }
 }

@@ -9,12 +9,14 @@ use App\Core\Response;
 use App\Core\ViewRenderer;
 use App\Models\ContactSetting;
 use App\Services\SeoService;
+use App\Services\SiteSettings;
 
 final class ContactController
 {
     public function __construct(
         private ViewRenderer $viewRenderer,
-        private ?ContactSetting $contactSetting = null
+        private ?ContactSetting $contactSetting = null,
+        private ?SiteSettings $siteSettings = null,
     ) {
     }
 
@@ -44,8 +46,8 @@ final class ContactController
             'title' => 'Contact | GenBI Provinsi Jambi',
             'meta' => SeoService::renderMetaBlock($seo),
             'contact' => $contact,
-            'scripts' => '<script src="/assets/js/pages/contact.js?v=20260508f"></script>',
+            'site' => $this->siteSettings?->site() ?? [],
+            'scripts' => '<script defer src="/assets/js/dist/pages/contact.js?v=20260508f"></script>',
         ]));
     }
 }
-

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\EventController as AdminEventController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
+use App\Controllers\Public\AboutController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
@@ -24,6 +26,7 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 use App\Services\AuthService;
+use App\Services\CommentThrottleService;
 use App\Services\LoginThrottleService;
 use App\Core\Request;
 use App\Core\Response;
@@ -36,8 +39,12 @@ use App\Models\Prestasi;
 use App\Models\PrestasiToken;
 use App\Models\Event;
 use App\Models\Feature;
+use App\Models\NewsCommentVote;
+use App\Models\Setting;
 use App\Models\TeamMember;
 use App\Models\ContactSetting;
+use App\Services\CommentPolicy;
+use App\Services\SiteSettings;
 
 spl_autoload_register(static function (string $class): void {
     $prefix = 'App\\';
@@ -71,17 +78,27 @@ $tokenModel = null;
 $teamModel = null;
 $featureModel = null;
 $contactSettingModel = null;
+$commentVoteModel = null;
+$settingModel = null;
+$commentPolicy = null;
+$commentThrottle = null;
+$siteSettings = null;
 
 try {
     $db = \App\Core\Database::connection();
     $newsModel = new News($db);
-    $commentModel = new NewsComment($db);
     $prestasiModel = new Prestasi($db);
     $tokenModel = new PrestasiToken($db);
     $eventModel = new Event($db);
     $teamModel = new TeamMember($db);
     $featureModel = new Feature($db);
     $contactSettingModel = new ContactSetting($db);
+    $commentVoteModel = new NewsCommentVote($db);
+    $settingModel = new Setting($db);
+    $commentPolicy = new CommentPolicy($settingModel);
+    $siteSettings = new SiteSettings($settingModel);
+    $commentThrottle = new CommentThrottleService();
+    $commentModel = new NewsComment($db, $commentVoteModel);
 } catch (\Throwable $exception) {
     error_log('[GenBI DB] ' . $exception->getMessage());
     $newsModel = null;
@@ -92,13 +109,24 @@ try {
     $teamModel = null;
     $featureModel = null;
     $contactSettingModel = null;
+    $commentVoteModel = null;
+    $settingModel = null;
+    $commentPolicy = null;
+    $commentThrottle = null;
+    $siteSettings = new SiteSettings(null);
 }
 
+$viewRenderer->share([
+    'siteSettings' => $siteSettings,
+    'site' => $siteSettings->site(),
+]);
+
 $pageController = new PageController($renderer);
-$contactController = new ContactController($viewRenderer, $contactSettingModel);
-$homeController = new HomeController($renderer, $featureModel, $newsModel, $viewRenderer);
+$aboutController = new AboutController($viewRenderer);
+$contactController = new ContactController($viewRenderer, $contactSettingModel, $siteSettings);
+$homeController = new HomeController($renderer, $featureModel, $newsModel, $eventModel, $teamModel, $viewRenderer, $siteSettings);
 $newsController = new NewsController($renderer, $newsModel, $commentModel, $viewRenderer);
-$commentController = new CommentController($newsModel, $commentModel);
+$commentController = new CommentController($newsModel, $commentModel, $commentVoteModel, $commentPolicy, $commentThrottle);
 $prestasiController = new PrestasiController($renderer, $prestasiModel, $tokenModel, $viewRenderer);
 $eventController = new EventController($renderer, $eventModel, $viewRenderer);
 $teamController = new TeamController($renderer, $teamModel, $viewRenderer);
@@ -118,6 +146,8 @@ $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
 $adminTeamMemberController = new AdminTeamMemberController($teamModel);
 $adminFeatureController = new \App\Controllers\Admin\FeatureController($featureModel);
 $adminContactSettingController = new \App\Controllers\Admin\ContactSettingController($contactSettingModel);
+$adminCommentSettingController = new CommentSettingController($settingModel);
+$adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';

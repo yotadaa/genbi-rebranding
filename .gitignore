@@ -9,6 +9,8 @@
 # Dependencies and generated artifacts
 node_modules/
 vendor/
+public/assets/js/dist/
+public/assets/css/styles.min.css
 
 # Runtime files
 storage/logs/*

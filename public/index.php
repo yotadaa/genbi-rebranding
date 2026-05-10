@@ -106,9 +106,4 @@ if (str_starts_with($path, '/uploads/')) {
 
 [$router, $request, $response] = require dirname(__DIR__) . '/bootstrap/app.php';
 
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-
 $router->dispatch($request, $response);

@@ -76,7 +76,7 @@ class TeamController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-team',
-                'scripts' => '<script src="/assets/js/pages/team.js"></script>',
+                'scripts' => '<script defer src="/assets/js/dist/pages/team.js"></script>',
             ]);
             $response->html($html);
             return;
