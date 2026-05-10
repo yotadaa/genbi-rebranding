@@ -7,6 +7,7 @@ namespace App\Controllers\Public;
 use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\ErrorHandler;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
@@ -91,7 +92,7 @@ final class NewsController
     /** @param array{slug?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
-        $slug = $params['slug'] ?? '';
+        $slug = mb_substr($params['slug'] ?? '', 0, 255);
         if ($request->acceptsJson()) {
             $item = $this->readFromDatabase(static function (News $news) use ($slug): ?array {
                 $row = $news->findPublicBySlug($slug);
@@ -159,6 +160,11 @@ final class NewsController
             ])
             : '';
 
+        if (!is_array($item) && !$request->acceptsJson()) {
+            ErrorHandler::render($response, 404, 'Berita tidak ditemukan', 'Berita yang Anda cari tidak tersedia, belum dipublikasikan, atau sudah dipindahkan.');
+            return;
+        }
+
         if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/news/show.php', 'layouts/public.php', [
                 'item' => $item,
@@ -185,7 +191,7 @@ final class NewsController
             return;
         }
 
-        $response->html('<!doctype html><title>404</title><h1>404 - Berita tidak ditemukan</h1>', 404);
+        ErrorHandler::render($response, 404, 'Berita tidak ditemukan', 'Berita lama yang Anda buka tidak tersedia atau belum memiliki URL slug publik.');
     }
 
     /** @template T @param callable(News): T $callback @return T|null */

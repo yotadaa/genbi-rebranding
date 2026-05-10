@@ -7,6 +7,7 @@ namespace App\Controllers\Public;
 use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\ErrorHandler;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\Event;
@@ -79,7 +80,7 @@ final class EventController
 
     public function show(Request $request, Response $response, array $params): void
     {
-        $slug = trim((string) ($params['slug'] ?? ''));
+        $slug = mb_substr(trim((string) ($params['slug'] ?? '')), 0, 255);
         $item = $this->findPublicEvent($slug);
 
         if ($request->acceptsJson()) {
@@ -138,6 +139,11 @@ final class EventController
                 ['name' => $item['title'] ?? 'Detail', 'url' => '/event/' . ($item['slug'] ?? $slug)],
             ])
             : '';
+
+        if (!is_array($item)) {
+            ErrorHandler::render($response, 404, 'Agenda tidak ditemukan', 'Agenda yang Anda cari tidak tersedia, belum dipublikasikan, atau sudah dipindahkan.');
+            return;
+        }
 
         if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/event/show.php', 'layouts/public.php', [

@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\EventController as AdminEventController;
@@ -14,8 +15,10 @@ use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\FeatureController as AdminFeatureController;
 use App\Controllers\Admin\ContactSettingController as AdminContactSettingController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
+use App\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
+use App\Middleware\RoleMiddleware;
 
 /** @var AuthController $authController */
 /** @var AdminPageController $adminPageController */
@@ -27,20 +30,23 @@ use App\Middleware\CsrfMiddleware;
 /** @var AdminTeamMemberController $adminTeamMemberController */
 /** @var AdminFeatureController $adminFeatureController */
 /** @var AdminContactSettingController $adminContactSettingController */
+/** @var CommentSettingController $adminCommentSettingController */
+/** @var AdminSettingsController $adminSettingsController */
 /** @var AuthMiddleware $authMiddleware */
 /** @var CsrfMiddleware $csrfMiddleware */
+/** @var RoleMiddleware $roleMiddleware */
 
 // Auth routes (no auth middleware - accessible to guests)
 $router->get('/admin/login', static fn(Request $request, Response $response) => $authController->showLogin($request, $response));
-$router->post('/admin/login', static fn(Request $request, Response $response) => $authController->login($request, $response));
 
-// Logout requires CSRF validation (prevents cross-site logout attacks)
+// Login POST and Logout require CSRF validation
 $router->group([$csrfMiddleware], static function ($router) use ($authController) {
+    $router->post('/admin/login', static fn(Request $request, Response $response) => $authController->login($request, $response));
     $router->post('/admin/logout', static fn(Request $request, Response $response) => $authController->logout($request, $response));
 });
 
-// Protected admin routes (require authentication + CSRF on POST)
-$router->group([$authMiddleware, $csrfMiddleware], static function ($router) use (
+// Protected admin routes (require authentication + CSRF on POST + role check)
+$router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static function ($router) use (
     $adminPageController,
     $adminNewsController,
     $adminNewsCommentController,
@@ -50,6 +56,8 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $adminTeamMemberController,
     $adminFeatureController,
     $adminContactSettingController,
+    $adminCommentSettingController,
+    $adminSettingsController,
 ) {
     // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
@@ -111,9 +119,28 @@ $router->group([$authMiddleware, $csrfMiddleware], static function ($router) use
     $router->post('/admin/features/{id}/images/reorder', static fn(Request $request, Response $response, array $params) => $adminFeatureController->reorderImages($request, $response, $params));
     $router->post('/admin/features/{id}/images/{imageId}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->deleteImage($request, $response, $params));
 
+    // Live settings
+    $router->get('/admin/settings', static fn(Request $request, Response $response) => $adminSettingsController->edit($request, $response));
+    $router->get('/admin/settings/data', static fn(Request $request, Response $response) => $adminSettingsController->data($request, $response));
+    $router->post('/admin/settings/logo', static fn(Request $request, Response $response) => $adminSettingsController->updateLogo($request, $response));
+    $router->post('/admin/settings/favicon', static fn(Request $request, Response $response) => $adminSettingsController->updateFavicon($request, $response));
+    $router->post('/admin/settings/topbar', static fn(Request $request, Response $response) => $adminSettingsController->updateTopbar($request, $response));
+    $router->post('/admin/settings/footer', static fn(Request $request, Response $response) => $adminSettingsController->updateFooter($request, $response));
+    $router->post('/admin/settings/email', static fn(Request $request, Response $response) => $adminSettingsController->updateEmail($request, $response));
+    $router->post('/admin/settings/banner', static fn(Request $request, Response $response) => $adminSettingsController->updateBanner($request, $response));
+    $router->post('/admin/settings/sidebar', static fn(Request $request, Response $response) => $adminSettingsController->updateSidebar($request, $response));
+    $router->post('/admin/settings/color', static fn(Request $request, Response $response) => $adminSettingsController->updateColor($request, $response));
+    $router->post('/admin/settings/upload', static fn(Request $request, Response $response) => $adminSettingsController->upload($request, $response));
+    $router->get('/admin/settings/theme', static fn(Request $request, Response $response) => $adminSettingsController->showTheme($request, $response));
+    $router->post('/admin/settings/theme', static fn(Request $request, Response $response) => $adminSettingsController->updateTheme($request, $response));
+
     // Contact settings
     $router->get('/admin/contact-setting', static fn(Request $request, Response $response) => $adminContactSettingController->show($request, $response));
     $router->post('/admin/contact-setting', static fn(Request $request, Response $response) => $adminContactSettingController->update($request, $response));
+
+    // Comment settings
+    $router->get('/admin/comment-setting', static fn(Request $request, Response $response) => $adminCommentSettingController->show($request, $response));
+    $router->post('/admin/comment-setting', static fn(Request $request, Response $response) => $adminCommentSettingController->update($request, $response));
 
     // Catch-all for static admin pages (must be last)
     $router->get('/admin/{page}', static fn(Request $request, Response $response, array $params) => $adminPageController->show($request, $response, $params));

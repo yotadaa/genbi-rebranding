@@ -240,7 +240,7 @@ class TeamMember
 
         if (!empty($filters['q'])) {
             $where[] = '(t.name LIKE :q_name OR t.designation LIKE :q_designation OR d.nama LIKE :q_division OR COALESCE(k.nama, t.komsat) LIKE :q_campus)';
-            $search = '%' . $filters['q'] . '%';
+            $search = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
             $params['q_name'] = $search;
             $params['q_designation'] = $search;
             $params['q_division'] = $search;

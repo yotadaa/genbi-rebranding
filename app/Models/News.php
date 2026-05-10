@@ -27,7 +27,7 @@ final class News
 
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         $sql .= ' ORDER BY COALESCE(n.published_at, n.news_date, n.created_at) DESC LIMIT :limit OFFSET :offset';
@@ -55,7 +55,7 @@ final class News
 
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         $statement = $this->db->prepare($sql);
@@ -161,7 +161,7 @@ final class News
         // Search filter
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         // Category filter (array of category IDs)
@@ -211,7 +211,7 @@ final class News
         // Search filter
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         // Category filter (array of category IDs)
@@ -244,7 +244,7 @@ final class News
     public function create(array $data): ?int
     {
         $statement = $this->db->prepare(
-            'INSERT INTO tbl_news (news_title, news_content, news_content_short, news_date, photo, banner, category_id, comment, meta_title, meta_keyword, meta_description, slug, status, published_at, contributor_pewarta, contributor_editor, contributor_redaksi, published) VALUES (:title, :content, :excerpt, :date, :photo, :banner, :category_id, :comment, :meta_title, :meta_keyword, :meta_description, :slug, :status, :published_at, :pewarta, :editor, :redaksi, :published)'
+            'INSERT INTO tbl_news (news_title, news_content, news_content_short, news_date, photo, banner, category_id, comment, comments_enabled, voting_enabled, replies_enabled, max_reply_depth, meta_title, meta_keyword, meta_description, slug, status, published_at, contributor_pewarta, contributor_editor, contributor_redaksi, published) VALUES (:title, :content, :excerpt, :date, :photo, :banner, :category_id, :comment, :comments_enabled, :voting_enabled, :replies_enabled, :max_reply_depth, :meta_title, :meta_keyword, :meta_description, :slug, :status, :published_at, :pewarta, :editor, :redaksi, :published)'
         );
 
         $statement->execute([
@@ -256,6 +256,10 @@ final class News
             ':banner' => $data['banner'] ?? $data['photo'] ?? '',
             ':category_id' => (int) ($data['category_id'] ?? 0),
             ':comment' => $data['comment'] ?? 'On',
+            ':comments_enabled' => $data['comments_enabled'] ?? null,
+            ':voting_enabled' => $data['voting_enabled'] ?? null,
+            ':replies_enabled' => $data['replies_enabled'] ?? null,
+            ':max_reply_depth' => $data['max_reply_depth'] ?? null,
             ':meta_title' => $data['meta_title'] ?? '',
             ':meta_keyword' => $data['meta_keyword'] ?? '',
             ':meta_description' => $data['meta_description'] ?? '',
@@ -288,6 +292,10 @@ final class News
             'banner' => 'banner',
             'category_id' => 'category_id',
             'comment' => 'comment',
+            'comments_enabled' => 'comments_enabled',
+            'voting_enabled' => 'voting_enabled',
+            'replies_enabled' => 'replies_enabled',
+            'max_reply_depth' => 'max_reply_depth',
             'meta_title' => 'meta_title',
             'meta_keyword' => 'meta_keyword',
             'meta_description' => 'meta_description',
@@ -422,6 +430,10 @@ final class News
             'meta_description' => (string) ($row['meta_description'] ?? ''),
             'related' => (string) ($row['related'] ?? ''),
             'status' => (string) ($row['status'] ?? 'published'),
+            'comments_enabled' => array_key_exists('comments_enabled', $row) && $row['comments_enabled'] !== null ? (int) $row['comments_enabled'] : null,
+            'voting_enabled' => array_key_exists('voting_enabled', $row) && $row['voting_enabled'] !== null ? (int) $row['voting_enabled'] : null,
+            'replies_enabled' => array_key_exists('replies_enabled', $row) && $row['replies_enabled'] !== null ? (int) $row['replies_enabled'] : null,
+            'max_reply_depth' => array_key_exists('max_reply_depth', $row) && $row['max_reply_depth'] !== null ? (int) $row['max_reply_depth'] : null,
         ];
     }
 

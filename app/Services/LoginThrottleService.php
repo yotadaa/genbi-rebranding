@@ -12,7 +12,9 @@ use Throwable;
 final class LoginThrottleService
 {
     private const MAX_ATTEMPTS = 10;
+    private const MAX_EMAIL_ATTEMPTS = 20;
     private const WINDOW_MINUTES = 10;
+    private static bool $tableWarningLogged = false;
 
     public function __construct(private ?PDO $db = null)
     {
@@ -37,6 +39,31 @@ final class LoginThrottleService
 
         $expiresAt = strtotime($lockedUntil);
         return $expiresAt !== false && $expiresAt > time();
+    }
+
+    public function isEmailBlocked(string $email): bool
+    {
+        $email = trim(mb_strtolower($email));
+        if ($email === '' || !$this->db instanceof PDO) {
+            return false;
+        }
+
+        try {
+            $windowStart = (new DateTimeImmutable('now'))
+                ->sub(new DateInterval('PT' . self::WINDOW_MINUTES . 'M'))
+                ->format('Y-m-d H:i:s');
+
+            $stmt = $this->db->prepare(
+                'SELECT COALESCE(SUM(attempt_count), 0) AS total FROM tbl_login_attempt WHERE email_normalized = :email AND first_attempt_at >= :window'
+            );
+            $stmt->execute([':email' => $email, ':window' => $windowStart]);
+            $total = (int) $stmt->fetchColumn();
+
+            return $total >= self::MAX_EMAIL_ATTEMPTS;
+        } catch (Throwable) {
+            $this->logTableWarning();
+            return false;
+        }
     }
 
     public function recordFailure(string $email, string $ip): void
@@ -91,6 +118,7 @@ final class LoginThrottleService
             $statement->execute();
         } catch (Throwable) {
             // Throttling should not break login flows when the table is unavailable.
+            $this->logTableWarning();
         }
     }
 
@@ -146,7 +174,16 @@ final class LoginThrottleService
 
             return is_array($row) ? $row : null;
         } catch (Throwable) {
+            $this->logTableWarning();
             return null;
+        }
+    }
+
+    private function logTableWarning(): void
+    {
+        if (!self::$tableWarningLogged) {
+            self::$tableWarningLogged = true;
+            error_log('WARNING: Login throttle table unavailable — rate limiting disabled');
         }
     }
 }

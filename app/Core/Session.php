@@ -29,6 +29,13 @@ final class Session
         ]);
         session_start();
         self::$started = true;
+
+        // Idle timeout (30 minutes)
+        if (isset($_SESSION['_last_activity']) && (time() - $_SESSION['_last_activity']) > 1800) {
+            self::destroy();
+            return;
+        }
+        $_SESSION['_last_activity'] = time();
     }
 
     public static function get(string $key, mixed $default = null): mixed

@@ -12,7 +12,7 @@ final class Security
     public static function config(): array
     {
         $appEnv = Env::get('APP_ENV', 'local') ?? 'local';
-        $defaultSecure = $appEnv === 'production' ? 'true' : 'false';
+        $defaultSecure = $appEnv === 'local' ? 'false' : 'true';
         $sameSite = Env::get('SESSION_SAMESITE', 'Lax') ?? 'Lax';
         $sameSite = in_array($sameSite, ['Lax', 'Strict', 'None'], true) ? $sameSite : 'Lax';
 

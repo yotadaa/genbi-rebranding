@@ -198,7 +198,7 @@ class Prestasi
     {
         if (!empty($filters['q'])) {
             $sql .= ' AND (title LIKE :q OR member_name LIKE :q OR category LIKE :q OR institution LIKE :q OR description LIKE :q)';
-            $params[':q'] = '%' . $filters['q'] . '%';
+            $params[':q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
         if (!empty($filters['category'])) {
             $sql .= ' AND category = :category';

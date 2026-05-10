@@ -7,6 +7,7 @@ namespace App\Controllers\Public;
 use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\ErrorHandler;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\Prestasi;
@@ -76,7 +77,7 @@ class PrestasiController
 
     public function show(Request $request, Response $response, array $params): void
     {
-        $slug = $params['slug'] ?? '';
+        $slug = mb_substr($params['slug'] ?? '', 0, 255);
 
         if ($request->acceptsJson()) {
             $item = $this->prestasi?->findBySlug($slug);
@@ -105,6 +106,11 @@ class PrestasiController
                 ['name' => $item['title'] ?? 'Detail', 'url' => '/prestasi/' . ($item['slug'] ?? $slug)],
             ])
             : '';
+
+        if (!is_array($item)) {
+            ErrorHandler::render($response, 404, 'Prestasi tidak ditemukan', 'Prestasi yang Anda cari tidak tersedia, belum dipublikasikan, atau sudah dipindahkan.');
+            return;
+        }
 
         if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/prestasi/show.php', 'layouts/public.php', [

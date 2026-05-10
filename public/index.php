@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/app/Core/HotReload.php';
+require_once dirname(__DIR__) . '/app/Core/Request.php';
+require_once dirname(__DIR__) . '/app/Core/Response.php';
+require_once dirname(__DIR__) . '/app/Core/ViewRenderer.php';
+require_once dirname(__DIR__) . '/app/Core/ErrorHandler.php';
+require_once dirname(__DIR__) . '/app/Config/App.php';
+require_once dirname(__DIR__) . '/app/Core/Env.php';
 
 if (PHP_VERSION_ID < 80200) {
     http_response_code(500);
@@ -20,6 +26,7 @@ if (!extension_loaded('pdo_mysql')) {
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $rootPath = dirname(__DIR__);
+\App\Core\Env::load($rootPath . '/.env');
 
 if (\App\Core\HotReload::enabled() && $path === \App\Core\HotReload::endpoint()) {
     http_response_code(200);
@@ -76,7 +83,8 @@ if (str_starts_with($path, '/assets/')) {
     }
 
     http_response_code(404);
-    echo 'Asset not found';
+    \App\Core\ErrorHandler::log('Asset not found', ['path' => $path]);
+    \App\Core\ErrorHandler::render(new \App\Core\Response(), 404, 'Asset tidak ditemukan', 'File aset yang diminta tidak tersedia.');
     return;
 }
 
@@ -95,15 +103,29 @@ if (str_starts_with($path, '/uploads/')) {
         $extension = strtolower(pathinfo($uploadPath, PATHINFO_EXTENSION));
         header('Content-Type: ' . ($types[$extension] ?? 'application/octet-stream'));
         header('Cache-Control: public, max-age=86400');
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
         readfile($uploadPath);
         return;
     }
 
-    http_response_code(404);
-    echo 'Upload not found';
+    \App\Core\ErrorHandler::log('Upload not found', ['path' => $path]);
+    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    if (in_array($extension, ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'], true)) {
+        http_response_code(404);
+        header('Content-Type: image/svg+xml; charset=UTF-8');
+        header('Cache-Control: public, max-age=300');
+        echo '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Gambar tidak tersedia"><rect width="1200" height="630" fill="#edf4fb"/><circle cx="600" cy="260" r="72" fill="#114b9a" opacity=".16"/><path d="M520 356h160l-46-60-34 42-24-30-56 48Z" fill="#114b9a" opacity=".45"/><text x="600" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#114b9a">Gambar tidak tersedia</text></svg>';
+        return;
+    }
+
+    \App\Core\ErrorHandler::render(new \App\Core\Response(), 404, 'Upload tidak ditemukan', 'File unggahan yang diminta tidak tersedia.');
     return;
 }
 
-[$router, $request, $response] = require dirname(__DIR__) . '/bootstrap/app.php';
-
-$router->dispatch($request, $response);
+try {
+    [$router, $request, $response] = require dirname(__DIR__) . '/bootstrap/app.php';
+    $router->dispatch($request, $response);
+} catch (\Throwable $error) {
+    \App\Core\ErrorHandler::renderThrowable(new \App\Core\Response(), $error);
+}

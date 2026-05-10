@@ -34,5 +34,11 @@ final class SecurityHeadersMiddleware implements Middleware
         }
 
         $next($request, $response);
+
+        // Override caching for error responses
+        $code = http_response_code();
+        if ($code >= 400) {
+            header('Cache-Control: no-store');
+        }
     }
 }

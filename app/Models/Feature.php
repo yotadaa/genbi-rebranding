@@ -277,7 +277,7 @@ final class Feature
             if ($searchable !== []) {
                 $clauses = array_map(static fn(string $column): string => $column . ' LIKE :q', $searchable);
                 $sql .= ' AND (' . implode(' OR ', $clauses) . ')';
-                $params[':q'] = '%' . trim((string) $filters['q']) . '%';
+                $params[':q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], trim((string) $filters['q'])) . '%';
             }
         }
         if (!empty($filters['status']) && $this->hasFeatureColumn('status')) {

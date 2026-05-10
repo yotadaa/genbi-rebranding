@@ -33,18 +33,10 @@ final class AuthController
 
     public function login(Request $request, Response $response): void
     {
-        // Validate CSRF
-        $token = $_POST['_csrf_token'] ?? null;
-        if (!CsrfService::validate($token)) {
-            Session::flash('login_error', 'Sesi tidak valid. Silakan coba lagi.');
-            $response->redirect('/admin/login');
-            return;
-        }
-
         $ip = $request->ip() ?? 'unknown';
         $email = trim((string) ($_POST['email'] ?? ''));
 
-        if ($this->throttle->isBlocked($email, $ip)) {
+        if ($this->throttle->isBlocked($email, $ip) || $this->throttle->isEmailBlocked($email)) {
             Session::flash('login_error', 'Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.');
             $response->redirect('/admin/login');
             return;

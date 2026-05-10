@@ -156,7 +156,7 @@ final class AuthService
         }
 
         // Legacy MD5 fallback (transition period only)
-        if (strlen($stored) === 32 && $stored === md5($input)) {
+        if (strlen($stored) === 32 && hash_equals($stored, md5($input))) {
             return true;
         }
 

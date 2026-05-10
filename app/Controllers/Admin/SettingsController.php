@@ -16,7 +16,7 @@ use App\Services\SiteSettings;
 final class SettingsController
 {
     private const BRANDING_UPLOAD_DIR = '/uploads/branding/';
-    private const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/svg+xml'];
+    private const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/x-icon', 'image/vnd.microsoft.icon'];
     private const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
 
     public function __construct(
@@ -116,7 +116,7 @@ final class SettingsController
             return;
         }
 
-        if ($mimeType !== 'image/svg+xml' && @getimagesize($file['tmp_name']) === false) {
+        if (@getimagesize($file['tmp_name']) === false) {
             $response->json(['error' => 'File gambar tidak valid'], 422);
             return;
         }
@@ -127,7 +127,6 @@ final class SettingsController
             'image/webp' => 'webp',
             'image/gif' => 'gif',
             'image/x-icon', 'image/vnd.microsoft.icon' => 'ico',
-            'image/svg+xml' => 'svg',
             default => 'png',
         };
 
