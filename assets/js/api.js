@@ -26,9 +26,9 @@
       if (token) headers['X-CSRF-TOKEN'] = token;
     }
     const response = await window.fetch(path, {
-      headers,
-      credentials: 'same-origin',
       ...options,
+      headers,
+      credentials: options.credentials || 'same-origin',
     });
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
     return response.json();
@@ -79,6 +79,8 @@
   async function submitNewsComment(news, payload) {
     const slug = news?.slug || news?.id;
     const body = Core.createCommentPayload(payload);
+    const token = getCsrfToken();
+    if (token) body._csrf_token = token;
     return requestJson(Core.routeUrl('public.newsCommentStore', { slug }), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
