@@ -112,13 +112,14 @@ final class StructuredData
         $location = $event['location'] ?? $event['event_location'] ?? '';
         $image = $event['image'] ?? $event['photo'] ?? '';
         $id = $event['id'] ?? $event['event_id'] ?? 0;
+        $slug = $event['slug'] ?? '';
 
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'Event',
             'name' => $title,
             'description' => mb_substr(strip_tags($description), 0, 200),
-            'url' => $baseUrl . '/event/' . $id,
+            'url' => $baseUrl . '/event/' . ($slug !== '' ? $slug : $id),
             'startDate' => self::isoDate($startDate),
             'organizer' => [
                 '@type' => 'Organization',

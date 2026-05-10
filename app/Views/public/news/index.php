@@ -35,6 +35,7 @@ $endItem = min($page * $perPage, $total);
       <h2 class="sr-only">Daftar Berita</h2>
       <?php if (!empty($items)): ?>
         <?php foreach ($items as $index => $item): ?>
+          <article>
           <a data-transition href="/news/<?= rawurlencode((string) $item['slug']) ?>" class="article-link <?= $index === 0 ? 'pt-0 border-t-0' : '' ?>">
             <div class="grid gap-5 md:grid-cols-[170px_1fr] md:items-start">
               <div class="aspect-[4/3] overflow-hidden rounded-2xl bg-blue-50">
@@ -53,6 +54,7 @@ $endItem = min($page * $perPage, $total);
               </div>
             </div>
           </a>
+          </article>
         <?php endforeach; ?>
       <?php else: ?>
         <div class="rounded-2xl border border-neutral-900/10 bg-white p-8 text-center text-sm text-neutral-600">

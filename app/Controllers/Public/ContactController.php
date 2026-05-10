@@ -33,14 +33,14 @@ final class ContactController
             'og_title' => $contact['meta_title'] ?? 'Contact | GenBI Provinsi Jambi',
             'og_description' => $contact['meta_description'] ?? 'Hubungi GenBI Provinsi Jambi.',
             'og_url' => SeoService::absoluteUrl('/contact'),
-            'og_image' => SeoService::absoluteUrl('/uploads/slider-1.png'),
+            'og_image' => SeoService::absoluteUrl(\App\Services\SeoConfig::DEFAULT_OG_IMAGE),
             'og_image_width' => '1200',
             'og_image_height' => '630',
             'og_image_alt' => 'Contact GenBI Provinsi Jambi',
             'twitter_card' => 'summary_large_image',
             'twitter_title' => $contact['meta_title'] ?? 'Contact | GenBI Provinsi Jambi',
             'twitter_description' => $contact['meta_description'] ?? 'Hubungi GenBI Provinsi Jambi.',
-            'twitter_image' => SeoService::absoluteUrl('/uploads/slider-1.png'),
+            'twitter_image' => SeoService::absoluteUrl(\App\Services\SeoConfig::DEFAULT_OG_IMAGE),
         ];
 
         $jsonld = StructuredData::organization() . PHP_EOL . '  ' . StructuredData::breadcrumbs([
