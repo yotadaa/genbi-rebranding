@@ -115,6 +115,7 @@ class PrestasiController
         if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/prestasi/show.php', 'layouts/public.php', [
                 'item' => $item,
+                'seo' => $seo,
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-prestasi-detail',
