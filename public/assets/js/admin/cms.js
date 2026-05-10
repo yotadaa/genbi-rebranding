@@ -62,6 +62,8 @@
     'https://official.genbijambi.com/storage/team-members/Depi-Susanti.png'
   ];
 
+  const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
+
   const routes = {
     language: () => { Admin.renderAdminShell('language'); renderLanguage(); },
     category: () => { Admin.renderAdminShell('category'); renderCategoryList(); },
@@ -1865,8 +1867,6 @@
   function escape(value = '') { return Admin.escapeHtml(value); }
 
   // ─── Prestasi CMS ───────────────────────────────────────────────────────────
-
-  const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
 
   async function renderPrestasiList() {
     // Check if SSR markup exists - if so, only bind delete/detail behavior
