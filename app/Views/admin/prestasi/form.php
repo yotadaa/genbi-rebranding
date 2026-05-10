@@ -24,7 +24,7 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Kelola data prestasi anggota GenBI Jambi.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/prestasi" class="btn btn-secondary">View All</a>
+      <a href="<?= $url('admin.prestasi') ?>" class="btn btn-secondary">View All</a>
     </div>
   </header>
   <div id="cms-body" class="mt-6">

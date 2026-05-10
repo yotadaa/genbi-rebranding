@@ -3,13 +3,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: { blue: '#114b9a', dark: '#0c3572', soft: '#eef6ff' },
-        cream: '#fbfaf7',
-        stone: '#f3f0e8',
+        brand: {
+          blue: 'rgb(var(--brand-primary) / <alpha-value>)',
+          dark: 'rgb(var(--brand-primary-hover) / <alpha-value>)',
+          soft: 'rgb(var(--brand-soft) / <alpha-value>)',
+        },
+        cream: 'rgb(var(--background-default) / <alpha-value>)',
+        stone: 'rgb(var(--background-muted) / <alpha-value>)',
+        ink: 'rgb(var(--text-primary) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        serif: ['Source Serif 4', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Source Serif 4', 'Georgia', 'serif'],
+      },
+      borderRadius: {
+        card: 'var(--radius-card)',
+        pill: 'var(--radius-pill)',
+      },
+      boxShadow: {
+        card: 'var(--shadow-card)',
       },
     },
   },

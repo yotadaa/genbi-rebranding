@@ -24,7 +24,7 @@ $filterParams = array_filter([
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Kelola program utama yang tampil di landing page, lengkap dengan ikon, status, dan slideshow gambar.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/feature-add" class="btn btn-primary"><?= $e('Add Program Utama') ?></a>
+      <a href="<?= $url('admin.feature.add') ?>" class="btn btn-primary"><?= $e('Add Program Utama') ?></a>
     </div>
   </header>
   <div id="cms-body" class="mt-6">
@@ -100,7 +100,7 @@ $filterParams = array_filter([
                   </td>
                   <td>
                     <div class="flex gap-2">
-                      <a href="/admin/feature-edit?id=<?= (int) $item['id'] ?>" class="cms-action edit">Edit</a>
+                      <a href="<?= $url('admin.feature.edit', ['id' => (int) $item['id']]) ?>" class="cms-action edit">Edit</a>
                       <button type="button" class="cms-action delete" data-delete-feature="<?= (int) $item['id'] ?>">Delete</button>
                     </div>
                   </td>
@@ -117,7 +117,7 @@ $filterParams = array_filter([
       <?php if ($totalPages > 1): ?>
         <nav class="public-pagination mt-8" aria-label="Pagination Program Utama">
           <?php if ($page > 1): ?>
-            <a class="pager-button" href="/admin/feature?<?= $e(Paginator::buildQuery($page - 1, $filterParams + ['per_page' => $perPage])) ?>">Sebelumnya</a>
+            <a class="pager-button" href="<?= $url('admin.feature') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams + ['per_page' => $perPage])) ?>">Sebelumnya</a>
           <?php else: ?>
             <span class="pager-button" aria-disabled="true">Sebelumnya</span>
           <?php endif; ?>
@@ -125,11 +125,11 @@ $filterParams = array_filter([
             <?php if ($i === $page): ?>
               <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
             <?php else: ?>
-              <a class="pager-button" href="/admin/feature?<?= $e(Paginator::buildQuery($i, $filterParams + ['per_page' => $perPage])) ?>"><?= $i ?></a>
+              <a class="pager-button" href="<?= $url('admin.feature') ?>?<?= $e(Paginator::buildQuery($i, $filterParams + ['per_page' => $perPage])) ?>"><?= $i ?></a>
             <?php endif; ?>
           <?php endfor; ?>
           <?php if ($page < $totalPages): ?>
-            <a class="pager-button" href="/admin/feature?<?= $e(Paginator::buildQuery($page + 1, $filterParams + ['per_page' => $perPage])) ?>">Berikutnya</a>
+            <a class="pager-button" href="<?= $url('admin.feature') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams + ['per_page' => $perPage])) ?>">Berikutnya</a>
           <?php else: ?>
             <span class="pager-button" aria-disabled="true">Berikutnya</span>
           <?php endif; ?>

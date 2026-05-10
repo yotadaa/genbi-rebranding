@@ -20,7 +20,7 @@ $images = $isEdit ? ($item['images'] ?? []) : [];
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Program Utama ditulis seperti section hero ringkas: label pendek, nama program, deskripsi, ikon, dan rangkaian gambar latar.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/feature" class="btn btn-secondary">View All</a>
+      <a href="<?= $url('admin.feature') ?>" class="btn btn-secondary">View All</a>
     </div>
   </header>
   <div id="cms-body" class="mt-6">
@@ -87,10 +87,9 @@ $images = $isEdit ? ($item['images'] ?? []) : [];
               <span class="feature-icon-button-preview" data-feature-icon-preview="<?= $e($iconKey) ?>"></span>
               <span>
                 <strong id="feature-icon-label"><?= $e($iconKey) ?></strong>
-                <small>Pilih hero icon Program Utama</small>
+                <small>Buka popup Heroicons tersegmentasi</small>
               </span>
             </button>
-            <div class="feature-icon-menu hidden" id="feature-icon-menu"></div>
           </div>
         </section>
         <section class="config-card medium-config-card">

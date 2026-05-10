@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-10T19:21:26.435Z",
+  "activeTasks": [],
+  "completedSummaries": [],
+  "blockers": [],
+  "verificationEvidence": [],
+  "retryHistory": [],
+  "traceEvents": [],
+  "workflowRuns": [],
+  "activeWorkflow": {
+    "id": "workflow-1778340203104",
+    "goal": "No files found",
+    "status": "planning",
+    "createdAt": "2026-05-09T15:23:23.104Z",
+    "updatedAt": "2026-05-10T19:21:03.126Z",
+    "steps": [],
+    "acceptanceCriteria": [],
+    "evidence": [],
+    "retryPolicy": {
+      "maxRetries": 1
+    },
+    "completionGate": {
+      "status": "pending",
+      "reasons": []
+    },
+    "route": {
+      "intent": "bugfix",
+      "skills": [
+        "systematic-debugging",
+        "test-driven-development"
+      ],
+      "reason": "Detected bug or failing test intent.",
+      "source": "message"
+    }
+  }
+}

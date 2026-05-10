@@ -61,6 +61,7 @@
     language: () => { Admin.renderAdminShell('language'); renderLanguage(); },
     category: () => { Admin.renderAdminShell('category'); renderCategoryList(); },
     comment: () => { Admin.renderAdminShell('comment'); renderCommentSetup(); },
+    'comment-setting': () => { Admin.renderAdminShell('comment-setting'); renderCommentSettings(); },
     news: () => { Admin.renderAdminShell('news-list'); mode === 'editor' ? renderNewsEditor(false) : renderNewsList(); },
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
     prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
@@ -81,7 +82,10 @@
 
   const teamSelection = new Set();
 
-  (routes[page] || routes.news)();
+  // Defer route execution until this module has finished initializing.
+  // Some editor routes reference tools declared later in the file (for example
+  // MapEmbedTool); running immediately can hit class temporal-dead-zone errors.
+  queueMicrotask(() => (routes[page] || routes.news)());
 
   function renderShell(title, subtitle, actions = '') {
     const root = document.querySelector('#admin-content');
@@ -562,8 +566,9 @@
     });
   }
 
-  function initMediumEditor(item, isEdit) {
-    const holder = document.querySelector('#news-editor');
+  function initMediumEditor(item, isEdit, options = {}) {
+    const holderId = options.holderId || 'news-editor';
+    const holder = document.querySelector(`#${holderId}`);
     const fallback = document.querySelector('#editor-fallback');
     if (!holder) return null;
 
@@ -574,15 +579,16 @@
       return null;
     }
 
-    const initialBlocks = buildNewsBlocks(item, isEdit);
+    const initialBlocks = options.buildBlocks ? options.buildBlocks(item, isEdit) : buildNewsBlocks(item, isEdit);
     const tools = {};
     if (window.Header) tools.header = { class: window.Header, inlineToolbar: true, config: { levels: [1, 2, 3], defaultLevel: 2 } };
     const ListTool = window.EditorjsList || window.List;
     if (ListTool) tools.list = { class: ListTool, inlineToolbar: true, config: { defaultStyle: 'unordered' } };
     if (window.Quote) tools.quote = { class: window.Quote, inlineToolbar: true, config: { quotePlaceholder: 'Tulis kutipan...', captionPlaceholder: 'Sumber kutipan' } };
-    if (window.ImageTool) {
+    const ImageToolClass = window.ImageTool || SimpleImageTool;
+    if (ImageToolClass) {
       tools.image = {
-        class: window.ImageTool,
+        class: ImageToolClass,
         config: {
           uploader: {
             async uploadByFile(file) {
@@ -604,11 +610,13 @@
       };
     }
 
+    if (options.extraTools) Object.assign(tools, options.extraTools);
+
     return new window.EditorJS({
-      holder: 'news-editor',
+      holder: holderId,
       autofocus: true,
       minHeight: 520,
-      placeholder: 'Mulai tulis berita. Tekan Tab atau klik plus untuk memilih blok.',
+      placeholder: options.placeholder || 'Mulai tulis berita. Tekan Tab atau klik plus untuk memilih blok.',
       tools,
       data: {
         time: Date.now(),
@@ -672,6 +680,230 @@
         const src = block.data.file?.url || block.data.url || '';
         if (!src) return '';
         return `<figure><img src="${escape(src)}" alt="${escape(block.data.caption || '')}" />${block.data.caption ? `<figcaption>${escape(block.data.caption)}</figcaption>` : ''}</figure>`;
+      }
+      return block.data.text ? `<p>${block.data.text}</p>` : '';
+    }).filter(Boolean).join('\n');
+  }
+
+  class SimpleImageTool {
+    static get toolbox() {
+      return { title: 'Image', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h12A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 16.5 4.72-4.72a1.5 1.5 0 0 1 2.12 0l2.16 2.16 1.22-1.22a1.5 1.5 0 0 1 2.12 0l4.16 4.16M8.25 8.25h.01"/></svg>' };
+    }
+
+    constructor({ data, config }) {
+      this.data = data || { file: { url: '' }, caption: '' };
+      this.config = config || {};
+      this.urlInput = null;
+      this.captionInput = null;
+      this.fileInput = null;
+    }
+
+    render() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'rounded-2xl border border-neutral-900/10 bg-white p-4';
+      wrapper.innerHTML = `
+        <label class="mb-3 block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Image URL</label>
+        <input type="text" class="config-input w-full" placeholder="https://..." value="${escape(this.data.file?.url || this.data.url || '')}" />
+        <label class="mb-3 mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Caption</label>
+        <input type="text" class="config-input w-full" placeholder="Caption gambar (opsional)" value="${escape(this.data.caption || '')}" />
+        <input type="file" class="hidden" accept="image/*" />
+        <button type="button" class="btn btn-secondary mt-3">Upload Image</button>
+      `;
+      this.urlInput = wrapper.querySelectorAll('input')[0];
+      this.captionInput = wrapper.querySelectorAll('input')[1];
+      this.fileInput = wrapper.querySelector('input[type="file"]');
+      wrapper.querySelector('button')?.addEventListener('click', () => this.fileInput?.click());
+      this.fileInput?.addEventListener('change', async () => {
+        const file = this.fileInput?.files?.[0];
+        if (!file || !this.config.uploader?.uploadByFile) return;
+        const result = await this.config.uploader.uploadByFile(file);
+        const url = result?.file?.url || '';
+        if (url && this.urlInput) this.urlInput.value = url;
+        this.fileInput.value = '';
+      });
+      return wrapper;
+    }
+
+    save() {
+      return {
+        file: { url: this.urlInput?.value?.trim() || '' },
+        caption: this.captionInput?.value?.trim() || '',
+        withBorder: false,
+        withBackground: false,
+        stretched: false,
+      };
+    }
+
+    validate(savedData) {
+      return Boolean(savedData?.file?.url || savedData?.url);
+    }
+  }
+
+  class MapEmbedTool {
+    static get toolbox() {
+      return {
+        title: 'Embed Map',
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19.5 3.75 17.25V4.5L9 6.75m0 12.75 6-2.25m-6 2.25V6.75m6 10.5 5.25 2.25V6.75L15 4.5m0 12.75V4.5"/></svg>'
+      };
+    }
+
+    constructor({ data }) {
+      this.data = data || { url: '', caption: '' };
+      this.urlInput = null;
+      this.captionInput = null;
+    }
+
+    render() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'rounded-2xl border border-neutral-900/10 bg-white p-4';
+      wrapper.innerHTML = `
+        <label class="mb-3 block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Google Maps Embed</label>
+        <input type="text" class="config-input w-full" placeholder="Paste iframe atau https://www.google.com/maps/embed?..." value="${escape(this.data.url || '')}" />
+        <label class="mb-3 mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Caption</label>
+        <input type="text" class="config-input w-full" placeholder="Caption lokasi (opsional)" value="${escape(this.data.caption || '')}" />
+      `;
+      this.urlInput = wrapper.querySelectorAll('input')[0];
+      this.captionInput = wrapper.querySelectorAll('input')[1];
+      return wrapper;
+    }
+
+    save() {
+      return {
+        url: extractMapEmbedUrl(this.urlInput?.value || ''),
+        caption: this.captionInput?.value?.trim() || '',
+      };
+    }
+
+    validate(savedData) {
+      return Boolean(extractMapEmbedUrl(savedData?.url || ''));
+    }
+  }
+
+  function extractMapEmbedUrl(value = '') {
+    const input = String(value || '').trim();
+    if (!input) return '';
+    const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    const candidate = (iframeMatch?.[1] || input).trim();
+    return /^https:\/\/www\.google\.com\/maps\/embed\?/i.test(candidate) ? candidate : '';
+  }
+
+  function initEventBlockEditor(item) {
+    const holder = document.querySelector('#event-editor');
+    const fallback = document.querySelector('#editor-fallback');
+    if (!holder) return null;
+
+    if (!window.EditorJS) {
+      holder.classList.add('hidden');
+      fallback?.classList.remove('hidden');
+      Admin.showToast('Editor.js CDN belum termuat. Fallback editor aktif.');
+      return null;
+    }
+
+    const tools = {};
+    if (window.Header) tools.header = { class: window.Header, inlineToolbar: true, config: { levels: [1, 2, 3], defaultLevel: 2 } };
+    const ListTool = window.EditorjsList || window.List;
+    if (ListTool) tools.list = { class: ListTool, inlineToolbar: true, config: { defaultStyle: 'unordered' } };
+    if (window.Quote) tools.quote = { class: window.Quote, inlineToolbar: true, config: { quotePlaceholder: 'Tulis kutipan...', captionPlaceholder: 'Sumber kutipan' } };
+    if (window.ImageTool) {
+      tools.image = {
+        class: window.ImageTool,
+        config: {
+          uploader: {
+            async uploadByFile(file) {
+              try {
+                Admin.showToast('Mengupload gambar agenda...');
+                const url = await uploadNewsImageFile(file);
+                Admin.showToast('Gambar agenda berhasil diupload.');
+                return { success: 1, file: { url } };
+              } catch (e) {
+                Admin.showToast('Gagal upload gambar agenda.');
+                return { success: 0 };
+              }
+            },
+            uploadByUrl(url) {
+              return Promise.resolve({ success: 1, file: { url } });
+            }
+          }
+        }
+      };
+    }
+    tools.map = { class: MapEmbedTool, inlineToolbar: false };
+
+    return new window.EditorJS({
+      holder: 'event-editor',
+      autofocus: true,
+      minHeight: 520,
+      placeholder: 'Mulai tulis agenda. Tekan Tab atau klik plus untuk memilih blok.',
+      tools,
+      data: {
+        time: Date.now(),
+        blocks: buildEventBlocks(item),
+      }
+    });
+  }
+
+  function buildEventBlocks(item = {}) {
+    const htmlBlocks = htmlToEventBlocks(item.content || item.event_content || '');
+    if (htmlBlocks.length) return htmlBlocks;
+    return [];
+  }
+
+  function htmlToEventBlocks(html = '') {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = String(html || '').trim();
+    const blocks = [];
+    const nodes = wrapper.children.length ? Array.from(wrapper.children) : [];
+
+    if (!nodes.length && wrapper.textContent.trim()) {
+      return [{ type: 'paragraph', data: { text: wrapper.textContent.trim() } }];
+    }
+
+    nodes.forEach((node) => {
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'p') blocks.push({ type: 'paragraph', data: { text: node.innerHTML.trim() } });
+      else if (/^h[1-6]$/.test(tag)) blocks.push({ type: 'header', data: { text: node.innerHTML.trim(), level: Number(tag.slice(1)) } });
+      else if (tag === 'ul' || tag === 'ol') blocks.push({ type: 'list', data: { style: tag === 'ol' ? 'ordered' : 'unordered', items: Array.from(node.querySelectorAll(':scope > li')).map((li) => li.innerHTML.trim()) } });
+      else if (tag === 'blockquote') blocks.push({ type: 'quote', data: { text: node.querySelector('p')?.innerHTML.trim() || node.textContent.trim(), caption: node.querySelector('cite')?.textContent.trim() || '', alignment: 'left' } });
+      else if (tag === 'figure') {
+        const image = node.querySelector('img');
+        if (image?.getAttribute('src')) blocks.push({ type: 'image', data: { file: { url: image.getAttribute('src') }, caption: node.querySelector('figcaption')?.textContent.trim() || image.getAttribute('alt') || '', withBorder: false, withBackground: false, stretched: false } });
+      } else if (tag === 'img' && node.getAttribute('src')) {
+        blocks.push({ type: 'image', data: { file: { url: node.getAttribute('src') }, caption: node.getAttribute('alt') || '', withBorder: false, withBackground: false, stretched: false } });
+      } else if (tag === 'div' && node.dataset.blockType === 'map') {
+        const iframe = node.querySelector('iframe');
+        blocks.push({ type: 'embedMap', data: { url: extractMapEmbedUrl(iframe?.getAttribute('src') || node.dataset.mapUrl || ''), caption: node.dataset.caption || node.querySelector('p')?.textContent.trim() || '' } });
+      } else if (tag === 'iframe' && /(google\.com\/maps|maps\.google\.com|googleusercontent\.com\/maps)/i.test(node.getAttribute('src') || '')) {
+        blocks.push({ type: 'embedMap', data: { url: extractMapEmbedUrl(node.getAttribute('src') || ''), caption: '' } });
+      } else if (node.textContent.trim()) {
+        blocks.push({ type: 'paragraph', data: { text: node.innerHTML.trim() } });
+      }
+    });
+
+    return blocks;
+  }
+
+  function blocksToEventHtml(blocks = []) {
+    return blocks.map((block) => {
+      if (block.type === 'paragraph') return block.data.text ? `<p>${block.data.text}</p>` : '';
+      if (block.type === 'header') {
+        const level = Math.min(Math.max(Number(block.data.level) || 2, 1), 6);
+        return block.data.text ? `<h${level}>${block.data.text}</h${level}>` : '';
+      }
+      if (block.type === 'list') {
+        const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
+        return `<${tag}>${(block.data.items || []).map((entry) => `<li>${entry}</li>`).join('')}</${tag}>`;
+      }
+      if (block.type === 'quote') return block.data.text ? `<blockquote><p>${block.data.text}</p>${block.data.caption ? `<cite>${block.data.caption}</cite>` : ''}</blockquote>` : '';
+      if (block.type === 'image') {
+        const src = block.data.file?.url || block.data.url || '';
+        if (!src) return '';
+        return `<figure><img src="${escape(src)}" alt="${escape(block.data.caption || '')}" />${block.data.caption ? `<figcaption>${escape(block.data.caption)}</figcaption>` : ''}</figure>`;
+      }
+      if (block.type === 'map' || block.type === 'embedMap') {
+        const url = extractMapEmbedUrl(block.data.url || '');
+        if (!url) return '';
+        const caption = String(block.data.caption || '').trim();
+        return `<div class="event-map-block" data-block-type="map" data-map-url="${escape(url)}" data-caption="${escape(caption)}"><iframe src="${escape(url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>${caption ? `<p>${escape(caption)}</p>` : ''}</div>`;
       }
       return block.data.text ? `<p>${block.data.text}</p>` : '';
     }).filter(Boolean).join('\n');
@@ -776,9 +1008,14 @@
     return (API && API.getCsrfToken && API.getCsrfToken()) || document.querySelector('meta[name="csrf-token"]')?.content || '';
   }
 
-  function insertEditorBlock(editor, type, data) {
+  async function insertEditorBlock(editor, type, data) {
     if (!editor?.blocks?.insert) return Admin.showToast('Editor belum siap.');
-    editor.blocks.insert(type, data);
+    try {
+      if (editor.isReady) await editor.isReady;
+      editor.blocks.insert(type, data);
+    } catch (error) {
+      Admin.showToast('Gagal menambahkan blok. Coba klik area editor lalu ulangi.');
+    }
   }
 
   async function renderCommentSetup() {
@@ -839,6 +1076,7 @@
           <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-blue-800"><span>${escape(item.article)}</span><span>•</span><span>${escape(item.date)}</span></div>
           <h2>${escape(item.name)}</h2>
           <p class="text-sm text-neutral-500">${escape(item.email)}</p>
+          ${item.parentId ? `<p class="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-900">Balasan untuk ${item.parentName ? escape(item.parentName) : 'komentar'}: “${escape(item.parentExcerpt || 'Komentar induk')}”</p>` : ''}
           <p class="comment-moderation-text">${escape(item.text)}</p>
         </div>
         <aside class="comment-moderation-side">
@@ -877,6 +1115,36 @@
     renderCommentDashboard(state);
     renderCommentList(state);
     Admin.showToast(`Komentar berhasil ${labels[action]} pada mode integrasi.`);
+  }
+
+  async function renderCommentSettings() {
+    const body = renderShell('Comment Settings', 'Atur perilaku komentar publik secara global, termasuk voting, balasan, moderasi, dan rate limit.');
+    body.innerHTML = '<div class="admin-card p-6 text-sm text-neutral-600">Memuat pengaturan komentar...</div>';
+    const settings = await API.getCommentSettings();
+    body.innerHTML = `
+      <section class="admin-card p-4 md:p-6">
+        <form id="comment-setting-form" class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Comments Enabled</span><select name="comments.enabled" class="config-input js-admin-custom-select"><option value="1" ${settings['comments.enabled'] !== false ? 'selected' : ''}>On</option><option value="0" ${settings['comments.enabled'] === false ? 'selected' : ''}>Off</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Voting Enabled</span><select name="comments.voting_enabled" class="config-input js-admin-custom-select"><option value="1" ${settings['comments.voting_enabled'] !== false ? 'selected' : ''}>On</option><option value="0" ${settings['comments.voting_enabled'] === false ? 'selected' : ''}>Off</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Replies Enabled</span><select name="comments.replies_enabled" class="config-input js-admin-custom-select"><option value="1" ${settings['comments.replies_enabled'] !== false ? 'selected' : ''}>On</option><option value="0" ${settings['comments.replies_enabled'] === false ? 'selected' : ''}>Off</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Replies Require Moderation</span><select name="comments.replies_require_moderation" class="config-input js-admin-custom-select"><option value="1" ${settings['comments.replies_require_moderation'] !== false ? 'selected' : ''}>On</option><option value="0" ${settings['comments.replies_require_moderation'] === false ? 'selected' : ''}>Off</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Max Reply Depth</span><input name="comments.max_reply_depth" type="number" min="1" max="10" class="config-input" value="${escape(settings['comments.max_reply_depth'] ?? 3)}"></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Root Sort</span><select name="comments.root_sort" class="config-input js-admin-custom-select"><option value="newest_first" ${(settings['comments.root_sort'] || 'newest_first') === 'newest_first' ? 'selected' : ''}>Newest First</option><option value="oldest_first" ${settings['comments.root_sort'] === 'oldest_first' ? 'selected' : ''}>Oldest First</option><option value="top_voted" ${settings['comments.root_sort'] === 'top_voted' ? 'selected' : ''}>Top Voted</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Reply Sort</span><select name="comments.reply_sort" class="config-input js-admin-custom-select"><option value="oldest_first" ${(settings['comments.reply_sort'] || 'oldest_first') === 'oldest_first' ? 'selected' : ''}>Oldest First</option><option value="newest_first" ${settings['comments.reply_sort'] === 'newest_first' ? 'selected' : ''}>Newest First</option><option value="top_voted" ${settings['comments.reply_sort'] === 'top_voted' ? 'selected' : ''}>Top Voted</option></select></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Comment Rate Limit / 15 min</span><input name="comments.rate_limit_per_ip_per_15min" type="number" min="1" max="500" class="config-input" value="${escape(settings['comments.rate_limit_per_ip_per_15min'] ?? 20)}"></label>
+          <label class="grid gap-2 text-sm font-semibold text-neutral-700"><span>Vote Rate Limit / 15 min</span><input name="comments.vote_rate_limit_per_ip_per_15min" type="number" min="1" max="500" class="config-input" value="${escape(settings['comments.vote_rate_limit_per_ip_per_15min'] ?? 60)}"></label>
+          <div class="md:col-span-2"><button type="submit" class="btn btn-primary">Simpan Pengaturan</button></div>
+        </form>
+      </section>
+    `;
+    enhanceAdminSelects(body);
+    body.querySelector('#comment-setting-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const payload = Object.fromEntries(formData.entries());
+      await API.updateCommentSettings(payload);
+      Admin.showToast('Pengaturan komentar berhasil disimpan.');
+    });
   }
 
   async function renderEventList() {
@@ -951,9 +1219,9 @@
         if (!ok) return;
         const res = await fetch(route('admin.eventDelete', { id }), {
           method: 'POST',
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
           credentials: 'same-origin',
-          body: JSON.stringify({ _csrf_token: API.getCsrfToken?.() || '' }),
+          body: JSON.stringify({ _csrf_token: getAdminCsrfToken() }),
         });
         if (res.ok) {
           Admin.showToast('Agenda berhasil dihapus.');
@@ -979,44 +1247,84 @@
       } catch (e) { item = null; }
     }
 
-    const body = renderShell(isEdit ? 'Edit Agenda' : 'Add Agenda', 'Form agenda ini langsung menyimpan data `tbl_event`, sehingga hasilnya sama dengan daftar publik dan Agenda Utama di landing page.', `<a href="${adminUrl('event')}" class="btn btn-secondary">View All Agenda</a>`);
+    const body = renderShell(isEdit ? 'Edit Agenda' : 'Add Agenda', 'Ruang tulis agenda sekarang mengikuti struktur story editor seperti News, dengan tambahan blok map untuk lokasi.', `<a href="${adminUrl('event')}" class="btn btn-secondary">View All Agenda</a>`);
     body.innerHTML = `
-      <form class="editor-workspace" id="event-form">
-        <main class="block-writing-surface">
-          <div id="event-title" class="news-title-block" contenteditable="true" data-placeholder="Judul agenda...">${escape(item?.title || '')}</div>
-          <div id="event-excerpt" class="news-excerpt-block" contenteditable="true" data-placeholder="Ringkasan pendek agenda...">${escape(item?.excerpt || '')}</div>
-          <article id="event-content" class="news-body-block" contenteditable="true" data-placeholder="Deskripsi agenda...">${item?.content || ''}</article>
-          <div id="event-location" class="news-excerpt-block" contenteditable="true" data-placeholder="Lokasi agenda...">${escape(item?.location || '')}</div>
-          <input id="event-map" class="config-input mt-4" value="${escape(item?.map || '')}" placeholder="Embed map atau URL lokasi..." />
+      <form class="medium-editor-layout" id="event-form">
+        <main class="medium-editor-canvas">
+          <div class="medium-editor-kicker">Agenda editor</div>
+          <section class="story-main-block">
+            <label for="event-title-field">Agenda Title</label>
+            <div id="event-title-field" class="story-title-field" contenteditable="true" spellcheck="true" data-placeholder="Tulis judul agenda...">${escape(item?.title || '')}</div>
+          </section>
+          <section class="story-main-block">
+            <label for="event-short-content-field">Agenda Short Content</label>
+            <div id="event-short-content-field" class="story-excerpt-field" contenteditable="true" spellcheck="true" data-placeholder="Tulis ringkasan singkat untuk agenda list...">${escape(item?.excerpt || '')}</div>
+          </section>
+          <div class="medium-editor-divider">
+            <div class="medium-editor-kicker">Agenda content</div>
+          </div>
+          <div id="news-editor" class="medium-editor-host"></div>
+          <div id="editor-fallback" class="editor-fallback hidden">
+            <article contenteditable="true">${item?.content || ''}</article>
+          </div>
+          <p class="medium-editor-help">Tekan <strong>Enter</strong> untuk membuat blok baru. Tambahkan gambar dan map di antara paragraf lewat Editor.js atau panel kanan.</p>
         </main>
-        <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Agenda Date</h2>${control('Start Date', `<input id="event-start-date" class="config-input" type="date" value="${escape(item?.start_date || '2026-05-05')}" />`)}${control('End Date', `<input id="event-end-date" class="config-input" type="date" value="${escape(item?.end_date || '2026-05-05')}" />`)}</section>
-          <section class="config-card"><h2>Photo and Banner</h2>${control('Featured Photo URL', `<input id="event-photo" class="config-input" value="${escape(item?.photo || '')}" placeholder="/uploads/... atau https://..." />`)}${control('Banner URL', `<input id="event-banner" class="config-input" value="${escape(item?.banner || '')}" placeholder="/uploads/... atau https://..." />`)}</section>
-          <section class="config-card"><h2>SEO Information</h2>${control('Meta Title', `<input id="event-meta-title" class="config-input" value="${escape(item?.meta_title || item?.title || '')}" />`)}${control('Meta Description', `<textarea id="event-meta-description" class="config-input" rows="5">${escape(item?.meta_description || item?.excerpt || '')}</textarea>`)}</section>
+        <aside class="editor-config-sidebar medium-config-sidebar">
+          <section class="config-card medium-config-card">
+            <h2>Publishing</h2>
+            ${control('Agenda Start Date', `<input id="event-start-date" class="config-input" type="date" value="${escape(item?.start_date || '2026-05-05')}" />`)}
+            ${control('Agenda End Date', `<input id="event-end-date" class="config-input" type="date" value="${escape(item?.end_date || '2026-05-05')}" />`)}
+            ${control('Location', `<input id="event-location" class="config-input" value="${escape(item?.location || '')}" placeholder="Lokasi agenda..." />`)}
+            ${control('Primary Map URL', `<textarea id="event-map" class="config-input" rows="6" placeholder="Paste iframe Google Maps atau URL embed https://www.google.com/maps/embed?...">${escape(item?.map || '')}</textarea><p class="config-hint mt-2">Tempel kode iframe Google Maps lengkap. Sistem akan otomatis mengambil nilai <code>src</code>-nya.</p>`)}
+          </section>
+          <section class="config-card medium-config-card">
+            <h2>SEO Information</h2>
+            ${control('Meta Title', `<input id="event-meta-title" class="config-input" value="${escape(item?.meta_title || item?.title || '')}" />`)}
+            ${control('Meta Description', `<textarea id="event-meta-description" class="config-input" rows="5">${escape(item?.meta_description || item?.excerpt || '')}</textarea>`)}
+          </section>
           <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update Agenda' : 'Submit Agenda'}</button>
         </aside>
       </form>
     `;
 
+    const eventEditor = initMediumEditor(item || {}, isEdit, {
+      buildBlocks: buildEventBlocks,
+      placeholder: 'Mulai tulis agenda. Tekan Tab atau klik plus untuk memilih blok.',
+      extraTools: { embedMap: { class: MapEmbedTool, inlineToolbar: false } },
+    });
+
     document.querySelector('#event-form').addEventListener('submit', async (event) => {
       event.preventDefault();
+      let contentHtml = '';
+      if (eventEditor?.save) {
+        try {
+          const saved = await eventEditor.save();
+          contentHtml = blocksToEventHtml(saved.blocks || []);
+        } catch (error) {
+          const fallbackEl = document.querySelector('#editor-fallback article');
+          if (fallbackEl) contentHtml = fallbackEl.innerHTML;
+        }
+      } else {
+        const fallbackEl = document.querySelector('#editor-fallback article');
+        if (fallbackEl) contentHtml = fallbackEl.innerHTML;
+      }
       const payload = {
-        title: document.querySelector('#event-title')?.textContent?.trim() || '',
-        excerpt: document.querySelector('#event-excerpt')?.textContent?.trim() || '',
-        content: document.querySelector('#event-content')?.innerHTML || '',
-        location: document.querySelector('#event-location')?.textContent?.trim() || '',
-        map: document.querySelector('#event-map')?.value?.trim() || '',
+        title: document.querySelector('#event-title-field')?.textContent?.trim() || '',
+        excerpt: document.querySelector('#event-short-content-field')?.textContent?.trim() || '',
+        content: contentHtml,
+        location: document.querySelector('#event-location')?.value?.trim() || '',
+        map: extractMapEmbedUrl(document.querySelector('#event-map')?.value || ''),
         start_date: document.querySelector('#event-start-date')?.value || '',
         end_date: document.querySelector('#event-end-date')?.value || '',
-        photo: document.querySelector('#event-photo')?.value?.trim() || '',
-        banner: document.querySelector('#event-banner')?.value?.trim() || '',
+        photo: item?.photo || '',
+        banner: item?.banner || '',
         meta_title: document.querySelector('#event-meta-title')?.value?.trim() || '',
         meta_description: document.querySelector('#event-meta-description')?.value?.trim() || '',
       };
       const url = isEdit ? route('admin.eventUpdate', { id: eventId }) : route('admin.eventStore');
       const res = await fetch(url, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
         credentials: 'same-origin',
         body: JSON.stringify(payload),
       });
@@ -1237,7 +1545,7 @@
       const payload = teamEditorPayload();
       const res = await fetch(isEdit ? route('admin.teamMemberUpdate', { id }) : route('admin.teamMembers'), {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
         credentials: 'same-origin',
         body: JSON.stringify(payload),
       });
@@ -1438,7 +1746,7 @@
         formData.append('image', file);
         const res = await fetch(route('admin.featureUpload'), {
           method: 'POST',
-          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
           credentials: 'same-origin',
           body: formData,
         });
@@ -1479,7 +1787,7 @@
           if (!ok) return;
           const res = await fetch(route('admin.featureImageDelete', { id: featureId, imageId }), {
             method: 'POST',
-            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
             credentials: 'same-origin',
           });
           if (!res.ok) {
@@ -1517,7 +1825,7 @@
       const endpoint = isEdit ? route('admin.featureUpdate', { id: featureId }) : route('admin.featureStore');
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
         credentials: 'same-origin',
         body: JSON.stringify(featurePayload(form)),
       });
@@ -1543,7 +1851,7 @@
         if (!ok) return;
         const res = await fetch(route('admin.featureDelete', { id: featureId }), {
           method: 'POST',
-          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
           credentials: 'same-origin',
         });
         if (!res.ok) {
@@ -1753,7 +2061,7 @@
         const adding = !(card?.classList.contains('is-home'));
         const res = await fetch(route('admin.teamMemberHome', { id }), {
           method: 'POST',
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
           credentials: 'same-origin',
           body: JSON.stringify({ show_on_home: adding }),
         });
@@ -1768,9 +2076,9 @@
         if (!ok) return;
         const res = await fetch(route('admin.teamMemberDelete', { id }), {
           method: 'POST',
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
           credentials: 'same-origin',
-          body: JSON.stringify({ _csrf_token: API.getCsrfToken?.() || '' }),
+          body: JSON.stringify({ _csrf_token: getAdminCsrfToken() }),
         });
         if (res.ok) {
           teamSelection.delete(id);
@@ -1845,7 +2153,7 @@
       });
       if (!ok) return;
 
-      const token = API.getCsrfToken?.() || '';
+      const token = getAdminCsrfToken();
       const res = await fetch(route('admin.teamMembersBulk'), {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
@@ -1894,7 +2202,7 @@
   async function uploadTeamPhoto(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const token = API.getCsrfToken?.() || '';
+    const token = getAdminCsrfToken();
     const form = new FormData();
     form.append('image', file);
     form.append('_csrf_token', token);

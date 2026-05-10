@@ -2,7 +2,11 @@
 'use strict';
 const { renderShell } = window.GenBIApp;
 const { observeFadeUp } = window.GenBIUI;
-const { site } = window.GenBIData;
+const fallbackSite = window.GenBIData.site || {};
+const site = {
+  ...fallbackSite,
+  ...(window.GenBISiteSettings || {}),
+};
 
 renderShell('contact');
 renderContactInfoFallback();

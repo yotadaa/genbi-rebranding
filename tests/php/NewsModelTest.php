@@ -26,6 +26,10 @@ $row = News::mapRow([
     'meta_keyword' => 'genbi,jambi',
     'meta_description' => 'Meta description',
     'status' => 'published',
+    'comments_enabled' => 1,
+    'voting_enabled' => 0,
+    'replies_enabled' => 1,
+    'max_reply_depth' => 4,
 ]);
 
 assert($row['id'] === 94);
@@ -38,6 +42,10 @@ assert($row['category'] === 'BANK INDONESIA');
 assert($row['author'] === 'Pewarta');
 assert($row['editor'] === 'Editor');
 assert($row['meta_description'] === 'Meta description');
+assert($row['comments_enabled'] === 1);
+assert($row['voting_enabled'] === 0);
+assert($row['replies_enabled'] === 1);
+assert($row['max_reply_depth'] === 4);
 
 $relativeImageRow = News::mapRow([
     'news_id' => 98,
@@ -58,6 +66,11 @@ $db->exec('CREATE TABLE tbl_news (
     news_content TEXT,
     news_content_short TEXT,
     category_id INTEGER,
+    comment TEXT,
+    comments_enabled INTEGER NULL,
+    voting_enabled INTEGER NULL,
+    replies_enabled INTEGER NULL,
+    max_reply_depth INTEGER NULL,
     status TEXT,
     deleted_at TEXT NULL
 )');
@@ -71,5 +84,40 @@ $model = new News($db);
 assert(($model->findPublicBySlug('published-news')['id'] ?? 0) === 1);
 assert($model->findPublicBySlug('draft-news') === null);
 assert($model->findPublicById(3) === null);
+
+$created = $model->create([
+    'news_title' => 'Komentar Override',
+    'news_content' => 'Isi',
+    'news_content_short' => 'Ringkas',
+    'category_id' => 1,
+    'comment' => 'On',
+    'comments_enabled' => 1,
+    'voting_enabled' => 0,
+    'replies_enabled' => 1,
+    'max_reply_depth' => 5,
+    'slug' => 'komentar-override',
+    'status' => 'draft',
+]);
+
+assert($created !== null);
+$saved = $model->findById((int) $created);
+assert(($saved['comments_enabled'] ?? null) === 1);
+assert(($saved['voting_enabled'] ?? null) === 0);
+assert(($saved['replies_enabled'] ?? null) === 1);
+assert(($saved['max_reply_depth'] ?? null) === 5);
+
+$updated = $model->updateNews((int) $created, [
+    'comments_enabled' => 0,
+    'voting_enabled' => 1,
+    'replies_enabled' => 0,
+    'max_reply_depth' => 2,
+]);
+assert($updated === true);
+
+$updatedRow = $model->findById((int) $created);
+assert(($updatedRow['comments_enabled'] ?? null) === 0);
+assert(($updatedRow['voting_enabled'] ?? null) === 1);
+assert(($updatedRow['replies_enabled'] ?? null) === 0);
+assert(($updatedRow['max_reply_depth'] ?? null) === 2);
 
 echo "PHP news model tests passed\n";

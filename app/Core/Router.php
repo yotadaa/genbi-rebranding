@@ -51,35 +51,49 @@ final class Router
 
     public function dispatch(Request $request, Response $response): void
     {
-        foreach ($this->routes as $route) {
-            if (!$this->methodMatches($route['method'], $request->method())) {
-                continue;
-            }
+        try {
+            $allowedMethodsForPath = [];
+            foreach ($this->routes as $route) {
+                $params = $this->match($route['pattern'], $request->path());
+                if ($params !== null) {
+                    $allowedMethodsForPath[] = $route['method'];
+                }
 
-            $params = $this->match($route['pattern'], $request->path());
-            if ($params === null) {
-                continue;
-            }
+                if (!$this->methodMatches($route['method'], $request->method())) {
+                    continue;
+                }
 
-            $handler = $route['handler'];
-            $middleware = $route['middleware'];
+                if ($params === null) {
+                    continue;
+                }
 
-            $pipeline = static function () use ($handler, $request, $response, $params): void {
-                call_user_func($handler, $request, $response, $params);
-            };
+                $handler = $route['handler'];
+                $middleware = $route['middleware'];
 
-            foreach (array_reverse(array_merge($this->globalMiddleware, $middleware)) as $mw) {
-                $next = $pipeline;
-                $pipeline = static function () use ($mw, $request, $response, $next): void {
-                    $mw->handle($request, $response, $next);
+                $pipeline = static function () use ($handler, $request, $response, $params): void {
+                    call_user_func($handler, $request, $response, $params);
                 };
+
+                foreach (array_reverse(array_merge($this->globalMiddleware, $middleware)) as $mw) {
+                    $next = $pipeline;
+                    $pipeline = static function () use ($mw, $request, $response, $next): void {
+                        $mw->handle($request, $response, $next);
+                    };
+                }
+
+                $pipeline();
+                return;
             }
 
-            $pipeline();
-            return;
-        }
+            if ($allowedMethodsForPath !== []) {
+                ErrorHandler::render($response, 405);
+                return;
+            }
 
-        $response->html('<!doctype html><title>404</title><h1>404 - Halaman tidak ditemukan</h1>', 404);
+            ErrorHandler::render($response, 404);
+        } catch (\Throwable $error) {
+            ErrorHandler::renderThrowable($response, $error);
+        }
     }
 
     private function methodMatches(string $routeMethod, string $requestMethod): bool

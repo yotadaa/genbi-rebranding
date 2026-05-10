@@ -24,7 +24,7 @@ $itemId = $isEdit ? (int) ($item['id'] ?? 0) : 0;
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Ruang tulis memakai Editor.js. Judul, paragraf, quote, list, dan gambar disusun sebagai blok.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/news" class="btn btn-secondary">View All</a>
+      <a href="<?= $url('admin.news') ?>" class="btn btn-secondary">View All</a>
     </div>
   </header>
   <div id="cms-body" class="mt-6">

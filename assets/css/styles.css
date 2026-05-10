@@ -52,6 +52,28 @@ body.page-leaving {
   background: var(--blue-800);
 }
 
+.site-header-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 50;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.site-header-shell.is-scrolled {
+  box-shadow: 0 12px 30px rgb(15 23 42 / 0.08);
+}
+
+.site-header-shell.is-hidden {
+  transform: translateY(calc(-100% - 0.5rem));
+}
+
+.site-main-header {
+  transition: background-color 220ms ease, border-color 220ms ease;
+}
+
 .social-mini {
   display: inline-grid;
   place-items: center;
@@ -172,6 +194,13 @@ body.page-leaving {
   background: var(--cream);
   padding: 1.25rem;
   box-shadow: -25px 0 60px rgb(0 0 0 / 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header-shell,
+  .site-main-header {
+    transition: none;
+  }
 }
 
 .mobile-link {
@@ -2288,6 +2317,95 @@ body.page-leaving {
   border: 1px solid rgb(23 23 23 / 0.08);
 }
 
+.team-control-toolbar,
+.cms-toolbar.team-control-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .cms-toolbar.team-control-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.team-control-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.team-control-primary {
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.team-control-secondary {
+  justify-content: flex-start;
+}
+
+.team-control-filters,
+.team-control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.team-control-filters {
+  align-items: flex-end;
+}
+
+.team-control-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .team-control-primary,
+  .team-control-filters,
+  .team-control-actions,
+  .team-control-secondary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .team-control-filters,
+  .team-control-actions {
+    width: 100%;
+  }
+
+  .team-filter-field,
+  .team-control-actions .cms-search,
+  .team-control-secondary .view-toggle,
+  .team-control-secondary #team-batch-toggle {
+    width: 100%;
+  }
+
+  .team-filter-field {
+    flex: 1 1 100%;
+  }
+
+  .team-filter-field .config-input,
+  .team-filter-field select,
+  .team-control-actions .cms-search {
+    width: 100%;
+  }
+
+  .team-control-secondary .view-toggle {
+    justify-content: space-between;
+  }
+
+  .team-control-secondary .view-toggle-btn,
+  .team-control-secondary #team-batch-toggle {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 .team-filter-field {
   flex: 1 1 12rem;
   color: #525252;
@@ -4078,6 +4196,79 @@ input[type="file"].config-input::file-selector-button:hover {
   color: #404040 !important;
   font-size: 14px !important;
   line-height: 1.75;
+}
+
+.comment-node {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.comment-children {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.comment-depth-1,
+.comment-depth-2,
+.comment-depth-3,
+.comment-depth-4,
+.comment-depth-5,
+.comment-depth-6 {
+  margin-left: 1rem;
+  border-left: 3px solid rgb(17 75 154 / 0.12);
+}
+
+.comment-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.comment-vote-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comment-vote-btn,
+.comment-reply-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  border-radius: 999px;
+  border: 1px solid rgb(17 75 154 / 0.14);
+  background: #fff;
+  padding: 0.45rem 0.8rem;
+  color: var(--blue-800);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.comment-reply-form.hidden {
+  display: none;
+}
+
+.comment-disabled-note {
+  border-radius: 1rem;
+  border: 1px solid rgb(23 23 23 / 0.08);
+  background: white;
+  padding: 0.9rem 1rem;
+  color: #525252;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .comment-depth-1,
+  .comment-depth-2,
+  .comment-depth-3,
+  .comment-depth-4,
+  .comment-depth-5,
+  .comment-depth-6 {
+    margin-left: 0.5rem;
+  }
 }
 
 .public-mini-toast {

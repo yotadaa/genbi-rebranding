@@ -26,7 +26,8 @@
       newsDetail: { clean: '/news/{slug}', static: 'news-detail.html?slug={slug}&id={id}' },
       newsComments: { clean: '/news/{slug}/comments' },
       newsCommentStore: { clean: '/news/{slug}/comment' },
-      eventDetail: { clean: '/event/{id}' },
+      newsCommentVote: { clean: '/news/{slug}/comment/{id}/vote' },
+      eventDetail: { clean: '/event/{slug}' },
     },
     admin: {
       dashboard: { clean: '/admin/dashboard', static: 'admin/dashboard.html' },
@@ -37,6 +38,7 @@
       newsCategories: { clean: '/admin/news/categories' },
       newsComments: { clean: '/admin/news-comments' },
       newsCommentAction: { clean: '/admin/news-comments/{id}/{action}' },
+      commentSetting: { clean: '/admin/comment-setting' },
       newsShow: { clean: '/admin/news/{id}' },
       newsStore: { clean: '/admin/news' },
       newsUpdate: { clean: '/admin/news/{id}/update' },
@@ -171,6 +173,7 @@
   function normalizeComment(comment = {}) {
     return {
       id: comment.id || comment.comment_id || comment.news_comment_id || '',
+      parentId: comment.parent_id ?? comment.parentId ?? null,
       name: comment.name || comment.commentator_name || comment.author_name || 'Pembaca',
       email: comment.email || comment.commentator_email || '',
       role: comment.role || 'Pembaca',
@@ -178,6 +181,11 @@
       text: comment.text || comment.comment || comment.content || '',
       article: comment.article || comment.news_title || '',
       date: comment.date || comment.created_at || '',
+      upVotes: Number(comment.up_votes ?? comment.upVotes ?? 0),
+      downVotes: Number(comment.down_votes ?? comment.downVotes ?? 0),
+      score: Number(comment.score ?? 0),
+      depth: Number(comment.depth ?? 0),
+      children: Array.isArray(comment.children) ? comment.children.map(normalizeComment) : [],
       raw: comment,
     };
   }
@@ -197,6 +205,9 @@
       status: normalizeCommentStatus(normalized.status),
       article: normalized.article || comment.article_title || comment.news?.title || 'Berita GenBI Jambi',
       text: normalized.text || comment.comment_text || '',
+      parentId: normalized.parentId,
+      parentExcerpt: comment.parent_excerpt || comment.parentExcerpt || '',
+      parentName: comment.parent_name || comment.parentName || '',
     };
   }
 
@@ -206,6 +217,15 @@
 
   function normalizeApprovedComments(payload) {
     return normalizeListPayload(payload).filter(isApprovedComment).map(normalizeComment);
+  }
+
+  function normalizeCommentTree(payload = {}) {
+    const items = Array.isArray(payload?.data) ? payload.data : normalizeListPayload(payload);
+    return {
+      data: items.map(normalizeComment),
+      policy: payload?.policy && typeof payload.policy === 'object' ? payload.policy : {},
+      voter: payload?.voter && typeof payload.voter === 'object' ? payload.voter : { votes: {} },
+    };
   }
 
   function getCommentModerationStats(comments = []) {
@@ -246,25 +266,61 @@
     };
   }
 
+  function buildCommentVoteEndpoint(slug, id) {
+    return routeUrl('public.newsCommentVote', { slug, id });
+  }
+
+  function buildCommentReplyPayload({ parentId, name, email, comment, website }) {
+    return {
+      ...createCommentPayload({ name, email, comment }),
+      parent_id: parentId ? Number(parentId) : 0,
+      website: String(website || '').trim(),
+    };
+  }
+
   function normalizeEvent(item = {}) {
     const title = item.event_title || item.title || 'Event GenBI Jambi';
     const id = item.event_id || item.id || 0;
+    const content = item.event_content || item.content || '';
+    const photo = item.photo || '';
+    const banner = item.banner || '';
+    const images = extractEventImages(item);
+    const slug = item.slug || (id ? `${slugify(title)}-${id}` : slugify(title));
     return {
       id,
+      slug,
       title,
-      content: item.event_content || item.content || '',
+      content,
       excerpt: item.event_content_short || item.excerpt || '',
       start_date: item.event_start_date || item.start_date || '',
       end_date: item.event_end_date || item.end_date || '',
       location: item.event_location || item.location || '',
       map: item.event_map || item.map || '',
-      image: item.photo || item.image || DEFAULT_IMAGE,
-      photo: item.photo || '',
-      banner: item.banner || '',
+      image: photo || item.image || banner || DEFAULT_IMAGE,
+      photo,
+      banner,
+      images,
       status: item.status || 'Upcoming',
       meta_title: item.meta_title || '',
       meta_description: item.meta_description || '',
     };
+  }
+
+  function extractEventImages(item = {}) {
+    const existing = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+    const inline = [];
+    const content = String(item.event_content || item.content || '');
+    const matches = content.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi);
+    for (const match of matches) {
+      const src = String(match[1] || '').trim();
+      if (src) inline.push(src);
+    }
+
+    const combined = [...existing, ...inline, item.banner || '', item.photo || '', item.image || '']
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+
+    return Array.from(new Set(combined));
   }
 
   function normalizeEventList(payload) {
@@ -444,6 +500,8 @@
   return {
     DEFAULT_IMAGE,
     buildCommentActionEndpoint,
+    buildCommentReplyPayload,
+    buildCommentVoteEndpoint,
     buildEndpoint,
     canRequestBackend,
     createCommentPayload,
@@ -456,6 +514,7 @@
     normalizeAdminComments,
     normalizeApprovedComments,
     normalizeComment,
+    normalizeCommentTree,
     normalizeCommentStatus,
     normalizeListPayload,
     normalizeNews,

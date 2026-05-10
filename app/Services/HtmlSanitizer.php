@@ -14,18 +14,20 @@ final class HtmlSanitizer
     private const ALLOWED_ATTRIBUTES = [
         'a' => ['href', 'title', 'target', 'rel'],
         'img' => ['src', 'alt', 'title', 'width', 'height', 'loading'],
+        'div' => ['class', 'data-block-type', 'data-map-url', 'data-caption'],
+        'iframe' => ['src', 'loading', 'referrerpolicy'],
     ];
 
     /** @var array<int, string> */
     private const ALLOWED_TAGS = [
         'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'a',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'ul', 'ol', 'li', 'blockquote', 'cite', 'figure', 'figcaption', 'img',
+        'ul', 'ol', 'li', 'blockquote', 'cite', 'figure', 'figcaption', 'img', 'div', 'iframe',
     ];
 
     /** @var array<int, string> */
     private const DROP_WITH_CHILDREN = [
-        'script', 'style', 'iframe', 'object', 'embed', 'form',
+        'script', 'style', 'object', 'embed', 'form',
         'input', 'button', 'textarea', 'select', 'option', 'meta', 'link',
     ];
 
@@ -176,8 +178,36 @@ final class HtmlSanitizer
             }
 
             if (in_array($name, ['href', 'src'], true)) {
-                $value = self::sanitizeUrl($value);
+                $value = ($tag === 'iframe' && $name === 'src')
+                    ? self::sanitizeMapEmbedUrl($value)
+                    : self::sanitizeUrl($value);
                 if ($value === '') {
+                    continue;
+                }
+            }
+
+            if ($tag === 'div' && $name === 'class') {
+                if ($value !== 'event-map-block') {
+                    continue;
+                }
+            }
+
+            if ($tag === 'div' && $name === 'data-block-type') {
+                if ($value !== 'map') {
+                    continue;
+                }
+            }
+
+            if ($tag === 'div' && $name === 'data-map-url') {
+                $value = self::sanitizeMapEmbedUrl($value);
+                if ($value === '') {
+                    continue;
+                }
+            }
+
+            if ($tag === 'iframe' && $name === 'referrerpolicy') {
+                $allowedPolicies = ['no-referrer-when-downgrade', 'strict-origin-when-cross-origin'];
+                if (!in_array(strtolower($value), $allowedPolicies, true)) {
                     continue;
                 }
             }

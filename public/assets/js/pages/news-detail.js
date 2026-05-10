@@ -23,42 +23,8 @@ window.addEventListener('error', showDetailError);
 window.addEventListener('unhandledrejection', showDetailError);
 
 function bindProgressiveBehavior() {
-  // Bind share buttons
-  document.querySelectorAll('[data-share-url]').forEach((button) => {
-    button.addEventListener('click', () => window.open(button.dataset.shareUrl, '_blank', 'noopener,noreferrer'));
-  });
-
-  // Bind copy link
-  document.querySelector('[data-copy]')?.addEventListener('click', async (event) => {
-    const canonical = event.currentTarget.dataset.canonical || location.href;
-    try { 
-      await navigator.clipboard.writeText(canonical); 
-      showMiniToast('Link artikel disalin'); 
-    } catch { 
-      showMiniToast('Copy link disimulasikan'); 
-    }
-  });
-
-  // Bind comment form
-  const form = document.querySelector('#comment-form');
-  if (form) {
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(form);
-      const identifier = window.location.pathname.split('/').filter(Boolean).pop() || '';
-      try {
-        await API.submitNewsComment({ slug: identifier }, {
-          name: formData.get('name'),
-          email: formData.get('email'),
-          comment: formData.get('comment'),
-        });
-        form.reset();
-        showMiniToast('Komentar masuk antrean moderasi');
-      } catch {
-        showMiniToast('Gagal mengirim komentar');
-      }
-    });
-  }
+  bindShareButtons(document);
+  bindCommentInteractions(document, { slug: window.location.pathname.split('/').filter(Boolean).pop() || '' });
 }
 
 async function renderDetail() {
@@ -69,11 +35,11 @@ async function renderDetail() {
     root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Berita tidak ditemukan.</div></section>`;
     return;
   }
-  let item, related, comments;
+  let item, related, commentsPayload;
   try {
     item = await API.getNewsDetail(identifier);
     related = await API.getRelatedNews(item.id, item.category);
-    comments = await API.getNewsComments(item);
+    commentsPayload = await API.getNewsComments(item);
   } catch (err) {
     root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Gagal memuat berita. Silakan coba lagi.</div></section>`;
     return;
@@ -123,27 +89,8 @@ async function renderDetail() {
               </div>
               <span class="blue-badge">Moderasi aktif</span>
             </div>
-            <form class="comment-form mt-6" id="comment-form">
-              <input class="input-soft" name="name" placeholder="Nama" required />
-              <input class="input-soft" name="email" type="email" placeholder="Email" required />
-              <textarea class="input-soft" name="comment" rows="4" placeholder="Tulis komentar singkat..." required></textarea>
-              <button type="submit" class="btn btn-primary w-fit">Kirim komentar</button>
-              <p class="text-sm leading-6 text-neutral-500">Komentar akan tampil setelah disetujui admin.</p>
-            </form>
-            <div class="mt-7 grid gap-3">
-              ${comments.length ? comments.map((comment) => `
-                <article class="comment-item">
-                  <div class="flex items-center justify-between gap-3">
-                    <div>
-                      <h3>${comment.name}</h3>
-                      <p>${comment.role}</p>
-                    </div>
-                    <span class="comment-status ${comment.status.includes('Menunggu') ? 'pending' : ''}">${comment.status}</span>
-                  </div>
-                  <p class="comment-text">${comment.text}</p>
-                </article>
-              `).join('') : '<div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>'}
-            </div>
+            ${renderMainCommentForm(commentsPayload.policy)}
+            <div class="mt-7 grid gap-3" id="comments-list">${renderCommentList(commentsPayload)}</div>
           </section>
         </div>
       </div>
@@ -151,26 +98,105 @@ async function renderDetail() {
     ${hasPreservedRelated(item) ? renderRelatedSection(related) : ''}
   `;
 
-  root.querySelectorAll('[data-share-url]').forEach((button) => {
+  bindShareButtons(root);
+  bindCommentInteractions(root, item, commentsPayload);
+}
+
+function renderMainCommentForm(policy = {}) {
+  if (policy.comments_enabled === false) {
+    return '<div class="comment-disabled-note mt-6">Komentar dinonaktifkan untuk artikel ini.</div>';
+  }
+  return `<form class="comment-form mt-6" id="comment-form"><input class="input-soft" name="name" placeholder="Nama" required /><input class="input-soft" name="email" type="email" placeholder="Email" required /><textarea class="input-soft" name="comment" rows="4" placeholder="Tulis komentar singkat..." required></textarea><button type="submit" class="btn btn-primary w-fit">Kirim komentar</button><p class="text-sm leading-6 text-neutral-500">Komentar akan tampil setelah disetujui admin.</p></form>`;
+}
+
+function renderCommentList(payload = {}) {
+  const comments = Array.isArray(payload.data) ? payload.data : [];
+  if (!comments.length) return '<div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>';
+  return comments.map((comment) => renderCommentNode(comment, payload.policy || {})).join('');
+}
+
+function renderCommentNode(comment, policy = {}) {
+  const depth = Number(comment.depth || 0);
+  const maxDepth = Number(policy.max_reply_depth || 3);
+  const canVote = policy.voting_enabled !== false;
+  const canReply = policy.replies_enabled !== false && depth < maxDepth;
+  return `<article class="comment-item comment-node comment-depth-${Math.min(depth, 6)}" data-comment-id="${comment.id}"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(comment.name || 'Pembaca')}</h3><p>${depth > 0 ? 'Balasan pembaca' : 'Pembaca'}</p></div><span class="comment-status">Disetujui</span></div><p class="comment-text">${escapeHtml(comment.text || '')}</p><div class="comment-meta-row">${canVote ? `<div class="comment-vote-group"><button type="button" class="comment-vote-btn" data-vote-up="${comment.id}">↑ <span data-vote-up-count>${Number(comment.upVotes || 0)}</span></button><button type="button" class="comment-vote-btn" data-vote-down="${comment.id}">↓ <span data-vote-down-count>${Number(comment.downVotes || 0)}</span></button><span class="comment-score" data-vote-score>${Number(comment.score || 0)}</span></div>` : ''}${canReply ? `<button type="button" class="comment-reply-toggle" data-reply-toggle="${comment.id}">Balas</button>` : ''}</div>${canReply ? `<form class="comment-form comment-reply-form hidden" data-reply-form="${comment.id}"><input type="hidden" name="parent_id" value="${comment.id}" /><input class="input-soft" name="name" placeholder="Nama" required /><input class="input-soft" name="email" type="email" placeholder="Email" required /><textarea class="input-soft" name="comment" rows="3" placeholder="Tulis balasan..." required></textarea><button type="submit" class="btn btn-primary w-fit">Kirim balasan</button></form>` : ''}${Array.isArray(comment.children) && comment.children.length ? `<div class="comment-children">${comment.children.map((child) => renderCommentNode(child, policy)).join('')}</div>` : ''}</article>`;
+}
+
+function bindShareButtons(scope) {
+  scope.querySelectorAll('[data-share-url]').forEach((button) => {
     button.addEventListener('click', () => window.open(button.dataset.shareUrl, '_blank', 'noopener,noreferrer'));
   });
-  root.querySelector('[data-copy]')?.addEventListener('click', async (event) => {
+  scope.querySelector('[data-copy]')?.addEventListener('click', async (event) => {
     const canonical = event.currentTarget.dataset.canonical || location.href;
     try { await navigator.clipboard.writeText(canonical); showMiniToast('Link artikel disalin'); }
     catch { showMiniToast('Copy link disimulasikan'); }
   });
-  root.querySelector('#comment-form')?.addEventListener('submit', async (event) => {
+}
+
+function bindCommentInteractions(scope, item) {
+  scope.querySelector('#comment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    await API.submitNewsComment(item, {
-      name: formData.get('name'),
-      email: formData.get('email'),
-      comment: formData.get('comment'),
-    });
-    form.reset();
-    showMiniToast('Komentar masuk antrean moderasi');
+    try {
+      await API.submitNewsComment(item, { name: formData.get('name'), email: formData.get('email'), comment: formData.get('comment') });
+      form.reset();
+      showMiniToast('Komentar masuk antrean moderasi');
+    } catch {
+      showMiniToast('Gagal mengirim komentar');
+    }
   });
+
+  scope.addEventListener('click', async (event) => {
+    const replyToggle = event.target.closest('[data-reply-toggle]');
+    if (replyToggle) {
+      const form = scope.querySelector(`[data-reply-form="${replyToggle.dataset.replyToggle}"]`);
+      if (form) form.classList.toggle('hidden');
+      return;
+    }
+    const upButton = event.target.closest('[data-vote-up]');
+    const downButton = event.target.closest('[data-vote-down]');
+    const button = upButton || downButton;
+    if (!button) return;
+    const commentId = button.dataset.voteUp || button.dataset.voteDown;
+    const value = button.dataset.voteUp ? 1 : -1;
+    try {
+      const response = await API.voteComment(item, commentId, value);
+      const container = button.closest('.comment-node');
+      if (container) {
+        const data = response?.data || {};
+        const upCount = container.querySelector('[data-vote-up-count]');
+        const downCount = container.querySelector('[data-vote-down-count]');
+        const score = container.querySelector('[data-vote-score]');
+        if (upCount) upCount.textContent = String(Number(data.up || 0));
+        if (downCount) downCount.textContent = String(Number(data.down || 0));
+        if (score) score.textContent = String(Number(data.score || 0));
+      }
+    } catch {
+      showMiniToast('Gagal menyimpan vote');
+    }
+  });
+
+  scope.querySelectorAll('[data-reply-form]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const replyForm = event.currentTarget;
+      const formData = new FormData(replyForm);
+      try {
+        await API.submitNewsComment(item, { parentId: formData.get('parent_id'), name: formData.get('name'), email: formData.get('email'), comment: formData.get('comment') });
+        replyForm.reset();
+        replyForm.classList.add('hidden');
+        showMiniToast('Balasan masuk antrean moderasi');
+      } catch {
+        showMiniToast('Gagal mengirim balasan');
+      }
+    });
+  });
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
 function hasPreservedRelated(item) {

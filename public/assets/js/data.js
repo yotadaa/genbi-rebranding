@@ -1,5 +1,6 @@
 (function () {
   'use strict';
+// Fallback-only site data for static prototype mode. SSR pages should prefer window.GenBISiteSettings.
 const site = {
   name: 'GenBI Provinsi Jambi',
   tagline: 'Bersama GenBI, Energi untuk Negeri',
@@ -268,7 +269,8 @@ const settingTabs = [
   { key: 'email', label: 'Email', icon: 'mail' },
   { key: 'banner', label: 'Banner', icon: 'image' },
   { key: 'sidebar', label: 'Sidebar', icon: 'list' },
-  { key: 'color', label: 'Color', icon: 'swatch' }
+  { key: 'color', label: 'Color', icon: 'swatch' },
+  { key: 'theme', label: 'Theme', icon: 'sparkles' }
 ];
 
 const adminActivity = [

@@ -2,8 +2,17 @@
 'use strict';
 const { newsDetailUrl, pageUrl, renderShell } = window.GenBIApp;
 const { observeFadeUp } = window.GenBIUI;
-const { site, stats, programs, news, bpiMembers, publicEvents } = window.GenBIData;
+const { site: fallbackSite, stats, programs, news, bpiMembers, publicEvents } = window.GenBIData;
 const API = window.GenBIAPI;
+const site = {
+  ...fallbackSite,
+  ...(window.GenBISiteSettings || {}),
+  heroSlides: Array.isArray(window.GenBISiteSettings?.heroSlides) && window.GenBISiteSettings.heroSlides.length
+    ? window.GenBISiteSettings.heroSlides
+    : fallbackSite.heroSlides,
+  sidebar: { ...(fallbackSite.sidebar || {}), ...(window.GenBISiteSettings?.sidebar || {}) },
+  colors: { ...(fallbackSite.colors || {}), ...(window.GenBISiteSettings?.colors || {}) },
+};
 
 renderShell('home');
 renderHero();
@@ -25,10 +34,14 @@ function renderHero() {
   const caption = document.querySelector('#hero-caption');
   if (!slider) return;
 
-  slider.innerHTML = site.heroSlides.map((slide, index) => `
-    <img src="${slide.image}" alt="${slide.caption}" class="hero-image hero-bg-image ${index === 0 ? 'is-active' : ''}" />
-  `).join('');
-  dots.innerHTML = site.heroSlides.map((_, index) => `<button class="h-2.5 w-2.5 rounded-full bg-white/40 transition hover:bg-white ${index === 0 ? 'bg-white' : ''}" aria-label="Slide ${index + 1}" data-slide="${index}"></button>`).join('');
+  if (slider.dataset.ssr !== 'true' || !slider.children.length) {
+    slider.innerHTML = site.heroSlides.map((slide, index) => `
+      <img src="${slide.image}" alt="${slide.caption}" class="hero-image hero-bg-image ${index === 0 ? 'is-active' : ''}" />
+    `).join('');
+  }
+  if (dots && (dots.dataset.ssr !== 'true' || !dots.children.length)) {
+    dots.innerHTML = site.heroSlides.map((_, index) => `<button class="h-2.5 w-2.5 rounded-full bg-white/40 transition hover:bg-white ${index === 0 ? 'bg-white' : ''}" aria-label="Slide ${index + 1}" data-slide="${index}"></button>`).join('');
+  }
   let active = 0;
   const update = (index) => {
     active = index;
@@ -50,6 +63,7 @@ function renderHero() {
 
 function renderStats() {
   const root = document.querySelector('#stats-row');
+  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
   root.innerHTML = stats.map((item) => `
     <div class="fade-up">
       <p class="serif text-4xl font-semibold tracking-tight text-neutral-950">${item.value}</p>
@@ -81,7 +95,7 @@ function renderPrograms() {
     return `
       <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program ${index + 1} dari ${programs.length}" data-program-slides='${JSON.stringify(images)}' style="--program-bg-image: url('${images[0]}');">
         <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
-        <span class="program-icon mx-auto">${window.GenBIApp.icon(program.icon_key || 'sparkles')}</span>
+        <span class="program-icon mx-auto">${window.GenBIApp.icon(program.icon_key || 'sparkles', 'program-icon-svg')}</span>
         <p class="slide-kicker">${program.title}</p>
         <h3>${program.name}</h3>
         <p>${program.description}</p>
@@ -96,12 +110,12 @@ function hydrateProgramCards(root) {
   root.querySelectorAll('.program-slide-card').forEach((card) => {
     const iconTarget = card.querySelector('[data-program-icon]');
     if (iconTarget) {
-      const iconKey = iconTarget.dataset.programIcon || 'sparkles';
-      iconTarget.innerHTML = window.GenBIApp.icon(iconKey);
+        const iconKey = iconTarget.dataset.programIcon || 'sparkles';
+        iconTarget.innerHTML = window.GenBIApp.icon(iconKey, 'program-icon-svg');
     } else {
       const existingIcon = card.querySelector('.program-icon');
       if (existingIcon && !existingIcon.innerHTML.trim()) {
-        existingIcon.innerHTML = window.GenBIApp.icon('sparkles');
+        existingIcon.innerHTML = window.GenBIApp.icon('sparkles', 'program-icon-svg');
       }
     }
 
@@ -122,6 +136,7 @@ function hydrateProgramCards(root) {
 async function renderBPIList() {
   const root = document.querySelector('#bpi-list');
   if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
   let members = bpiMembers;
   try {
     const payload = await API.getTeamList({ per_page: 200 });
@@ -159,6 +174,10 @@ function eventIcon(type) {
 async function renderHomeEvents() {
   const root = document.querySelector('#home-events');
   if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) {
+    hydrateProgramCards(root);
+    return;
+  }
   let agendaItems = publicEvents;
   try {
     const payload = await API.getEventList();
@@ -188,7 +207,7 @@ async function renderHomeEvents() {
 
 function renderHomeContact() {
   const root = document.querySelector('#home-contact-card');
-  if (!root) return;
+  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
   root.innerHTML = `
     <div>
       <p class="eyebrow">Contact us</p>

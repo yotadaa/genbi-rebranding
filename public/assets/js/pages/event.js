@@ -28,7 +28,8 @@ if (ssrList) {
       // If JS is available, intercept link click and open modal instead
       event.preventDefault();
       const id = Number(button.dataset.id);
-      if (id > 0) openEventModal(id, eventModal);
+      const slug = button.dataset.slug || '';
+      if (id > 0) openEventModal({ id, slug }, eventModal);
     });
   });
 } else {
@@ -102,12 +103,12 @@ if (ssrList) {
             <p class="mt-3 text-sm leading-6 text-neutral-600">${item.excerpt}</p>
             ${item.location ? `<p class="mt-2 text-sm font-semibold text-blue-800">${item.location}</p>` : ''}
           </div>
-          <button class="btn btn-secondary open-event" data-id="${item.id}">Detail</button>
+          <button class="btn btn-secondary open-event" data-id="${item.id}" data-slug="${item.slug || ''}">Detail</button>
         </article>
       `).join('') : `<div class="rounded-2xl border border-neutral-900/10 bg-white p-8 text-center text-sm text-neutral-600">Belum ada event yang cocok.</div>`;
 
       list.querySelectorAll('.open-event').forEach((button) => {
-        button.addEventListener('click', () => openEventCSR(Number(button.dataset.id), eventModal));
+        button.addEventListener('click', () => openEventCSR({ id: Number(button.dataset.id), slug: button.dataset.slug || '' }, eventModal));
       });
     }
     renderPagination(totalPages);
@@ -131,31 +132,33 @@ if (ssrList) {
     });
   }
 
-  function openEventCSR(id, modal) {
-    const item = events.find((e) => e.id === id);
+  function openEventCSR(target, modal) {
+    const item = events.find((e) => e.id === target.id || e.slug === target.slug);
     if (!item) return;
     renderEventModal(item, modal);
   }
 }
 
-async function openEventModal(id, modal) {
+function eventDetailHref(target) {
+  return `/event/${encodeURIComponent(target.slug || target.id || '')}`;
+}
+
+async function openEventModal(target, modal) {
   try {
-    const response = await fetch(`/event/${id}`, { headers: { 'Accept': 'application/json' } });
+    const response = await fetch(eventDetailHref(target), { headers: { 'Accept': 'application/json' } });
     if (!response.ok) {
-      // Fallback: navigate to detail page
-      window.location.href = `/event/${id}`;
+      window.location.href = eventDetailHref(target);
       return;
     }
     const json = await response.json();
     const item = json.data;
     if (!item) {
-      window.location.href = `/event/${id}`;
+      window.location.href = eventDetailHref(target);
       return;
     }
     renderEventModal(item, modal);
   } catch (e) {
-    // On error, navigate to detail page directly
-    window.location.href = `/event/${id}`;
+    window.location.href = eventDetailHref(target);
   }
 }
 
@@ -177,7 +180,7 @@ function renderEventModal(item, modal) {
           ${item.location ? `<div class="event-detail-info-card"><span>Lokasi</span><strong>${item.location}</strong></div>` : ''}
         </div>
         <div class="event-detail-body">${item.content || item.excerpt}</div>
-        <a href="/event/${item.id}" class="btn btn-secondary mt-6">Lihat halaman detail</a>
+        <a href="/event/${encodeURIComponent(item.slug || item.id)}" class="btn btn-secondary mt-6">Lihat halaman detail</a>
       </div>
     </div>
   ` });

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 return [
     'up' => static function (\PDO $db): void {
+        $makeSlug = static function (string $title): string {
+            $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $title), '-'));
+            return $slug !== '' ? $slug : 'event';
+        };
+
         try {
             $statement = $db->query('DESCRIBE tbl_event');
             $columns = $statement ? array_column($statement->fetchAll(\PDO::FETCH_ASSOC), 'Field') : [];
@@ -24,6 +29,7 @@ return [
         $entries = [
             [
                 'event_title' => 'GenBI PEKA',
+                'slug' => $makeSlug('GenBI PEKA'),
                 'event_content' => '<p>Gerakan kepedulian anggota GenBI Jambi untuk hadir lebih dekat dengan masyarakat dan membangun empati melalui aksi nyata.</p>',
                 'event_content_short' => 'Gerakan kepedulian anggota GenBI Jambi untuk hadir lebih dekat dengan masyarakat dan membangun empati melalui aksi nyata.',
                 'event_start_date' => '2025-01-23',
@@ -39,6 +45,7 @@ return [
             ],
             [
                 'event_title' => 'GenBI Ceria',
+                'slug' => $makeSlug('GenBI Ceria'),
                 'event_content' => '<p>Agenda kebersamaan yang merawat solidaritas anggota, membuka ruang interaksi, dan menjaga semangat organisasi tetap hidup.</p>',
                 'event_content_short' => 'Agenda kebersamaan yang merawat solidaritas anggota, membuka ruang interaksi, dan menjaga semangat organisasi tetap hidup.',
                 'event_start_date' => '2024-12-21',
@@ -54,6 +61,7 @@ return [
             ],
             [
                 'event_title' => 'GenBI for UMKM',
+                'slug' => $makeSlug('GenBI for UMKM'),
                 'event_content' => '<p>Pendampingan sederhana untuk membantu pelaku usaha memahami pencatatan, promosi digital, dan peluang pembayaran non-tunai.</p>',
                 'event_content_short' => 'Pendampingan sederhana untuk membantu pelaku usaha memahami pencatatan, promosi digital, dan peluang pembayaran non-tunai.',
                 'event_start_date' => '2024-12-20',
@@ -69,6 +77,7 @@ return [
             ],
             [
                 'event_title' => 'PTBI 2024',
+                'slug' => $makeSlug('PTBI 2024'),
                 'event_content' => '<p>Kesempatan anggota GenBI Jambi memperluas wawasan tentang arah kebijakan Bank Indonesia dan dinamika ekonomi terkini.</p>',
                 'event_content_short' => 'Kesempatan anggota GenBI Jambi memperluas wawasan tentang arah kebijakan Bank Indonesia dan dinamika ekonomi terkini.',
                 'event_start_date' => '2024-11-29',
@@ -94,6 +103,7 @@ return [
 
             $fieldMap = [
                 'event_title' => $entry['event_title'],
+                'slug' => $entry['slug'],
                 'event_content' => $entry['event_content'],
                 'event_content_short' => $entry['event_content_short'],
                 'event_start_date' => $entry['event_start_date'],

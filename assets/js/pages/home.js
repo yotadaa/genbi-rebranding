@@ -25,10 +25,14 @@ function renderHero() {
   const caption = document.querySelector('#hero-caption');
   if (!slider) return;
 
-  slider.innerHTML = site.heroSlides.map((slide, index) => `
-    <img src="${slide.image}" alt="${slide.caption}" class="hero-image hero-bg-image ${index === 0 ? 'is-active' : ''}" />
-  `).join('');
-  dots.innerHTML = site.heroSlides.map((_, index) => `<button class="h-2.5 w-2.5 rounded-full bg-white/40 transition hover:bg-white ${index === 0 ? 'bg-white' : ''}" aria-label="Slide ${index + 1}" data-slide="${index}"></button>`).join('');
+  if (slider.dataset.ssr !== 'true' || !slider.children.length) {
+    slider.innerHTML = site.heroSlides.map((slide, index) => `
+      <img src="${slide.image}" alt="${slide.caption}" class="hero-image hero-bg-image ${index === 0 ? 'is-active' : ''}" />
+    `).join('');
+  }
+  if (dots && (dots.dataset.ssr !== 'true' || !dots.children.length)) {
+    dots.innerHTML = site.heroSlides.map((_, index) => `<button class="h-2.5 w-2.5 rounded-full bg-white/40 transition hover:bg-white ${index === 0 ? 'bg-white' : ''}" aria-label="Slide ${index + 1}" data-slide="${index}"></button>`).join('');
+  }
   let active = 0;
   const update = (index) => {
     active = index;
@@ -50,6 +54,7 @@ function renderHero() {
 
 function renderStats() {
   const root = document.querySelector('#stats-row');
+  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
   root.innerHTML = stats.map((item) => `
     <div class="fade-up">
       <p class="serif text-4xl font-semibold tracking-tight text-neutral-950">${item.value}</p>
@@ -85,6 +90,7 @@ function renderPrograms() {
 function renderBPIList() {
   const root = document.querySelector('#bpi-list');
   if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
   root.innerHTML = bpiMembers.map((member, index) => `
     <article class="editorial-slide-card bpi-slide-card" role="group" aria-roledescription="slide" aria-label="Anggota BPI ${index + 1} dari ${bpiMembers.length}">
       <figure class="bpi-slide-photo">
@@ -117,6 +123,7 @@ function eventIcon(type) {
 async function renderHomeEvents() {
   const root = document.querySelector('#home-events');
   if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
   let agendaItems = publicEvents;
   try {
     const payload = await API.getEventList();
@@ -145,7 +152,7 @@ async function renderHomeEvents() {
 
 function renderHomeContact() {
   const root = document.querySelector('#home-contact-card');
-  if (!root) return;
+  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
   root.innerHTML = `
     <div>
       <p class="eyebrow">Contact us</p>
@@ -166,6 +173,7 @@ function renderHomeContact() {
 
 function renderHomeNews() {
   const root = document.querySelector('#home-news');
+  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
   root.innerHTML = news.slice(0, 3).map((item) => `
     <a data-transition href="${newsDetailUrl(item)}" class="home-news-card">
       <figure class="home-news-media"><img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>

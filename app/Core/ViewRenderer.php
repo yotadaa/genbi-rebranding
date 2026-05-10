@@ -8,13 +8,23 @@ use Throwable;
 
 final class ViewRenderer
 {
+    /** @var array<string, mixed> */
+    private array $shared = [];
+
     public function __construct(private string $viewRoot)
     {
     }
 
     /** @param array<string, mixed> $data */
+    public function share(array $data): void
+    {
+        $this->shared = array_merge($this->shared, $data);
+    }
+
+    /** @param array<string, mixed> $data */
     public function render(string $view, array $data = []): string
     {
+        $data = array_merge($this->shared, $data);
         $file = $this->resolve($view);
         if ($file === null) {
             return '<!doctype html><title>404</title><h1>404 - View tidak ditemukan</h1>';
@@ -22,7 +32,32 @@ final class ViewRenderer
 
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
         $asset = static fn (string $path): string => '/assets/' . ltrim($path, '/');
-        $url = static fn (string $path): string => '/' . ltrim($path, '/');
+        $url = static fn (string $name, array $params = []): string => match ($name) {
+            'home' => '/',
+            'about' => '/about',
+            'team' => '/team',
+            'news' => '/news',
+            'news.show' => '/news/' . rawurlencode($params['slug'] ?? ''),
+            'event' => '/event',
+            'event.show' => '/event/' . rawurlencode($params['slug'] ?? ''),
+            'prestasi' => '/prestasi',
+            'prestasi.show' => '/prestasi/' . rawurlencode($params['slug'] ?? ''),
+            'contact' => '/contact',
+            'admin.dashboard' => '/admin/dashboard',
+            'admin.news' => '/admin/news',
+            'admin.news.add' => '/admin/news-add',
+            'admin.news.edit' => '/admin/news-edit?id=' . ($params['id'] ?? ''),
+            'admin.prestasi' => '/admin/prestasi',
+            'admin.prestasi.add' => '/admin/prestasi-add',
+            'admin.prestasi.edit' => '/admin/prestasi-edit?id=' . ($params['id'] ?? ''),
+            'admin.feature' => '/admin/feature',
+            'admin.feature.add' => '/admin/feature-add',
+            'admin.feature.edit' => '/admin/feature-edit?id=' . ($params['id'] ?? ''),
+            'admin.team' => '/admin/team-member',
+            'admin.team.add' => '/admin/team-member-add',
+            'admin.team.edit' => '/admin/team-member-edit?id=' . ($params['id'] ?? ''),
+            default => '/' . ltrim($name, '/'),
+        };
 
         try {
             ob_start();

@@ -29,7 +29,7 @@ foreach ($selectedCategories as $catId) {
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Daftar berita dari <code>tbl_news</code>. Aksi hapus tetap memakai custom confirmation modal.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/news-add" class="btn btn-primary">Add News</a>
+      <a href="<?= $url('admin.news.add') ?>" class="btn btn-primary">Add News</a>
     </div>
   </header>
 
@@ -168,7 +168,7 @@ foreach ($selectedCategories as $catId) {
                     </td>
                     <td class="admin-cell-actions">
                       <div class="admin-table-actions">
-                        <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">
+                        <a class="btn btn-secondary btn-sm" href="<?= $url('admin.news.edit', ['id' => (int) $item['id']]) ?>">
                           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                           Edit
                         </a>
@@ -208,7 +208,7 @@ foreach ($selectedCategories as $catId) {
                   <span class="text-xs text-neutral-500"><?= $e(substr((string) ($item['date'] ?? ''), 0, 10)) ?></span>
                 </div>
                 <div class="admin-news-card-actions">
-                  <a class="btn btn-secondary btn-sm" href="/admin/news-edit?id=<?= (int) $item['id'] ?>">
+                  <a class="btn btn-secondary btn-sm" href="<?= $url('admin.news.edit', ['id' => (int) $item['id']]) ?>">
                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                     Edit
                   </a>
@@ -227,7 +227,7 @@ foreach ($selectedCategories as $catId) {
     <?php if ($totalPages > 1): ?>
       <nav class="admin-pagination mt-5" aria-label="Pagination berita" data-ssr="true">
         <?php if ($page > 1): ?>
-          <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+          <a class="pager-button" href="<?= $url('admin.news') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Sebelumnya</span>
         <?php endif; ?>
@@ -235,11 +235,11 @@ foreach ($selectedCategories as $catId) {
           <?php if ($i === $page): ?>
             <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
           <?php else: ?>
-            <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+            <a class="pager-button" href="<?= $url('admin.news') ?>?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
           <?php endif; ?>
         <?php endfor; ?>
         <?php if ($page < $totalPages): ?>
-          <a class="pager-button" href="/admin/news?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+          <a class="pager-button" href="<?= $url('admin.news') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Berikutnya</span>
         <?php endif; ?>

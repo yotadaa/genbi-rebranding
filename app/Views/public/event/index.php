@@ -50,7 +50,7 @@ $endItem = min($page * $perPage, $total);
                 <p class="mt-2 text-sm font-semibold text-blue-800"><?= $e($item['location']) ?></p>
               <?php endif; ?>
             </div>
-            <a href="/event/<?= (int) $item['id'] ?>" class="btn btn-secondary open-event" data-id="<?= (int) $item['id'] ?>">Detail</a>
+            <a href="/event/<?= rawurlencode((string) ($item['slug'] ?? $item['id'])) ?>" class="btn btn-secondary open-event" data-id="<?= (int) $item['id'] ?>" data-slug="<?= $e((string) ($item['slug'] ?? '')) ?>">Detail</a>
           </article>
         <?php endforeach; ?>
       <?php else: ?>

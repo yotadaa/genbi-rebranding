@@ -20,6 +20,7 @@ function renderShell(activeKey = 'home') {
   renderHeader(activeKey);
   renderFooter();
   setupMobileMenu();
+  setupAutoHideHeader();
   setupPageTransitions();
   setupBackToTop();
 }
@@ -36,40 +37,43 @@ function renderHeader(activeKey) {
     .join('');
 
   header.innerHTML = `
-    <div class="top-strip hidden md:block">
-      <div class="site-container flex h-9 items-center justify-between text-[13px] text-white/90">
-        <div class="flex items-center gap-4">
-          <a href="mailto:${site.email}" class="inline-flex items-center gap-2 hover:text-white">${icon('mail')}${site.email}</a>
-          <span class="h-4 w-px bg-white/30"></span>
-          <a href="tel:${site.phone}" class="inline-flex items-center gap-2 hover:text-white">${icon('phone')}${site.phone}</a>
-        </div>
-        <div class="flex items-center gap-3" aria-label="Social links">
-          <a href="#" class="social-mini">Fb</a>
-          <a href="#" class="social-mini">Ig</a>
-          <a href="#" class="social-mini">Yt</a>
-          <a href="#" class="social-mini">Wa</a>
+    <div id="site-header-shell" class="site-header-shell">
+      <div class="top-strip hidden md:block">
+        <div class="site-container flex h-9 items-center justify-between text-[13px] text-white/90">
+          <div class="flex items-center gap-4">
+            <a href="mailto:${site.email}" class="inline-flex items-center gap-2 hover:text-white">${icon('mail')}${site.email}</a>
+            <span class="h-4 w-px bg-white/30"></span>
+            <a href="tel:${site.phone}" class="inline-flex items-center gap-2 hover:text-white">${icon('phone')}${site.phone}</a>
+          </div>
+          <div class="flex items-center gap-3" aria-label="Social links">
+            <a href="#" class="social-mini">Fb</a>
+            <a href="#" class="social-mini">Ig</a>
+            <a href="#" class="social-mini">Yt</a>
+            <a href="#" class="social-mini">Wa</a>
+          </div>
         </div>
       </div>
+      <header class="site-main-header border-b border-neutral-900/10 bg-[rgba(251,250,247,0.92)] backdrop-blur-xl">
+        <div class="site-container flex h-20 items-center justify-between">
+          <a data-transition href="${pageUrl('home')}" class="flex items-center gap-3" aria-label="Go to home">
+            <span class="logo-shell"><img src="${site.logo}" alt="${site.name}" class="h-9 w-auto" /></span>
+            <span class="leading-tight">
+              <span class="block text-[15px] font-semibold tracking-tight text-neutral-950">GenBI</span>
+              <span class="block text-xs font-medium text-blue-800">Provinsi Jambi</span>
+            </span>
+          </a>
+          <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+            ${nav}
+          </nav>
+          <div class="hidden items-center gap-3 lg:flex">
+            <a data-transition href="${adminUrl('dashboard')}" class="btn btn-secondary">Admin Preview</a>
+            <a data-transition href="${pageUrl('contact')}" class="btn btn-primary">Hubungi Kami ${icon('arrowRight')}</a>
+          </div>
+          <button id="open-menu" class="btn-icon lg:hidden" aria-label="Open menu">${icon('menu')}</button>
+        </div>
+      </header>
     </div>
-    <header class="sticky top-0 z-50 border-b border-neutral-900/10 bg-[rgba(251,250,247,0.92)] backdrop-blur-xl">
-      <div class="site-container flex h-20 items-center justify-between">
-        <a data-transition href="${pageUrl('home')}" class="flex items-center gap-3" aria-label="Go to home">
-          <span class="logo-shell"><img src="${site.logo}" alt="${site.name}" class="h-9 w-auto" /></span>
-          <span class="leading-tight">
-            <span class="block text-[15px] font-semibold tracking-tight text-neutral-950">GenBI</span>
-            <span class="block text-xs font-medium text-blue-800">Provinsi Jambi</span>
-          </span>
-        </a>
-        <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
-          ${nav}
-        </nav>
-        <div class="hidden items-center gap-3 lg:flex">
-          <a data-transition href="${adminUrl('dashboard')}" class="btn btn-secondary">Admin Preview</a>
-          <a data-transition href="${pageUrl('contact')}" class="btn btn-primary">Hubungi Kami ${icon('arrowRight')}</a>
-        </div>
-        <button id="open-menu" class="btn-icon lg:hidden" aria-label="Open menu">${icon('menu')}</button>
-      </div>
-    </header>
+    <div id="site-header-spacer" aria-hidden="true"></div>
     <div id="mobile-panel" class="fixed inset-0 z-[70] hidden bg-neutral-950/35 backdrop-blur-sm lg:hidden">
       <div class="mobile-sheet">
         <div class="flex items-center justify-between">
@@ -163,6 +167,50 @@ function setupMobileMenu() {
     if (event.target === panel) hide();
   });
   panel.querySelectorAll('a').forEach((link) => link.addEventListener('click', hide));
+}
+
+function setupAutoHideHeader() {
+  const shell = document.querySelector('#site-header-shell');
+  const spacer = document.querySelector('#site-header-spacer');
+  if (!shell || !spacer) return;
+
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+  const revealThreshold = 24;
+  const hideThreshold = 96;
+
+  const syncSpacerHeight = () => {
+    spacer.style.height = `${shell.offsetHeight}px`;
+  };
+
+  const update = () => {
+    const currentScrollY = Math.max(window.scrollY, 0);
+    const delta = currentScrollY - lastScrollY;
+    const nearTop = currentScrollY <= revealThreshold;
+    const scrollingUp = delta < 0;
+    const scrollingDown = delta > 0;
+
+    shell.classList.toggle('is-scrolled', currentScrollY > 0);
+
+    if (nearTop || scrollingUp) {
+      shell.classList.remove('is-hidden');
+    } else if (currentScrollY > hideThreshold && scrollingDown) {
+      shell.classList.add('is-hidden');
+    }
+
+    lastScrollY = currentScrollY;
+    ticking = false;
+  };
+
+  syncSpacerHeight();
+  update();
+  window.addEventListener('resize', syncSpacerHeight);
+  window.addEventListener('load', syncSpacerHeight);
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(update);
+  }, { passive: true });
 }
 
 function setupPageTransitions() {

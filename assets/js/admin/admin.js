@@ -56,7 +56,8 @@
     { key: 'news', label: 'News', href: adminUrl('news'), icon: 'news', children: [
       { key: 'category', label: 'Category', href: adminUrl('category') },
       { key: 'news-list', label: 'News', href: adminUrl('news') },
-      { key: 'comment', label: 'Comment', href: adminUrl('comment') }
+      { key: 'comment', label: 'Comment', href: adminUrl('comment') },
+      { key: 'comment-setting', label: 'Comment Settings', href: adminUrl('comment-setting') }
     ] },
     { key: 'prestasi', label: 'Prestasi', href: adminUrl('prestasi'), icon: 'feature', children: [
       { key: 'prestasi-list', label: 'Prestasi', href: adminUrl('prestasi') },

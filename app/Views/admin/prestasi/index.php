@@ -28,8 +28,8 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Daftar prestasi anggota GenBI. Aksi hapus memakai custom confirmation modal.</p>
     </div>
     <div class="cms-actions">
-      <a href="/admin/prestasi-token" class="btn btn-secondary">Buat Link Form Prestasi</a>
-      <a href="/admin/prestasi-add" class="btn btn-primary">Add Prestasi</a>
+      <a href="<?= $url('admin/prestasi-token') ?>" class="btn btn-secondary">Buat Link Form Prestasi</a>
+      <a href="<?= $url('admin.prestasi.add') ?>" class="btn btn-primary">Add Prestasi</a>
     </div>
   </header>
   <div class="mt-6">
@@ -133,7 +133,7 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2.75 10s2.75-4.75 7.25-4.75S17.25 10 17.25 10 14.5 14.75 10 14.75 2.75 10 2.75 10Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5"/></svg>
                         Detail
                       </button>
-                      <a class="btn btn-secondary btn-sm" href="/admin/prestasi-edit?id=<?= (int) $item['id'] ?>">
+                      <a class="btn btn-secondary btn-sm" href="<?= $url('admin.prestasi.edit', ['id' => (int) $item['id']]) ?>">
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                         Edit
                       </a>
@@ -153,7 +153,7 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
     <?php if ($totalPages > 1): ?>
       <nav class="admin-pagination mt-5" aria-label="Pagination prestasi" data-ssr="true">
         <?php if ($page > 1): ?>
-          <a class="pager-button" href="/admin/prestasi?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+          <a class="pager-button" href="<?= $url('admin.prestasi') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Sebelumnya</span>
         <?php endif; ?>
@@ -161,11 +161,11 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
           <?php if ($i === $page): ?>
             <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
           <?php else: ?>
-            <a class="pager-button" href="/admin/prestasi?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+            <a class="pager-button" href="<?= $url('admin.prestasi') ?>?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
           <?php endif; ?>
         <?php endfor; ?>
         <?php if ($page < $totalPages): ?>
-          <a class="pager-button" href="/admin/prestasi?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+          <a class="pager-button" href="<?= $url('admin.prestasi') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Berikutnya</span>
         <?php endif; ?>
