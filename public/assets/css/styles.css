@@ -272,6 +272,7 @@ body.page-leaving {
 .public-inner-hero {
   position: relative;
   overflow: hidden;
+  padding-top: 5rem;
   background-color: rgb(var(--blue-900));
   background-image: url('https://genbijambi.com/public/uploads/slider-1.png');
   background-position: center;
@@ -941,7 +942,7 @@ body.page-leaving {
 
 .hero-inner-compact {
   min-height: clamp(500px, 64vh, 620px);
-  padding-top: clamp(1rem, 3vh, 2rem);
+  padding-top: clamp(5rem, 10vh, 7rem);
   padding-bottom: clamp(2rem, 5vh, 3rem);
 }
 
