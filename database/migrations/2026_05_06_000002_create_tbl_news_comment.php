@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'up' => static function (\PDO $db): void {
-        $db->exec("CREATE TABLE tbl_news_comment (
+        $db->exec("CREATE TABLE IF NOT EXISTS tbl_news_comment (
             comment_id INT NOT NULL AUTO_INCREMENT,
             news_id INT NOT NULL,
             parent_id INT NULL,
@@ -24,8 +24,12 @@ return [
             INDEX idx_news_comment_news_id (news_id),
             INDEX idx_news_comment_parent_id (parent_id),
             INDEX idx_news_comment_status (status),
-            INDEX idx_news_comment_created_at (created_at),
-            CONSTRAINT fk_news_comment_news FOREIGN KEY (news_id) REFERENCES tbl_news(news_id) ON DELETE CASCADE
+            INDEX idx_news_comment_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Add FK only if not exists (ignore error if already present)
+        try {
+            $db->exec('ALTER TABLE tbl_news_comment ADD CONSTRAINT fk_news_comment_news FOREIGN KEY (news_id) REFERENCES tbl_news(news_id) ON DELETE CASCADE');
+        } catch (\Throwable) {}
     },
 ];

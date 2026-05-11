@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'up' => static function (\PDO $db): void {
-        $db->exec('CREATE TABLE tbl_prestasi_submission_token (
+        $db->exec('CREATE TABLE IF NOT EXISTS tbl_prestasi_submission_token (
             token_id INT NOT NULL AUTO_INCREMENT,
             token_hash CHAR(64) NOT NULL,
             label VARCHAR(120) NULL,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'up' => static function (\PDO $db): void {
-        $db->exec("CREATE TABLE tbl_prestasi (
+        $db->exec("CREATE TABLE IF NOT EXISTS tbl_prestasi (
             prestasi_id INT NOT NULL AUTO_INCREMENT,
             title VARCHAR(255) NOT NULL,
             slug VARCHAR(255) NOT NULL,
