@@ -603,14 +603,20 @@ body.page-leaving {
 }
 
 .fade-up {
+  opacity: 1;
+  transform: none;
+}
+
+.has-observer .fade-up {
   opacity: 0;
   transform: translateY(16px);
   transition: opacity 650ms ease, transform 650ms ease;
 }
 
-.fade-up.in-view {
+.has-observer .fade-up.in-view {
   opacity: 1;
   transform: translateY(0);
+}
 }
 
 .article-link {

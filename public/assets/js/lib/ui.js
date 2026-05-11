@@ -25,6 +25,7 @@
   function observeFadeUp() {
     const items = document.querySelectorAll('.fade-up');
     if (!items.length) return;
+    document.body.classList.add('has-observer');
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
