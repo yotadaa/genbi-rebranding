@@ -40,6 +40,5 @@ $content = $content ?? '';
   <script defer src="/assets/js/dist/app.js?v=20260508e"></script>
   <script defer src="/assets/js/dist/lib/ui.js?v=20260510a"></script>
   <?= $scripts ?? '' ?>
-  <script>document.body.classList.add('page-ready')</script>
 </body>
 </html>
