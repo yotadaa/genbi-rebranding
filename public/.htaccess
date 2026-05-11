@@ -1,8 +1,10 @@
 Options -Indexes
 
-# Upload limits
-php_value upload_max_filesize 10M
-php_value post_max_size 12M
+# Upload limits (Apache mod_php only; ignored on CGI/FPM)
+<IfModule mod_php.c>
+  php_value upload_max_filesize 10M
+  php_value post_max_size 12M
+</IfModule>
 
 # Compression
 <IfModule mod_deflate.c>
