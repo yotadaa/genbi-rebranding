@@ -16,7 +16,7 @@ class FeedController
 
     public function news(Request $request, Response $response): void
     {
-        $base = SeoConfig::BASE_URL;
+        $base = rtrim(SeoService::absoluteUrl('/'), '/');
         $items = $this->news?->paginate([]) ?? [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;

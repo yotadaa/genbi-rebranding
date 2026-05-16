@@ -58,4 +58,5 @@ $router->get('/sitemap-pages.xml', static fn(Request $request, Response $respons
 $router->get('/sitemap-news.xml', static fn(Request $request, Response $response) => $sitemapController->news($request, $response));
 $router->get('/sitemap-events.xml', static fn(Request $request, Response $response) => $sitemapController->events($request, $response));
 $router->get('/sitemap-prestasi.xml', static fn(Request $request, Response $response) => $sitemapController->prestasi($request, $response));
+$router->get('/sitemap-images.xml', static fn(Request $request, Response $response) => $sitemapController->images($request, $response));
 $router->get('/feed.xml', static fn(Request $request, Response $response) => $feedController->news($request, $response));

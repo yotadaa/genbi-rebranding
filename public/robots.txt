@@ -36,4 +36,4 @@ Allow: /uploads/
 Allow: /public/uploads/
 
 # Sitemap index
-Sitemap: https://genbijambi.com/sitemap.xml
+Sitemap: https://official.genbijambi.com/sitemap.xml
