@@ -10,6 +10,8 @@ use Throwable;
 
 final class News
 {
+    private const LEGACY_IMAGE_BASE_URL = 'https://genbijambi.com';
+
     public function __construct(private PDO $db)
     {
     }
@@ -450,25 +452,29 @@ final class News
             $path = (string) ($parts['path'] ?? '');
 
             if (in_array($host, ['127.0.0.1', 'localhost', '::1'], true) && str_starts_with($path, '/uploads/')) {
-                return $path;
+                return self::uploadExists($path) ? $path : self::legacyImageUrl($path);
             }
 
             return $filename;
         }
 
         if (str_starts_with($filename, '/uploads/')) {
-            return $filename;
+            return self::uploadExists($filename) ? $filename : self::legacyImageUrl($filename);
         }
 
-        return '/uploads/' . self::resolveUploadFilename($filename);
+        $resolved = self::resolveUploadFilename($filename);
+        if ($resolved === null) {
+            return self::legacyImageUrl($filename);
+        }
+
+        return '/uploads/' . $resolved;
     }
 
-    private static function resolveUploadFilename(string $filename): string
+    private static function resolveUploadFilename(string $filename): ?string
     {
         $normalized = ltrim(str_replace('public/uploads/', '', $filename), '/');
-        $uploadRoot = dirname(__DIR__, 2) . '/public/uploads';
 
-        if (is_file($uploadRoot . '/' . $normalized)) {
+        if (self::uploadExists($normalized)) {
             return $normalized;
         }
 
@@ -480,11 +486,37 @@ final class News
         $base = substr($normalized, 0, -(strlen($extension) + 1));
         foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $candidateExtension) {
             $candidate = $base . '.' . $candidateExtension;
-            if (is_file($uploadRoot . '/' . $candidate)) {
+            if (self::uploadExists($candidate)) {
                 return $candidate;
             }
         }
 
-        return $normalized;
+        return null;
+    }
+
+    private static function uploadExists(string $path): bool
+    {
+        $normalized = ltrim(str_replace('public/uploads/', '', $path), '/');
+        $normalized = preg_replace('#^uploads/#', '', $normalized) ?? $normalized;
+        if ($normalized === '' || str_contains($normalized, '..')) {
+            return false;
+        }
+
+        return is_file(dirname(__DIR__, 2) . '/public/uploads/' . $normalized);
+    }
+
+    private static function legacyImageUrl(string $filename): string
+    {
+        $filename = trim($filename);
+        if ($filename === '') {
+            return '';
+        }
+
+        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://')) {
+            $path = (string) (parse_url($filename, PHP_URL_PATH) ?: '');
+            $filename = $path !== '' ? $path : $filename;
+        }
+
+        return self::LEGACY_IMAGE_BASE_URL . '/' . ltrim($filename, '/');
     }
 }
