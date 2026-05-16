@@ -39,7 +39,7 @@ final class SettingsController
             'cmsPage' => 'settings',
             'cmsMode' => 'settings',
             'settingsData' => $this->bootstrapData(),
-            'scripts' => '<script defer src="/assets/js/dist/theme-registry.js?v=20260510a"></script><script src="/assets/js/dist/admin/settings.js?v=20260510a"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/theme-registry.js?v=20260515b"></script><script defer src="/assets/js/dist/admin/settings.js?v=20260515b"></script>',
         ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
     }
 

@@ -16,12 +16,12 @@
       <article class="admin-card slide-in p-5" style="animation-delay:${index * 45}ms">
         <div class="flex items-start justify-between gap-4">
           <div class="admin-stat-icon">${icon(item.icon)}</div>
-          <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-neutral-500 ring-1 ring-neutral-900/10">CMS</span>
+          <span class="rounded-full bg-[rgb(var(--surface-default))] px-2.5 py-1 text-xs font-bold text-[rgb(var(--text-secondary))] ring-1 ring-[rgb(var(--border-subtle)_/_0.18)]">CMS</span>
         </div>
-        <p class="mt-6 text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">${item.label}</p>
+        <p class="mt-6 text-sm font-bold uppercase tracking-[0.12em] text-[rgb(var(--text-secondary))]">${item.label}</p>
         <div class="mt-2 flex items-end justify-between gap-4">
-          <p class="serif text-5xl font-semibold tracking-tight text-neutral-950">${item.value}</p>
-          <p class="max-w-[8rem] text-right text-xs leading-5 text-neutral-500">${item.note}</p>
+          <p class="serif text-5xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${item.value}</p>
+          <p class="max-w-[8rem] text-right text-xs leading-5 text-[rgb(var(--text-secondary))]">${item.note}</p>
         </div>
       </article>
     `).join('');
@@ -31,12 +31,12 @@
     const root = document.querySelector('#admin-activity');
     if (!root) return;
     root.innerHTML = adminActivity.map((item) => `
-      <div class="grid gap-3 border-t border-neutral-900/10 p-4 first:border-t-0 md:grid-cols-[1fr_150px_110px] md:items-center">
+      <div class="admin-activity-item grid gap-3 border-t border-neutral-900/10 p-4 first:border-t-0 md:grid-cols-[1fr_150px_110px] md:items-center">
         <div>
-          <p class="font-bold text-neutral-950">${item.title}</p>
-          <p class="mt-1 text-sm text-neutral-500">${item.area}</p>
+          <p class="font-bold text-[rgb(var(--text-primary))]">${item.title}</p>
+          <p class="mt-1 text-sm text-[rgb(var(--text-secondary))]">${item.area}</p>
         </div>
-        <p class="text-sm text-neutral-500">${item.time}</p>
+        <p class="text-sm text-[rgb(var(--text-secondary))]">${item.time}</p>
         <span class="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800">${item.status}</span>
       </div>
     `).join('');
@@ -52,15 +52,15 @@
       { label: 'CRUD admin', value: 'Belum dibuat', percent: 18 }
     ];
     root.innerHTML = checks.map((item) => `
-      <div class="rounded-2xl border border-neutral-900/10 bg-white p-4">
+      <div class="admin-health-card rounded-2xl border border-neutral-900/10 bg-white p-4">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <p class="font-bold text-neutral-950">${item.label}</p>
-            <p class="mt-1 text-sm text-neutral-500">${item.value}</p>
+            <p class="font-bold text-[rgb(var(--text-primary))]">${item.label}</p>
+            <p class="mt-1 text-sm text-[rgb(var(--text-secondary))]">${item.value}</p>
           </div>
           <span class="text-sm font-bold text-blue-800">${item.percent}%</span>
         </div>
-        <div class="mt-4 h-2 overflow-hidden rounded-full bg-neutral-100">
+        <div class="mt-4 h-2 overflow-hidden rounded-full bg-[rgb(var(--surface-muted))]">
           <div class="h-full rounded-full bg-blue-800" style="width:${item.percent}%"></div>
         </div>
       </div>

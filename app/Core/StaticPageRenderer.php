@@ -12,6 +12,55 @@ final class StaticPageRenderer
 
     public function render(string $relativeFile, array $options = []): string
     {
+        $html = $this->loadHtml($relativeFile, $options);
+        if ($html === null) {
+            return '<!doctype html><title>500</title><h1>Konten tidak dapat dibaca</h1>';
+        }
+
+        return $html;
+    }
+
+    /** @return array{title: string, content: string, scripts: string, cmsPage: string, cmsMode: string}|null */
+    public function extractAdminPage(string $relativeFile, array $options = []): ?array
+    {
+        $html = $this->loadHtml($relativeFile, $options);
+        if ($html === null) {
+            return null;
+        }
+
+        preg_match('/<title>(.*?)<\/title>/si', $html, $titleMatch);
+        preg_match('/<body[^>]*data-cms-page="([^"]*)"[^>]*data-cms-mode="([^"]*)"[^>]*>/si', $html, $bodyMatch);
+        preg_match('/<main[^>]*>(.*?)<\/main>/si', $html, $contentMatch);
+        preg_match_all('/<script\b[^>]*>.*?<\/script>/si', $html, $scriptMatches);
+
+        $scripts = array_filter($scriptMatches[0] ?? [], static function (string $script): bool {
+            return !str_contains($script, '/assets/js/data.js')
+                && !str_contains($script, '/assets/js/api-core.js')
+                && !str_contains($script, '/assets/js/api.js')
+                && !str_contains($script, '/assets/js/app.js')
+                && !str_contains($script, '/assets/js/lib/ui.js')
+                && !str_contains($script, '/assets/js/admin/admin.js');
+        });
+
+        $scripts = array_map(static function (string $script): string {
+            if (str_contains($script, ' src=') && !preg_match('/\sdefer\b/i', $script)) {
+                return preg_replace('/<script\b/i', '<script defer', $script, 1) ?? $script;
+            }
+
+            return $script;
+        }, $scripts);
+
+        return [
+            'title' => trim(strip_tags($titleMatch[1] ?? 'Admin GenBI')),
+            'content' => trim($contentMatch[1] ?? ''),
+            'scripts' => implode('', $scripts),
+            'cmsPage' => $bodyMatch[1] ?? '',
+            'cmsMode' => $bodyMatch[2] ?? '',
+        ];
+    }
+
+    private function loadHtml(string $relativeFile, array $options): ?string
+    {
         $file = $this->rootPath . '/' . ltrim($relativeFile, '/');
         if (!is_file($file)) {
             return '<!doctype html><title>404</title><h1>404 - Halaman tidak ditemukan</h1>';
@@ -19,7 +68,7 @@ final class StaticPageRenderer
 
         $html = file_get_contents($file);
         if (!is_string($html)) {
-            return '<!doctype html><title>500</title><h1>Konten tidak dapat dibaca</h1>';
+            return null;
         }
 
         $prefix = str_starts_with($relativeFile, 'admin/') ? '../' : '';

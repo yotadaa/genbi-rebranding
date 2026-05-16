@@ -5968,14 +5968,415 @@ html[data-theme^="dark-"] .admin-menu-button:hover {
 
 html[data-theme^="dark-"] .admin-link-active,
 html[data-theme^="dark-"] .admin-nav-group.is-open > .admin-link {
-  color: rgb(var(--background-default)) !important;
+  color: #fff !important;
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.26) !important;
+}
+
+html[data-theme^="dark-"] .admin-link-active svg,
+html[data-theme^="dark-"] .admin-link-active span,
+html[data-theme^="dark-"] .admin-nav-group.is-open > .admin-link svg,
+html[data-theme^="dark-"] .admin-nav-group.is-open > .admin-link span {
+  color: #fff !important;
 }
 
 html[data-theme^="dark-"] .admin-sub-link.is-active {
   background: rgb(var(--surface-default)) !important;
   color: rgb(var(--text-primary)) !important;
   box-shadow: inset 3px 0 0 rgb(var(--brand-primary)), 0 8px 22px rgb(0 0 0 / 0.18) !important;
+}
+
+html[data-theme^="dark-"] .admin-data-table-wrap,
+html[data-theme^="dark-"] .admin-responsive-table,
+html[data-theme^="dark-"] .comment-moderation-card,
+html[data-theme^="dark-"] .slider-card,
+html[data-theme^="dark-"] .admin-health-card,
+html[data-theme^="dark-"] .team-batch-bar,
+html[data-theme^="dark-"] .team-filter-row,
+html[data-theme^="dark-"] .dark-theme-note {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-default)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 0.16) !important;
+}
+
+html[data-theme^="dark-"] .admin-data-table thead th,
+html[data-theme^="dark-"] .cms-table th {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .admin-data-table tbody td,
+html[data-theme^="dark-"] .cms-table td {
+  border-color: rgb(var(--border-subtle) / 0.12) !important;
+  background: rgb(var(--surface-default)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .admin-data-table tbody tr:hover td,
+html[data-theme^="dark-"] .cms-table tr:hover td {
+  background: rgb(var(--brand-soft) / 0.38) !important;
+}
+
+html[data-theme^="dark-"] .admin-table-title strong,
+html[data-theme^="dark-"] .admin-table-copy,
+html[data-theme^="dark-"] .admin-cell-index,
+html[data-theme^="dark-"] .admin-cell-title,
+html[data-theme^="dark-"] .admin-cell-excerpt,
+html[data-theme^="dark-"] .admin-cell-status,
+html[data-theme^="dark-"] .comment-moderation-card h2,
+html[data-theme^="dark-"] .slider-card h2,
+html[data-theme^="dark-"] .slider-card p,
+html[data-theme^="dark-"] .slider-card span,
+html[data-theme^="dark-"] .team-admin-card h2,
+html[data-theme^="dark-"] .team-admin-card p,
+html[data-theme^="dark-"] .admin-health-card,
+html[data-theme^="dark-"] .admin-activity-item {
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .admin-table-title p,
+html[data-theme^="dark-"] .news-caption-cell,
+html[data-theme^="dark-"] .comment-moderation-text,
+html[data-theme^="dark-"] [class*="text-blue-800"],
+html[data-theme^="dark-"] [class*="text-blue-900"],
+html[data-theme^="dark-"] [class*="text-blue-950"] {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+html[data-theme^="dark-"] .status-pill,
+html[data-theme^="dark-"] .cms-pill,
+html[data-theme^="dark-"] .editor-status-pill,
+html[data-theme^="dark-"] .blue-badge {
+  border-color: rgb(var(--brand-primary) / 0.32) !important;
+  background: rgb(var(--brand-soft)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .btn-secondary,
+html[data-theme^="dark-"] .btn.btn-secondary,
+html[data-theme^="dark-"] .admin-table-actions .btn.btn-secondary,
+html[data-theme^="dark-"] .admin-table-actions .btn.btn-outline {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .rounded-2xl.bg-white,
+html[data-theme^="dark-"] [class*="bg-white"] {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-default)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .select-button,
+html[data-theme^="dark-"] .admin-select-button,
+html[data-theme^="dark-"] .select-menu,
+html[data-theme^="dark-"] .admin-select-menu {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 18px 46px rgb(0 0 0 / 0.26) !important;
+}
+
+html[data-theme^="dark-"] .select-menu button,
+html[data-theme^="dark-"] .admin-select-menu button {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+html[data-theme^="dark-"] .select-menu button:hover,
+html[data-theme^="dark-"] .select-menu button.is-active,
+html[data-theme^="dark-"] .admin-select-menu button:hover,
+html[data-theme^="dark-"] .admin-select-menu button.is-active {
+  background: rgb(var(--brand-soft)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .settings-field-label,
+html[data-theme^="dark-"] .settings-upload-title,
+html[data-theme^="dark-"] .settings-banner-preview-label,
+html[data-theme^="dark-"] .theme-card-name,
+html[data-theme^="dark-"] .theme-card-mode {
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .settings-upload-note,
+html[data-theme^="dark-"] .settings-banner-preview-caption,
+html[data-theme^="dark-"] .theme-card-note,
+html[data-theme^="dark-"] .settings-banner-preview-empty,
+html[data-theme^="dark-"] [class*="text-neutral-400"],
+html[data-theme^="dark-"] [class*="text-neutral-800"] {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+html[data-theme^="dark-"] .settings-banner-preview-media,
+html[data-theme^="dark-"] .settings-banner-preview-empty,
+html[data-theme^="dark-"] .theme-card-swatch {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-raised)) !important;
+}
+
+html[data-theme^="dark-"] .theme-card:hover,
+html[data-theme^="dark-"] .settings-upload-card:hover,
+html[data-theme^="dark-"] .settings-banner-preview:hover {
+  border-color: rgb(var(--brand-primary) / 0.36) !important;
+  box-shadow: 0 18px 46px rgb(0 0 0 / 0.2) !important;
+}
+
+html[data-theme^="dark-"] .btn-outline,
+html[data-theme^="dark-"] .admin-table-actions .btn,
+html[data-theme^="dark-"] button[class*="border-neutral-900"] {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .btn-outline:hover,
+html[data-theme^="dark-"] .btn-secondary:hover,
+html[data-theme^="dark-"] .admin-table-actions .btn:hover {
+  border-color: rgb(var(--brand-primary) / 0.36) !important;
+  background: rgb(var(--brand-soft)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-canvas,
+html[data-theme^="dark-"] .medium-config-card,
+html[data-theme^="dark-"] .config-card {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-default)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-kicker,
+html[data-theme^="dark-"] .story-main-block label,
+html[data-theme^="dark-"] .config-field span {
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .config-card h2,
+html[data-theme^="dark-"] .story-title-field,
+html[data-theme^="dark-"] .medium-editor-host .ce-header,
+html[data-theme^="dark-"] .editor-fallback h1 {
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .story-excerpt-field,
+html[data-theme^="dark-"] .medium-editor-help,
+html[data-theme^="dark-"] .config-hint,
+html[data-theme^="dark-"] .editor-fallback p,
+html[data-theme^="dark-"] .editor-fallback article,
+html[data-theme^="dark-"] .medium-editor-host .ce-paragraph,
+html[data-theme^="dark-"] .medium-editor-host .cdx-quote__text,
+html[data-theme^="dark-"] .medium-editor-host .cdx-list {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+html[data-theme^="dark-"] .story-main-block,
+html[data-theme^="dark-"] .medium-editor-help,
+html[data-theme^="dark-"] .medium-editor-divider {
+  border-color: rgb(var(--border-subtle) / 0.16) !important;
+}
+
+html[data-theme^="dark-"] .story-title-field:focus,
+html[data-theme^="dark-"] .story-excerpt-field:focus,
+html[data-theme^="dark-"] .medium-editor-host .ce-block--selected .ce-block__content,
+html[data-theme^="dark-"] .medium-editor-host .ce-block.ce-block--focused .ce-block__content,
+html[data-theme^="dark-"] .medium-editor-host .ce-block__content:hover {
+  background: rgb(var(--brand-soft) / 0.32) !important;
+  box-shadow: 0 0 0 8px rgb(var(--brand-soft) / 0.22) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-host ::selection,
+html[data-theme^="dark-"] .story-title-field::selection,
+html[data-theme^="dark-"] .story-excerpt-field::selection,
+html[data-theme^="dark-"] .editor-fallback ::selection {
+  background: rgb(var(--brand-primary) / 0.38) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-host .ce-toolbar__plus,
+html[data-theme^="dark-"] .medium-editor-host .ce-toolbar__settings-btn,
+html[data-theme^="dark-"] .medium-editor-host .ce-inline-toolbar,
+html[data-theme^="dark-"] .medium-editor-host .ce-conversion-toolbar,
+html[data-theme^="dark-"] .medium-editor-host .ce-settings,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover__container {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.3) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-host .ce-inline-tool,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover-item,
+html[data-theme^="dark-"] .medium-editor-host .ce-settings__button,
+html[data-theme^="dark-"] .medium-editor-host .ce-conversion-tool {
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-host .ce-inline-tool:hover,
+html[data-theme^="dark-"] .medium-editor-host .ce-inline-tool--active,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover-item:hover,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover-item--focused,
+html[data-theme^="dark-"] .medium-editor-host .ce-settings__button:hover,
+html[data-theme^="dark-"] .medium-editor-host .ce-conversion-tool:hover,
+html[data-theme^="dark-"] .medium-editor-host .ce-toolbar__plus:hover,
+html[data-theme^="dark-"] .medium-editor-host .ce-toolbar__settings-btn:hover {
+  background: rgb(var(--brand-soft)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .medium-editor-host .image-tool__caption,
+html[data-theme^="dark-"] .medium-editor-host .cdx-input,
+html[data-theme^="dark-"] .medium-editor-host .ce-popover__search,
+html[data-theme^="dark-"] select.config-input,
+html[data-theme^="dark-"] select.config-input option,
+html[data-theme^="dark-"] input.config-input,
+html[data-theme^="dark-"] textarea.config-input {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .config-empty {
+  border-color: rgb(var(--brand-primary) / 0.32) !important;
+  background: rgb(var(--brand-soft) / 0.72) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .input-soft,
+html[data-theme^="dark-"] .settings-input,
+html[data-theme^="dark-"] .settings-file-input,
+html[data-theme^="dark-"] .admin-file-input,
+html[data-theme^="dark-"] input[type="file"].config-input {
+  border-color: rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .input-soft:focus,
+html[data-theme^="dark-"] .settings-input:focus,
+html[data-theme^="dark-"] .config-input:focus,
+html[data-theme^="dark-"] .admin-file-input:focus {
+  border-color: rgb(var(--brand-primary) / 0.56) !important;
+  box-shadow: 0 0 0 4px rgb(var(--brand-primary) / 0.2) !important;
+}
+
+html[data-theme^="dark-"] .admin-file-input::file-selector-button,
+html[data-theme^="dark-"] input[type="file"].config-input::file-selector-button,
+html[data-theme^="dark-"] .settings-file-input::file-selector-button {
+  background: rgb(var(--brand-primary)) !important;
+  color: #fff !important;
+}
+
+html[data-theme^="dark-"] .feature-story-card,
+html[data-theme^="dark-"] .feature-media-card,
+html[data-theme^="dark-"] .feature-image-card,
+html[data-theme^="dark-"] .feature-icon-button {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-default)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 18px 46px rgb(0 0 0 / 0.16) !important;
+}
+
+html[data-theme^="dark-"] .feature-label,
+html[data-theme^="dark-"] .feature-media-card .eyebrow,
+html[data-theme^="dark-"] .feature-image-card-meta span {
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .story-title-input,
+html[data-theme^="dark-"] .story-name-input,
+html[data-theme^="dark-"] .feature-media-head h2,
+html[data-theme^="dark-"] .feature-icon-button strong,
+html[data-theme^="dark-"] .news-title-block {
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .news-body-block,
+html[data-theme^="dark-"] .news-body-block blockquote,
+html[data-theme^="dark-"] .feature-media-head p,
+html[data-theme^="dark-"] .feature-icon-button small,
+html[data-theme^="dark-"] .feature-image-empty,
+html[data-theme^="dark-"] .story-title-input::placeholder,
+html[data-theme^="dark-"] .story-name-input::placeholder,
+html[data-theme^="dark-"] .news-body-block::placeholder {
+  color: rgb(var(--text-secondary)) !important;
+}
+
+html[data-theme^="dark-"] .feature-icon-button-preview,
+html[data-theme^="dark-"] .program-icon,
+html[data-theme^="dark-"] .feature-image-empty {
+  border-color: rgb(var(--border-subtle) / 0.18) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] .feature-icon-button-preview svg,
+html[data-theme^="dark-"] .program-icon svg,
+html[data-theme^="dark-"] .program-icon .program-icon-svg {
+  color: rgb(var(--brand-primary)) !important;
+  stroke: currentColor !important;
+}
+
+html[data-theme^="dark-"] .feature-image-move,
+html[data-theme^="dark-"] .btn-dark,
+html[data-theme^="dark-"] .btn.btn-dark {
+  border: 1px solid rgb(var(--border-subtle) / 0.22) !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+html[data-theme^="dark-"] .feature-image-move:hover,
+html[data-theme^="dark-"] .btn-dark:hover,
+html[data-theme^="dark-"] .btn.btn-dark:hover {
+  border-color: rgb(var(--brand-primary) / 0.36) !important;
+  background: rgb(var(--brand-soft)) !important;
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] textarea.news-body-block,
+html[data-theme^="dark-"] .news-body-block.smaller,
+html[data-theme^="dark-"] .news-body-block[contenteditable="true"],
+html[data-theme^="dark-"] .mini-block div,
+html[data-theme^="dark-"] .code-block-editor {
+  border: 1px solid rgb(var(--border-subtle) / 0.18) !important;
+  border-radius: 1rem !important;
+  background: rgb(var(--surface-raised)) !important;
+  color: rgb(var(--text-primary)) !important;
+  caret-color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] textarea.news-body-block,
+html[data-theme^="dark-"] .news-body-block.smaller {
+  padding: 0.85rem 1rem !important;
+}
+
+html[data-theme^="dark-"] textarea.news-body-block:focus,
+html[data-theme^="dark-"] .news-body-block[contenteditable="true"]:focus,
+html[data-theme^="dark-"] .mini-block div:focus,
+html[data-theme^="dark-"] .code-block-editor:focus {
+  border-color: rgb(var(--brand-primary) / 0.5) !important;
+  outline: 0 !important;
+  box-shadow: 0 0 0 4px rgb(var(--brand-primary) / 0.18) !important;
+}
+
+html[data-theme^="dark-"] .mini-block,
+html[data-theme^="dark-"] .medium-editor-divider {
+  border-color: rgb(var(--border-subtle) / 0.16) !important;
+}
+
+html[data-theme^="dark-"] .mini-block span,
+html[data-theme^="dark-"] .feature-config-sidebar .config-field span,
+html[data-theme^="dark-"] .medium-config-sidebar .config-field span {
+  color: rgb(var(--brand-primary)) !important;
+}
+
+html[data-theme^="dark-"] textarea.news-body-block::placeholder,
+html[data-theme^="dark-"] .news-body-block:empty::before,
+html[data-theme^="dark-"] .mini-block div:empty::before {
+  color: rgb(var(--text-tertiary)) !important;
+  opacity: 1 !important;
 }
 
 html[data-theme^="dark-"] .admin-link svg,

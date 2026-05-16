@@ -123,8 +123,8 @@
     canvas.innerHTML = `
       <section class="block-page-hero slide-in">
         <p class="eyebrow">Admin Page</p>
-        <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-neutral-950">${tab.title}</h2>
-        <p class="mt-4 max-w-3xl text-base leading-7 text-neutral-600">${tab.description}</p>
+        <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${tab.title}</h2>
+        <p class="mt-4 max-w-3xl text-base leading-7 text-[rgb(var(--text-secondary))]">${tab.description}</p>
       </section>
       ${groups.map(renderGroup).join('')}
     `;
@@ -139,7 +139,7 @@
             </button>
           `).join('')}
         </div>
-        <div class="mt-6 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+        <div class="mt-6 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark-theme-note">
           Editor ini memakai blok editable agar pengetikan terasa seperti area konten, bukan form sempit.
         </div>
       `;
@@ -223,8 +223,8 @@
     canvas.innerHTML = `
       <section class="block-page-hero slide-in">
         <p class="eyebrow">Admin Page</p>
-        <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-neutral-950">${tab.title}</h2>
-        <p class="mt-4 max-w-3xl text-base leading-7 text-neutral-600">${tab.description}</p>
+        <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${tab.title}</h2>
+        <p class="mt-4 max-w-3xl text-base leading-7 text-[rgb(var(--text-secondary))]">${tab.description}</p>
       </section>
       <section class="admin-contact-grid mt-6 slide-in" id="admin-contact-grid">
         <form class="admin-contact-form admin-card p-5 md:p-6" id="admin-contact-form"></form>
@@ -234,7 +234,7 @@
     if (overview) {
       overview.innerHTML = `
         <p class="eyebrow">Contact</p>
-        <div class="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+        <div class="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark-theme-note">
           Data kontak ini dipakai langsung oleh halaman publik <strong>/contact</strong>.
         </div>
       `;
@@ -253,8 +253,8 @@
 
   function renderContactFormFields(data) {
     return `
-      <h3 class="serif text-2xl font-semibold tracking-tight text-neutral-950">Contact Settings</h3>
-      <p class="mt-2 text-sm leading-6 text-neutral-600">Kelola lokasi dan metadata kontak untuk halaman publik.</p>
+      <h3 class="serif text-2xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">Contact Settings</h3>
+      <p class="mt-2 text-sm leading-6 text-[rgb(var(--text-secondary))]">Kelola lokasi dan metadata kontak untuk halaman publik.</p>
       <div class="mt-5 grid gap-4">
         ${contactInput('Place Name', 'place_name', data.place_name)}
         ${contactTextarea('Address', 'address', data.address)}
@@ -319,9 +319,9 @@
       <p class="eyebrow">Live Preview</p>
       <article class="admin-contact-preview-card">
         <span class="blue-badge">Map preview</span>
-        <h4 class="serif mt-4 text-2xl font-semibold tracking-tight text-blue-950">${escapeHtml(payload.place_name || 'Contact Location')}</h4>
+        <h4 class="serif mt-4 text-2xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${escapeHtml(payload.place_name || 'Contact Location')}</h4>
         ${payload.coordinates_label ? `<p class="mt-3 text-xs font-bold uppercase tracking-[0.11em] text-blue-800">${escapeHtml(payload.coordinates_label)}</p>` : ''}
-        <p class="mt-3 text-sm leading-7 text-neutral-600">${escapeHtml(payload.address || 'Alamat belum diisi')}</p>
+        <p class="mt-3 text-sm leading-7 text-[rgb(var(--text-secondary))]">${escapeHtml(payload.address || 'Alamat belum diisi')}</p>
         ${payload.maps_url ? `<a class="btn btn-primary mt-5 w-fit" href="${escapeHtml(payload.maps_url)}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>` : ''}
       </article>
       <div class="admin-contact-preview-map">
@@ -360,4 +360,3 @@
     renderPage();
   }
 })();
-

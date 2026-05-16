@@ -5,8 +5,8 @@ $json = json_encode($settingsData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
 <section class="space-y-6">
   <div class="admin-card p-5 md:p-7">
     <p class="eyebrow">Settings</p>
-    <h1 class="serif mt-3 text-4xl font-semibold tracking-tight text-neutral-950">Live identity and theme settings</h1>
-    <p class="mt-4 max-w-3xl text-base leading-7 text-neutral-600">Semua tab sekarang memakai data nyata dari backend. Perubahan yang disimpan akan mengalir ke shell admin dan website publik.</p>
+    <h1 class="serif mt-3 text-4xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">Live identity and theme settings</h1>
+    <p class="mt-4 max-w-3xl text-base leading-7 text-[rgb(var(--text-secondary))]">Semua tab sekarang memakai data nyata dari backend. Perubahan yang disimpan akan mengalir ke shell admin dan website publik.</p>
   </div>
 
   <div class="admin-card p-5 md:p-7">

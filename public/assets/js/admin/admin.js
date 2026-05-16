@@ -217,9 +217,9 @@
       <div class="flex h-full flex-col p-4">
         <a href="${pageUrl('home')}" class="admin-brand">
           <span class="admin-brand-logo"><img src="${site.logo}" alt="${site.name}" /></span>
-          <span>
-            <span class="block text-sm font-bold text-white">GenBI CMS</span>
-            <span class="block text-xs font-medium text-blue-100">Admin Panel</span>
+          <span class="admin-brand-copy">
+            <span class="admin-brand-title">GenBI CMS</span>
+            <span class="admin-brand-subtitle">Admin Panel</span>
           </span>
         </a>
         <nav class="mt-6 grid gap-1">
@@ -228,7 +228,7 @@
             return `
               <div class="admin-nav-group ${isActive ? 'is-open' : ''}">
                 <a href="${item.href}" class="admin-link ${isActive ? 'admin-link-active' : ''}">
-                  ${icon(item.icon)}<span>${item.label}</span>${item.children ? '<span class="ml-auto text-blue-100/80">›</span>' : ''}
+                  ${icon(item.icon)}<span>${item.label}</span>${item.children ? '<span class="admin-nav-caret ml-auto">›</span>' : ''}
                 </a>
                 ${item.children ? `<div class="admin-subnav">${item.children.map((child) => `<a href="${child.href}" class="admin-sub-link ${child.key === active ? 'is-active' : ''}">${child.label}</a>`).join('')}</div>` : ''}
               </div>
@@ -249,8 +249,8 @@
         <div class="flex items-center gap-3">
           <button id="open-admin-menu" class="btn-icon admin-menu-button lg:hidden" aria-label="Open admin menu">${window.GenBIApp.icon('menu')}</button>
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-blue-100">Admin Panel</p>
-            <h1 class="text-lg font-bold tracking-tight text-white">${label}</h1>
+            <p class="admin-topbar-kicker">Admin Panel</p>
+            <h1 class="admin-topbar-title">${label}</h1>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -310,8 +310,8 @@
       <div id="admin-confirm-modal" class="admin-confirm hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="admin-confirm-panel">
           <div class="admin-confirm-icon">${icon('trash')}</div>
-          <h2 id="confirm-title" class="serif text-3xl font-semibold tracking-tight text-neutral-950">Konfirmasi tindakan</h2>
-          <div id="confirm-message" class="admin-confirm-message mt-3 text-sm leading-7 text-neutral-600">Apakah kamu yakin?</div>
+          <h2 id="confirm-title" class="serif text-3xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">Konfirmasi tindakan</h2>
+          <div id="confirm-message" class="admin-confirm-message mt-3 text-sm leading-7 text-[rgb(var(--text-secondary))]">Apakah kamu yakin?</div>
           <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button type="button" id="confirm-cancel" class="btn btn-secondary">Batal</button>
             <button type="button" id="confirm-ok" class="btn btn-primary">Ya, lanjutkan</button>

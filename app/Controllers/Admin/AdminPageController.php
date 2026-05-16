@@ -14,6 +14,7 @@ use App\Models\Feature;
 use App\Models\Prestasi;
 use App\Models\TeamMember;
 use App\Services\CsrfService;
+use App\Services\SiteSettings;
 
 final class AdminPageController
 {
@@ -24,11 +25,31 @@ final class AdminPageController
         private ?TeamMember $teamModel = null,
         private ?Prestasi $prestasiModel = null,
         private ?Feature $featureModel = null,
+        private ?SiteSettings $siteSettings = null,
     ) {
     }
 
     public function dashboard(Request $request, Response $response): void
     {
+        if ($this->viewRenderer instanceof ViewRenderer && $this->siteSettings instanceof SiteSettings) {
+            $extracted = $this->renderer->extractAdminPage('admin/dashboard.html', [
+                'noindex' => true,
+                'csrf_token' => CsrfService::token(),
+            ]);
+
+            if (is_array($extracted)) {
+                $response->html($this->viewRenderer->renderWithLayout('admin/static-shell.php', 'layouts/admin.php', [
+                    'title' => $extracted['title'],
+                    'csrfToken' => CsrfService::token(),
+                    'cmsPage' => $extracted['cmsPage'] ?: 'dashboard',
+                    'cmsMode' => $extracted['cmsMode'] ?: 'list',
+                    'staticContent' => $extracted['content'],
+                    'scripts' => $extracted['scripts'],
+                ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
+                return;
+            }
+        }
+
         $response->html($this->renderer->render('admin/dashboard.html', [
             'noindex' => true,
             'csrf_token' => CsrfService::token(),
@@ -322,6 +343,25 @@ HTML;
             }
         }
         
+        if ($this->viewRenderer instanceof ViewRenderer && $this->siteSettings instanceof SiteSettings) {
+            $extracted = $this->renderer->extractAdminPage('admin/' . $page . '.html', [
+                'noindex' => true,
+                'csrf_token' => CsrfService::token(),
+            ]);
+
+            if (is_array($extracted)) {
+                $response->html($this->viewRenderer->renderWithLayout('admin/static-shell.php', 'layouts/admin.php', [
+                    'title' => $extracted['title'],
+                    'csrfToken' => CsrfService::token(),
+                    'cmsPage' => $extracted['cmsPage'] ?: $page,
+                    'cmsMode' => $extracted['cmsMode'] ?: 'list',
+                    'staticContent' => $extracted['content'],
+                    'scripts' => $extracted['scripts'],
+                ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
+                return;
+            }
+        }
+
         // Static fallback for all other pages
         $response->html($this->renderer->render('admin/' . $page . '.html', [
             'noindex' => true,

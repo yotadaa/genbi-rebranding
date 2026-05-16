@@ -52,8 +52,8 @@
         <header class="admin-editor-head">
           <div>
             <p class="eyebrow">${title}</p>
-            <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-neutral-950">${title}</h2>
-            <p class="mt-4 max-w-3xl text-base leading-7 text-neutral-600">${description}</p>
+            <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${title}</h2>
+            <p class="mt-4 max-w-3xl text-base leading-7 text-[rgb(var(--text-secondary))]">${description}</p>
           </div>
         </header>
         <div class="admin-editor-canvas">${content}</div>
@@ -142,8 +142,8 @@
         <section>
           <div class="mb-4 flex items-center justify-between gap-4">
             <div>
-              <p class="text-sm font-semibold text-neutral-950">Public site</p>
-              <p class="text-sm text-neutral-500">Tema untuk halaman publik.</p>
+              <p class="text-sm font-semibold text-[rgb(var(--text-primary))]">Public site</p>
+              <p class="text-sm text-[rgb(var(--text-secondary))]">Tema untuk halaman publik.</p>
             </div>
             <span class="editor-status-pill">${escapeHtml(state.theme.publicKey)}</span>
           </div>
@@ -152,8 +152,8 @@
         <section>
           <div class="mb-4 flex items-center justify-between gap-4">
             <div>
-              <p class="text-sm font-semibold text-neutral-950">Admin panel</p>
-              <p class="text-sm text-neutral-500">Tema untuk shell admin.</p>
+              <p class="text-sm font-semibold text-[rgb(var(--text-primary))]">Admin panel</p>
+              <p class="text-sm text-[rgb(var(--text-secondary))]">Tema untuk shell admin.</p>
             </div>
             <span class="editor-status-pill">${escapeHtml(state.theme.adminKey)}</span>
           </div>
