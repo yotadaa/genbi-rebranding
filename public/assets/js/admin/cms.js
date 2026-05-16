@@ -250,9 +250,9 @@
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+          headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-CSRF-TOKEN': token },
           credentials: 'same-origin',
-          body: JSON.stringify({ name: categoryName, _csrf_token: token }),
+          body: new URLSearchParams({ name: categoryName, category_name: categoryName, _csrf_token: token }),
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {

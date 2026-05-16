@@ -15,6 +15,7 @@ public/assets/css/tailwind.css
 assets/css/tailwind.css
 public/assets.zip
 public/assets-build.zip
+public/assets-build/
 
 # Runtime files
 storage/logs/*
