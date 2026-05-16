@@ -6,6 +6,7 @@
     "build:css": "tailwindcss -c tailwind.config.js -i ./assets/css/input.css -o ./assets/css/tailwind.css --minify",
     "build:js": "node tools/build-js.js",
     "build:themes": "php tools/build-theme-css.php",
+    "build:zip": "bash tools/zip-build-assets.sh",
     "db:migrate": "php database/migrate.php",
     "db:status": "php database/migration_status.php",
     "watch:css": "tailwindcss -c tailwind.config.js -i ./assets/css/input.css -o ./assets/css/tailwind.css --watch",
