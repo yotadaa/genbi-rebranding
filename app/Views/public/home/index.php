@@ -4,6 +4,7 @@ $stats = $stats ?? [];
 $programs = $programs ?? [];
 $bpiMembers = $bpiMembers ?? [];
 $publicEvents = $publicEvents ?? [];
+$announcements = $announcements ?? [];
 $latestNews = $latestNews ?? [];
 $heroSlides = $site['heroSlides'] ?? [];
 $initialSlide = $heroSlides[0] ?? null;
@@ -69,6 +70,47 @@ $eventIconMarkup = static function (string $type): string {
       </div>
     </div>
   </section>
+
+  <?php if ($announcements !== []): ?>
+    <section class="announcement-hero-section home-section-surface py-16 md:py-24" aria-labelledby="announcement-heading">
+      <div class="site-container">
+        <div class="home-section-intro fade-up">
+          <p class="eyebrow">Pengumuman</p>
+          <h2 id="announcement-heading" class="section-title mt-4">Info penting untuk anggota dan publik.</h2>
+          <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.</p>
+          <a data-transition href="<?= $url('news') ?>?category=Pengumuman" class="btn btn-dark mt-7">Lihat semua pengumuman</a>
+        </div>
+        <div class="carousel-shell fade-up" data-carousel>
+          <div class="carousel-control-row">
+            <button class="carousel-nav" data-carousel-prev aria-label="Pengumuman sebelumnya">‹</button>
+            <button class="carousel-nav" data-carousel-next aria-label="Pengumuman berikutnya">›</button>
+          </div>
+          <div class="horizontal-carousel announcement-scroll<?= count($announcements) <= 2 ? ' is-centered' : '' ?>" id="home-announcements" data-ssr="true" aria-label="Daftar pengumuman terbaru">
+          <?php foreach ($announcements as $index => $item): ?>
+            <?php
+            $title = (string) ($item['title'] ?? $item['news_title'] ?? 'Pengumuman GenBI');
+            $slug = (string) ($item['slug'] ?? '');
+            $href = $slug !== '' ? '/news/' . rawurlencode($slug) : '/news';
+            $excerpt = trim(strip_tags((string) ($item['excerpt'] ?? $item['news_content_short'] ?? $item['content'] ?? $item['news_content'] ?? '')));
+            if (mb_strlen($excerpt) > 150) {
+                $excerpt = rtrim(mb_substr($excerpt, 0, 150)) . '…';
+            }
+            $dateRaw = (string) ($item['date'] ?? $item['news_date'] ?? $item['published_at'] ?? '');
+            $dateTimestamp = $dateRaw !== '' ? strtotime($dateRaw) : false;
+            $dateLabel = $dateTimestamp !== false ? date('d M Y', $dateTimestamp) : 'Terbaru';
+            ?>
+            <a data-transition href="<?= $e($href) ?>" class="announcement-card" aria-label="Baca pengumuman: <?= $e($title) ?>">
+              <span class="announcement-number"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
+              <span class="announcement-date"><?= $e($dateLabel) ?></span>
+              <h3><?= $e($title) ?></h3>
+              <p><?= $e($excerpt) ?></p>
+            </a>
+          <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+    </section>
+  <?php endif; ?>
 
   <section class="home-section-surface py-14">
     <div class="site-container grid gap-6 border-y border-neutral-900/10 py-8 md:grid-cols-4" id="stats-row"<?= $stats !== [] ? ' data-ssr="true"' : '' ?>>

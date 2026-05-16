@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
@@ -23,6 +24,7 @@ use App\Middleware\RoleMiddleware;
 /** @var AuthController $authController */
 /** @var AdminPageController $adminPageController */
 /** @var AdminNewsController $adminNewsController */
+/** @var AdminCategoryController $adminCategoryController */
 /** @var NewsCommentController $adminNewsCommentController */
 /** @var AdminEventController $adminEventController */
 /** @var AdminPrestasiController $adminPrestasiController */
@@ -49,6 +51,7 @@ $router->group([$csrfMiddleware], static function ($router) use ($authController
 $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static function ($router) use (
     $adminPageController,
     $adminNewsController,
+    $adminCategoryController,
     $adminNewsCommentController,
     $adminEventController,
     $adminPrestasiController,
@@ -71,6 +74,12 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/news/{id}/update', static fn(Request $request, Response $response, array $params) => $adminNewsController->update($request, $response, $params));
     $router->post('/admin/news/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminNewsController->delete($request, $response, $params));
     $router->post('/admin/news/upload', static fn(Request $request, Response $response) => $adminNewsController->upload($request, $response));
+
+    // Categories
+    $router->get('/admin/categories', static fn(Request $request, Response $response) => $adminCategoryController->index($request, $response));
+    $router->post('/admin/categories', static fn(Request $request, Response $response) => $adminCategoryController->store($request, $response));
+    $router->post('/admin/categories/{id}/update', static fn(Request $request, Response $response, array $params) => $adminCategoryController->update($request, $response, $params));
+    $router->post('/admin/categories/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminCategoryController->delete($request, $response, $params));
 
     // Agenda CMS
     $router->get('/admin/events', static fn(Request $request, Response $response) => $adminEventController->index($request, $response));

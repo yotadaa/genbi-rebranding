@@ -42,6 +42,7 @@ final class HomeController
                 'programs' => $this->featureModel?->homeVisible(12) ?? [],
                 'bpiMembers' => $this->bpiMembers(),
                 'publicEvents' => $this->publicEvents(),
+                'announcements' => $this->newsModel?->paginate(['category' => 'Pengumuman'], 8, 0) ?? [],
                 'latestNews' => $this->newsModel?->paginate([], 3, 0) ?? [],
                 'meta' => $meta,
                 'jsonld' => $jsonld,

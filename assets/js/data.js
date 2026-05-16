@@ -138,7 +138,7 @@ const news = [
   {
     id: 100,
     title: 'Talkshow Siginjai Fest 2026 Dorong Generasi Muda Berkarya',
-    category: 'BANK INDONESIA',
+    category: 'Pengumuman',
     date: 'April 30, 2026',
     readTime: '5 menit baca',
     image: 'https://genbijambi.com/public/uploads/news-100.jpg',

@@ -89,6 +89,9 @@ test('routeUrl resolves named public and admin routes', () => {
   assert.equal(Core.routeUrl('public.eventDetail', { slug: 'seminar-genbi-12', id: 12 }), '/event/seminar-genbi-12');
   assert.equal(Core.routeUrl('public.prestasiSubmit', { token: 'abc123' }), '/prestasi/submit/abc123');
   assert.equal(Core.routeUrl('admin.newsDelete', { id: 9 }), '/admin/news/9/delete');
+  assert.equal(Core.routeUrl('admin.categories'), '/admin/categories');
+  assert.equal(Core.routeUrl('admin.categoryUpdate', { id: 4 }), '/admin/categories/4/update');
+  assert.equal(Core.routeUrl('admin.categoryDelete', { id: 4 }), '/admin/categories/4/delete');
   assert.equal(Core.routeUrl('admin.prestasiTokenRevoke', { id: 3 }), '/admin/prestasi-tokens/3/revoke');
 });
 

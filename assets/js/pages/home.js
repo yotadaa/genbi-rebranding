@@ -7,6 +7,7 @@ const API = window.GenBIAPI;
 
 renderShell('home');
 renderHero();
+renderAnnouncements();
 renderStats();
 renderPrograms();
 renderBPIList();
@@ -50,6 +51,45 @@ function renderHero() {
   dots.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => update(Number(button.dataset.slide))));
   update(0);
   window.setInterval(() => update((active + 1) % site.heroSlides.length), 6500);
+}
+
+function formatAnnouncementDate(value) {
+  if (!value) return 'Terbaru';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function truncateAnnouncement(text = '', limit = 150) {
+  const clean = String(text).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return clean.length > limit ? `${clean.slice(0, limit).trim()}…` : clean;
+}
+
+function renderAnnouncements() {
+  const root = document.querySelector('#home-announcements');
+  const section = document.querySelector('[data-announcement-section]') || root?.closest('.announcement-hero-section');
+  if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
+
+  const announcements = news
+    .filter((item) => String(item.category || '').toLowerCase() === 'pengumuman')
+    .slice(0, 8);
+
+  if (!announcements.length) {
+    if (section) section.hidden = true;
+    return;
+  }
+
+  root.classList.toggle('is-centered', announcements.length <= 2);
+
+  root.innerHTML = announcements.map((item, index) => `
+    <a data-transition href="${newsDetailUrl(item)}" class="announcement-card" aria-label="Baca pengumuman: ${item.title}">
+      <span class="announcement-number">${String(index + 1).padStart(2, '0')}</span>
+      <span class="announcement-date">${formatAnnouncementDate(item.date)}</span>
+      <h3>${item.title}</h3>
+      <p>${truncateAnnouncement(item.excerpt || (Array.isArray(item.body) ? item.body.join(' ') : ''))}</p>
+    </a>
+  `).join('');
 }
 
 function renderStats() {
@@ -196,7 +236,7 @@ function setupHorizontalCarousels() {
     if (!track || !previous || !next) return;
 
     const getDistance = () => {
-      const firstCard = track.querySelector('.editorial-slide-card');
+      const firstCard = track.querySelector('.editorial-slide-card, .announcement-card');
       if (!firstCard) return track.clientWidth * 0.85;
       const styles = window.getComputedStyle(track);
       const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;

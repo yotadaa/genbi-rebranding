@@ -97,7 +97,7 @@
           <div>
             <p class="eyebrow">Admin CMS</p>
             <h1 class="section-title mt-3">${title}</h1>
-            ${subtitle ? `<p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">${subtitle}</p>` : ''}
+            ${subtitle ? `<p class="mt-4 max-w-2xl text-base leading-7 text-[rgb(var(--text-secondary))]">${subtitle}</p>` : ''}
           </div>
           <div class="cms-actions">${actions}</div>
         </header>
@@ -118,7 +118,7 @@
   function enhanceAdminSelects(root = document) {
     UI?.enhanceNativeSelects(root, 'select.js-admin-custom-select', {
       buttonClass: 'admin-select-button',
-      iconHtml: Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-neutral-500'),
+      iconHtml: Admin.icon('chevronDown', 'h-4 w-4 shrink-0 text-[rgb(var(--text-secondary))]'),
       menuClass: 'admin-select-menu',
       portal: true,
       wrapperClass: 'admin-custom-select',
@@ -129,7 +129,7 @@
     const body = renderShell('Edit Language Data', 'Ubah label bahasa dengan layout block. Label teknis tetap terbaca, teks terjemahan bisa diedit langsung.', '<button id="save-language" class="btn btn-primary">Update Language</button>');
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        <div class="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">NB: bagian ini untuk mengubah teks kecil yang tidak diatur dari section lain.</div>
+        <div class="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark-theme-note">NB: bagian ini untuk mengubah teks kecil yang tidak diatur dari section lain.</div>
         <div class="language-grid mt-6">
           ${languages.map(([key, value]) => `
             <article class="language-row">
@@ -143,20 +143,33 @@
     document.querySelector('#save-language').addEventListener('click', () => Admin.showToast('Language data disimpan pada mode simulasi.'));
   }
 
-  function renderCategoryList() {
-    const body = renderShell('View Categories', 'Kategori berita dirapikan menjadi list yang mudah dipindai.', '<button class="btn btn-primary">Add New</button>');
+  async function renderCategoryList() {
+    const body = renderShell('View Categories', 'Kategori berita dipakai untuk filter publik, editor berita, dan Pengumuman di beranda.', '<button class="btn btn-primary" type="button" data-category-add>Add New</button>');
+    let items = categories;
+    try {
+      const response = await fetch(route('admin.categories'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const payload = await response.json();
+      if (Array.isArray(payload?.data)) {
+        items = payload.data.map((item) => ({
+          id: item.id || item.category_id,
+          name: item.name || item.category_name || '',
+          banner: item.banner || '',
+        }));
+      }
+    } catch (error) { /* static fallback */ }
+
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         ${renderSearchToolbar('Category')}
         <div class="admin-responsive-table mt-5">
           <table class="cms-table">
             <thead><tr><th>SL</th><th>Category Name</th><th>Category Banner</th><th>Action</th></tr></thead>
-            <tbody>${categories.map((item, index) => `
+            <tbody>${items.map((item, index) => `
               <tr>
                 <td>${index + 1}</td>
                 <td><strong>${item.name}</strong></td>
                 <td>${item.banner ? `<img src="${item.banner}" class="table-banner" alt="${escape(item.name)}" />` : '<span class="text-neutral-500">Belum ada banner</span>'}</td>
-                <td>${rowActions('Kategori')}</td>
+                <td><div class="flex gap-2"><button class="cms-action edit" type="button" data-category-edit="${item.id}" data-category-name="${escape(item.name)}">Edit</button><button class="cms-action delete" type="button" data-category-delete="${item.id}">Delete</button></div></td>
               </tr>
             `).join('')}</tbody>
           </table>
@@ -164,7 +177,132 @@
       </section>
     `;
     enhanceAdminSelects(body);
-    bindDeleteButtons('Kategori akan dihapus dari daftar simulasi.');
+    bindCategoryActions();
+  }
+
+  function openCategoryForm({ id = '', name = '', trigger = document.activeElement } = {}) {
+    const root = document.querySelector('#admin-modal-root') || document.body;
+    const previous = document.querySelector('#category-editor-modal');
+    if (previous) previous.remove();
+
+    const isEdit = Boolean(id);
+    const modal = document.createElement('div');
+    modal.id = 'category-editor-modal';
+    modal.className = 'category-editor-modal hidden';
+    root.appendChild(modal);
+
+    const content = `
+      <div class="category-editor-backdrop" data-modal-close></div>
+      <section class="category-editor-panel" role="dialog" aria-modal="true" aria-labelledby="category-editor-title">
+        <header class="category-editor-head">
+          <div>
+            <p class="eyebrow">Admin CMS</p>
+            <h2 id="category-editor-title">${isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</h2>
+            <p>${isEdit ? 'Ubah nama kategori berita yang sudah ada.' : 'Tambahkan kategori berita baru dari tombol Add New.'}</p>
+          </div>
+          <button type="button" class="category-editor-close" data-modal-close aria-label="Tutup form kategori">×</button>
+        </header>
+        <form class="category-editor-form" id="category-editor-form">
+          <label class="config-field m-0">
+            <span>Nama Kategori</span>
+            <input class="config-input" id="category-editor-name" placeholder="Contoh: Pengumuman" maxlength="120" required value="${escape(name)}" />
+          </label>
+          <div class="category-editor-actions">
+            <button class="btn btn-secondary" type="button" data-modal-close>Batal</button>
+            <button class="btn btn-primary" type="submit">${isEdit ? 'Update Kategori' : 'Tambah Kategori'}</button>
+          </div>
+        </form>
+      </section>
+    `;
+
+    const controller = UI?.createModalController?.(modal, {
+      panelSelector: '.category-editor-panel',
+      closeSelector: '[data-modal-close]',
+      initialFocusSelector: '#category-editor-name',
+      onClose: () => modal.remove(),
+    });
+
+    if (controller) {
+      controller.open({ content, trigger });
+    } else {
+      modal.innerHTML = content;
+      modal.classList.remove('hidden');
+      document.body.classList.add('modal-lock');
+    }
+
+    const close = () => {
+      if (controller) {
+        controller.close();
+        return;
+      }
+      modal.remove();
+      document.body.classList.remove('modal-lock');
+      trigger?.focus?.();
+    };
+
+    modal.querySelector('#category-editor-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const categoryName = modal.querySelector('#category-editor-name')?.value?.trim() || '';
+      if (!categoryName) return Admin.showToast('Nama kategori wajib diisi.');
+
+      const token = getAdminCsrfToken();
+      const endpoint = isEdit ? route('admin.categoryUpdate', { id }) : route('admin.categoryStore');
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+          credentials: 'same-origin',
+          body: JSON.stringify({ name: categoryName, _csrf_token: token }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          Admin.showToast(payload.error || 'Gagal menyimpan kategori.');
+          return;
+        }
+        close();
+        Admin.showToast(isEdit ? 'Kategori berhasil diperbarui.' : 'Kategori berhasil ditambahkan.');
+        renderCategoryList();
+      } catch (error) {
+        Admin.showToast('Gagal menyimpan kategori. Periksa koneksi.');
+      }
+    });
+  }
+
+  function bindCategoryActions() {
+    document.querySelector('[data-category-add]')?.addEventListener('click', (event) => openCategoryForm({ trigger: event.currentTarget }));
+
+    document.querySelectorAll('[data-category-edit]').forEach((button) => {
+      button.addEventListener('click', () => {
+        openCategoryForm({ id: button.dataset.categoryEdit || '', name: button.dataset.categoryName || '', trigger: button });
+      });
+    });
+
+    document.querySelectorAll('[data-category-delete]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.categoryDelete || '';
+        const ok = await Admin.showConfirm({ title: 'Hapus kategori?', message: 'Kategori hanya bisa dihapus jika belum dipakai oleh berita.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+
+        const token = getAdminCsrfToken();
+        try {
+          const response = await fetch(route('admin.categoryDelete', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ _csrf_token: token }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            Admin.showToast(payload.error || 'Gagal menghapus kategori.');
+            return;
+          }
+          Admin.showToast('Kategori berhasil dihapus.');
+          renderCategoryList();
+        } catch (error) {
+          Admin.showToast('Gagal menghapus kategori. Periksa koneksi.');
+        }
+      });
+    });
   }
 
   async function renderNewsList() {
@@ -866,8 +1004,8 @@
         <div class="comment-moderation-main">
           <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-blue-800"><span>${escape(item.article)}</span><span>•</span><span>${escape(item.date)}</span></div>
           <h2>${escape(item.name)}</h2>
-          <p class="text-sm text-neutral-500">${escape(item.email)}</p>
-          ${item.parentId ? `<p class="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-900">Balasan untuk ${item.parentName ? escape(item.parentName) : 'komentar'}: “${escape(item.parentExcerpt || 'Komentar induk')}”</p>` : ''}
+          <p class="text-sm text-[rgb(var(--text-secondary))]">${escape(item.email)}</p>
+          ${item.parentId ? `<p class="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-900 dark-theme-note">Balasan untuk ${item.parentName ? escape(item.parentName) : 'komentar'}: “${escape(item.parentExcerpt || 'Komentar induk')}”</p>` : ''}
           <p class="comment-moderation-text">${escape(item.text)}</p>
         </div>
         <aside class="comment-moderation-side">
@@ -877,7 +1015,7 @@
           <button class="cms-action delete" data-action="delete" data-id="${item.id}">Delete</button>
         </aside>
       </article>
-    `).join('') : '<div class="rounded-2xl border border-neutral-900/10 bg-white p-8 text-center text-sm text-neutral-600">Tidak ada komentar yang cocok dengan filter.</div>';
+    `).join('') : '<div class="rounded-2xl border border-neutral-900/10 bg-white p-8 text-center text-sm text-[rgb(var(--text-secondary))]">Tidak ada komentar yang cocok dengan filter.</div>';
 
     root.querySelectorAll('[data-action]').forEach((button) => {
       button.addEventListener('click', () => handleCommentAction(state, button.dataset.id, button.dataset.action));
@@ -1805,9 +1943,9 @@
       <form class="editor-workspace compact" id="photo-form">
         <main class="block-writing-surface">
           <div class="admin-upload-zone">
-            <p class="font-bold text-blue-950">Upload Photo</p>
+            <p class="font-bold text-[rgb(var(--text-primary))]">Upload Photo</p>
             <input class="admin-file-input" type="file" accept="image/*" />
-            <p class="text-sm text-neutral-500">Only jpg, jpeg, gif, and png are allowed.</p>
+            <p class="text-sm text-[rgb(var(--text-secondary))]">Only jpg, jpeg, gif, and png are allowed.</p>
           </div>
         </main>
         <aside class="editor-config-sidebar">

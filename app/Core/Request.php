@@ -6,6 +6,9 @@ namespace App\Core;
 
 final class Request
 {
+    /** @var array<string, mixed>|null */
+    private ?array $jsonBody = null;
+
     public function method(): string
     {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -30,14 +33,20 @@ final class Request
     /** @return array<string, mixed> */
     public function json(): array
     {
+        if ($this->jsonBody !== null) {
+            return $this->jsonBody;
+        }
+
         $raw = file_get_contents('php://input');
         if (!is_string($raw) || trim($raw) === '') {
-            return [];
+            $this->jsonBody = [];
+            return $this->jsonBody;
         }
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? $decoded : [];
+        $this->jsonBody = is_array($decoded) ? $decoded : [];
+        return $this->jsonBody;
     }
 
     public function ip(): ?string
