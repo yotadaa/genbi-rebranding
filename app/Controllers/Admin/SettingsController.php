@@ -222,6 +222,29 @@ final class SettingsController
         ]);
     }
 
+    public function updateHomePage(Request $request, Response $response): void
+    {
+        $this->updateSettings($request, $response, [
+            'site.banner_badge' => ['type' => 'string', 'required' => true, 'max' => 120],
+            'site.banner_headline' => ['type' => 'string', 'required' => true, 'max' => 255],
+            'site.banner_subtitle' => ['type' => 'string', 'required' => true, 'max' => 500],
+            'home.announcement_eyebrow' => ['type' => 'string', 'required' => true, 'max' => 80],
+            'home.announcement_title' => ['type' => 'string', 'required' => true, 'max' => 160],
+            'home.announcement_description' => ['type' => 'string', 'required' => true, 'max' => 500],
+            'home.program_eyebrow' => ['type' => 'string', 'required' => true, 'max' => 80],
+            'home.program_title' => ['type' => 'string', 'required' => true, 'max' => 160],
+            'home.program_description' => ['type' => 'string', 'required' => true, 'max' => 500],
+            'home.team_eyebrow' => ['type' => 'string', 'required' => true, 'max' => 80],
+            'home.team_title' => ['type' => 'string', 'required' => true, 'max' => 160],
+            'home.team_description' => ['type' => 'string', 'required' => true, 'max' => 500],
+            'home.event_eyebrow' => ['type' => 'string', 'required' => true, 'max' => 80],
+            'home.event_title' => ['type' => 'string', 'required' => true, 'max' => 160],
+            'home.event_description' => ['type' => 'string', 'required' => true, 'max' => 500],
+            'home.news_eyebrow' => ['type' => 'string', 'required' => true, 'max' => 80],
+            'home.news_title' => ['type' => 'string', 'required' => true, 'max' => 160],
+        ]);
+    }
+
     /** @param array<string, array<string, mixed>> $rules */
     private function updateSettings(Request $request, Response $response, array $rules): void
     {

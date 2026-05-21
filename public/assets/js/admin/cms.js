@@ -20,6 +20,13 @@
     return Core.routeUrl(name, params, window.location);
   }
 
+  function normalizeAdminImageUrl(value = '') {
+    const source = String(value || '').trim();
+    if (!source) return '';
+    if (/^(https?:)?\/\//i.test(source) || source.startsWith('data:') || source.startsWith('/')) return source;
+    return `/uploads/${source.replace(/^\/+/, '')}`;
+  }
+
   const categories = [
     { id: 1, name: 'BANK INDONESIA', banner: 'https://genbijambi.com/public/uploads/banner-1.png' },
     { id: 2, name: 'GenBI Wilayah', banner: 'https://genbijambi.com/public/uploads/banner-1.png' },
@@ -56,7 +63,7 @@
     'https://official.genbijambi.com/storage/team-members/Depi-Susanti.png'
   ];
 
-  const prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
+  const prestasiCategories = ['QRIS', 'KTI', 'Essay', 'Inovasi Desa', 'Kreativitas', 'Ekonomi Syariah'];
 
   const routes = {
     language: () => { Admin.renderAdminShell('language'); renderLanguage(); },
@@ -72,6 +79,7 @@
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
     'event-edit': () => { Admin.renderAdminShell('event'); renderEventEditor(); },
     slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
+    'slider-add': () => { Admin.renderAdminShell('slider'); renderSliderEditor(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
     feature: () => { Admin.renderAdminShell('feature'); mode === 'editor' ? renderFeatureEditor() : renderFeatureList(); },
     'feature-edit': () => { Admin.renderAdminShell('feature'); renderFeatureEditor(); },
@@ -153,7 +161,7 @@
         items = payload.data.map((item) => ({
           id: item.id || item.category_id,
           name: item.name || item.category_name || '',
-          banner: item.banner || '',
+          banner: normalizeAdminImageUrl(item.banner || item.category_banner || ''),
         }));
       }
     } catch (error) { /* static fallback */ }
@@ -168,7 +176,7 @@
               <tr>
                 <td>${index + 1}</td>
                 <td><strong>${item.name}</strong></td>
-                <td>${item.banner ? `<img src="${item.banner}" class="table-banner" alt="${escape(item.name)}" />` : '<span class="text-neutral-500">Belum ada banner</span>'}</td>
+                <td>${item.banner ? `<img src="${escape(item.banner)}" class="table-banner" alt="${escape(item.name)}" />` : '<span class="text-neutral-500">Belum ada banner</span>'}</td>
                 <td><div class="flex gap-2"><button class="cms-action edit" type="button" data-category-edit="${item.id}" data-category-name="${escape(item.name)}">Edit</button><button class="cms-action delete" type="button" data-category-delete="${item.id}">Delete</button></div></td>
               </tr>
             `).join('')}</tbody>
@@ -1232,46 +1240,125 @@
     });
   }
 
+  function liveSiteSettings() {
+    return { ...(site || {}), ...(window.GenBISiteSettings || {}) };
+  }
+
+  function getLiveSliders() {
+    const settings = liveSiteSettings();
+    const slides = Array.isArray(settings.heroSlides) && settings.heroSlides.length ? settings.heroSlides : sliders.map((item) => ({ image: item.photo, title: item.heading, caption: '', eyebrow: 'GenBI Provinsi Jambi' }));
+    return [0, 1].map((index) => ({
+      id: index + 1,
+      index,
+      photo: slides[index]?.image || sliders[index]?.photo || '',
+      heading: slides[index]?.title || sliders[index]?.heading || '',
+      caption: slides[index]?.caption || '',
+      eyebrow: slides[index]?.eyebrow || slides[0]?.eyebrow || 'GenBI Provinsi Jambi',
+      position: index === 0 ? 'Primary hero' : 'Secondary hero',
+    }));
+  }
+
   function renderSliderList() {
-    const body = renderShell('View Sliders', 'Slider 1 dan slider 4 menjadi sumber background hero landing page.', `<a href="${adminUrl('slider-add')}" class="btn btn-primary">Add Slider</a>`);
+    const body = renderShell('View Sliders', 'Slider ini live: gambar dan teksnya menjadi background hero landing page paling atas.', `<a href="${adminUrl('slider-add')}?slot=1" class="btn btn-primary">Add Slider</a>`);
+    const liveSliders = getLiveSliders();
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('Slider')}
+        <div class="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark-theme-note">
+          Slider 1 dan Slider 2 tersimpan di <code>site.banner_image_1</code> dan <code>site.banner_image_2</code>. Perubahan langsung mengalir ke hero landing page <strong>/</strong>.
+        </div>
         <div class="slider-card-grid mt-5">
-          ${sliders.map((item) => `
+          ${liveSliders.map((item) => `
             <article class="slider-card">
-              <img src="${item.photo}" alt="${escape(item.heading)}" />
-              <div><h2>${item.heading}</h2><p>${item.button1} · ${item.button2}</p><span>${item.position}</span></div>
-              <div class="flex gap-2">${rowActions('Slider')}</div>
+              <img src="${escape(item.photo)}" alt="${escape(item.heading || item.position)}" />
+              <div>
+                <span class="cms-pill cms-pill-blue">${escape(item.position)}</span>
+                <h2 class="mt-3">${escape(item.heading || 'Belum ada headline')}</h2>
+                <p>${escape(item.caption || 'Belum ada deskripsi.')}</p>
+              </div>
+              <div class="flex gap-2"><a class="cms-action edit" href="${adminUrl('slider-add')}?slot=${item.id}">Edit</a><a class="cms-action" href="/" target="_blank" rel="noopener">Preview</a></div>
             </article>
           `).join('')}
         </div>
       </section>
     `;
-    bindDeleteButtons('Slider akan dihapus dari daftar simulasi.');
   }
 
   function renderSliderEditor() {
-    const body = renderShell('Add Slider', 'Form slider dibuat block based agar teks headline dan CTA mudah disusun.', `<a href="${adminUrl('slider')}" class="btn btn-secondary">View All</a>`);
+    const slot = Math.min(2, Math.max(1, Number(new URLSearchParams(window.location.search).get('slot')) || 1));
+    const item = getLiveSliders()[slot - 1];
+    const body = renderShell(`Edit Slider ${slot}`, 'Form slider sekarang live dan menyimpan data ke Settings hero landing page.', `<a href="${adminUrl('slider')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
-      <form class="editor-workspace compact" id="slider-form">
+      <form class="editor-workspace compact" id="slider-form" data-slot="${slot}">
         <main class="block-writing-surface">
-          <div class="news-title-block" contenteditable="true" data-placeholder="Heading slider..."></div>
-          <div class="news-excerpt-block" contenteditable="true" data-placeholder="Konten pendek slider..."></div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="news-excerpt-block" contenteditable="true" data-placeholder="Button 1 Text..."></div>
-            <div class="news-excerpt-block" contenteditable="true" data-placeholder="Button 1 URL..."></div>
-            <div class="news-excerpt-block" contenteditable="true" data-placeholder="Button 2 Text..."></div>
-            <div class="news-excerpt-block" contenteditable="true" data-placeholder="Button 2 URL..."></div>
-          </div>
+          <label class="config-field"><span>Eyebrow / Badge</span><input class="config-input" id="slider-eyebrow" value="${escape(item.eyebrow)}" placeholder="Contoh: GenBI Provinsi Jambi" /></label>
+          <label class="config-field"><span>Heading</span><textarea class="config-input min-h-28" id="slider-heading" placeholder="Heading slider...">${escape(item.heading)}</textarea></label>
+          <label class="config-field"><span>Caption</span><textarea class="config-input min-h-32" id="slider-caption" placeholder="Konten pendek slider...">${escape(item.caption)}</textarea></label>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Slider Config</h2>${control('Photo', '<input class="config-input" type="file" />')}${control('Position', selectControl({ id: 'slider-position', value: 'Left', options: ['Left', 'Right'] }))}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit Slider</button>
+          <section class="config-card">
+            <h2>Slider Config</h2>
+            ${control('Hero Slot', `<input class="config-input" value="Slider ${slot}" disabled />`)}
+            ${control('Image URL', `<input class="config-input" id="slider-image-url" value="${escape(item.photo)}" placeholder="/uploads/branding/..." />`)}
+            ${control('Upload Image', '<input class="admin-file-input" id="slider-image-file" type="file" accept="image/*,.svg" />')}
+            <div class="settings-banner-preview mt-4"><div class="settings-banner-preview-media">${item.photo ? `<img src="${escape(item.photo)}" alt="${escape(item.heading || 'Slider preview')}" loading="lazy">` : '<div class="settings-banner-preview-empty">Belum ada gambar</div>'}</div></div>
+          </section>
+          <button type="submit" class="btn btn-primary w-full">Save Slider ${slot}</button>
         </aside>
       </form>
     `;
-    document.querySelector('#slider-form').addEventListener('submit', async (event) => { event.preventDefault(); if (await Admin.showConfirm({ title: 'Submit slider?', message: 'Slider akan ditambahkan pada mode simulasi.' })) Admin.showToast('Slider ditambahkan pada mode simulasi.'); });
+    bindLiveSliderForm(slot);
+  }
+
+  function sliderSettingsPayload(slot) {
+    const live = getLiveSliders();
+    const current = live[slot - 1];
+    current.eyebrow = document.querySelector('#slider-eyebrow')?.value?.trim() || 'GenBI Provinsi Jambi';
+    current.heading = document.querySelector('#slider-heading')?.value?.trim() || '';
+    current.caption = document.querySelector('#slider-caption')?.value?.trim() || '';
+    current.photo = document.querySelector('#slider-image-url')?.value?.trim() || '';
+    const first = live[0];
+    const second = live[1];
+    return {
+      'site.banner_badge': current.eyebrow || first.eyebrow,
+      'site.banner_headline': first.heading,
+      'site.banner_headline_alt': second.heading,
+      'site.banner_subtitle': first.caption,
+      'site.banner_subtitle_alt': second.caption,
+      'site.banner_image_1': first.photo,
+      'site.banner_image_2': second.photo,
+    };
+  }
+
+  function syncSliderSettings(payload) {
+    const settings = window.GenBISiteSettings = { ...(window.GenBISiteSettings || {}) };
+    settings.heroSlides = Array.isArray(settings.heroSlides) && settings.heroSlides.length ? settings.heroSlides : [{}, {}];
+    settings.heroSlides[0] = { ...(settings.heroSlides[0] || {}), eyebrow: payload['site.banner_badge'], title: payload['site.banner_headline'], caption: payload['site.banner_subtitle'], image: payload['site.banner_image_1'] };
+    settings.heroSlides[1] = { ...(settings.heroSlides[1] || {}), eyebrow: payload['site.banner_badge'], title: payload['site.banner_headline_alt'], caption: payload['site.banner_subtitle_alt'], image: payload['site.banner_image_2'] };
+  }
+
+  function bindLiveSliderForm(slot) {
+    document.querySelector('#slider-image-file')?.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const form = new FormData();
+      form.append('image', file);
+      const response = await fetch('/admin/settings/upload', { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() }, credentials: 'same-origin', body: form });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json.data?.url) return Admin.showToast(json.error || 'Upload slider gagal.');
+      const input = document.querySelector('#slider-image-url');
+      if (input) input.value = json.data.url;
+      Admin.showToast('Gambar slider berhasil diupload. Klik Save untuk menerapkan ke landing page.');
+    });
+    document.querySelector('#slider-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = sliderSettingsPayload(slot);
+      const response = await fetch('/admin/settings/banner', { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() }, credentials: 'same-origin', body: JSON.stringify(payload) });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) return Admin.showToast(json.error || 'Gagal menyimpan slider.');
+      syncSliderSettings(payload);
+      Admin.showToast('Slider berhasil disimpan dan sudah live di landing page.');
+      window.setTimeout(() => { window.location.href = adminUrl('slider'); }, 700);
+    });
   }
 
   async function renderTeamList() {
@@ -1917,44 +2004,89 @@
     document.querySelector('#save-social').addEventListener('click', () => Admin.showToast('Social media disimpan pada mode simulasi.'));
   }
 
-  function renderPhotoList() {
-    const photos = news.slice(0, 6).map((item) => ({ title: item.title, image: item.image }));
+  async function renderPhotoList() {
     const body = renderShell('View Photos', 'Galeri foto tampil sebagai kartu agar preview lebih jelas.', `<a href="${adminUrl('photo-add')}" class="btn btn-primary">Add New</a>`);
+    body.innerHTML = '<section class="admin-card p-8 text-center text-sm text-neutral-500">Memuat galeri foto...</section>';
+    const res = await fetch(route('admin.photos'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+    const json = await res.json().catch(() => ({ data: [] }));
+    const photos = Array.isArray(json.data) ? json.data : [];
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
         ${renderSearchToolbar('Photo')}
         <div class="simple-card-grid mt-5">
-          ${photos.map((item) => `
+          ${photos.length ? photos.map((item) => `
             <article class="simple-admin-card">
-              <img src="${item.image}" alt="${escape(item.title)}" />
+              <img src="${escape(item.image)}" alt="${escape(item.title)}" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'config-empty', textContent: 'No image' }))" />
               <h2 class="mt-4">${escape(item.title)}</h2>
-              <div class="mt-4 flex gap-2">${rowActions('Photo')}</div>
+              ${item.caption ? `<p class="mt-2 text-sm text-[rgb(var(--text-secondary))]">${escape(item.caption)}</p>` : ''}
+              <div class="mt-4 flex gap-2">
+                <a class="cms-action edit" href="${adminUrl('photo-add')}?id=${item.id}">Edit</a>
+                <button class="cms-action delete" data-photo-delete="${item.id}">Delete</button>
+              </div>
             </article>
-          `).join('')}
+          `).join('') : '<div class="p-8 text-center text-sm text-neutral-500">Belum ada foto.</div>'}
         </div>
       </section>
     `;
-    bindDeleteButtons('Foto akan dihapus dari galeri simulasi.');
+    body.querySelectorAll('[data-photo-delete]').forEach((button) => button.addEventListener('click', async () => {
+      const ok = await Admin.showConfirm({ title: 'Hapus foto?', message: 'Foto akan dihapus dari galeri.', confirmText: 'Hapus', danger: true });
+      if (!ok) return;
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const response = await fetch(route('admin.photoDelete', { id: button.dataset.photoDelete }), { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin' });
+      if (response.ok) { Admin.showToast('Foto berhasil dihapus.'); button.closest('article')?.remove(); }
+      else Admin.showToast('Gagal menghapus foto.');
+    }));
   }
 
-  function renderPhotoEditor() {
-    const body = renderShell('Add Photo', 'Upload foto memakai tombol custom yang lebih rapi dari input default.', `<a href="${adminUrl('photo')}" class="btn btn-secondary">View All</a>`);
+  async function renderPhotoEditor() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    let item = { title: '', caption: '', image: '', status: 'show' };
+    if (id) {
+      const res = await fetch(route('admin.photoShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const json = await res.json().catch(() => ({}));
+      item = json.data || item;
+    }
+    const body = renderShell(id ? 'Edit Photo' : 'Add Photo', 'Galeri foto sekarang live dan tersimpan di backend.', `<a href="${adminUrl('photo')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
       <form class="editor-workspace compact" id="photo-form">
         <main class="block-writing-surface">
           <div class="admin-upload-zone">
             <p class="font-bold text-[rgb(var(--text-primary))]">Upload Photo</p>
-            <input class="admin-file-input" type="file" accept="image/*" />
+            <div id="photo-preview" class="config-preview mb-3">${item.image ? `<img src="${escape(item.image)}" alt="${escape(item.title || 'Photo preview')}" />` : '<div class="config-empty">Belum ada foto</div>'}</div>
+            <input id="photo-file" class="admin-file-input" type="file" accept="image/*" />
             <p class="text-sm text-[rgb(var(--text-secondary))]">Only jpg, jpeg, gif, and png are allowed.</p>
           </div>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Photo Info</h2>${control('Caption', '<input class="config-input" placeholder="Caption foto..." />')}${control('Visibility', selectControl({ id: 'photo-visibility', value: 'Show', options: ['Show', 'Hide'] }))}</section>
+          <section class="config-card"><h2>Photo Info</h2>${control('Title', `<input id="photo-title" class="config-input" value="${escape(item.title)}" placeholder="Judul foto..." />`)}${control('Image URL', `<input id="photo-image" class="config-input" value="${escape(item.image)}" placeholder="/uploads/gallery/..." />`)}${control('Caption', `<input id="photo-caption" class="config-input" value="${escape(item.caption)}" placeholder="Caption foto..." />`)}${control('Visibility', selectControl({ id: 'photo-visibility', value: item.status === 'hide' ? 'hide' : 'show', options: [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }] }))}</section>
           <button type="submit" class="btn btn-primary w-full">Submit Photo</button>
         </aside>
       </form>
     `;
-    bindSimpleSubmit('#photo-form', 'Submit foto?', 'Foto ditambahkan pada mode simulasi.');
+    document.querySelector('#photo-file')?.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const form = new FormData();
+      form.append('image', file);
+      const res = await fetch(route('admin.photoUpload'), { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin', body: form });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.data?.url) { Admin.showToast(json.error || 'Upload gagal.'); return; }
+      document.querySelector('#photo-image').value = json.data.url;
+      document.querySelector('#photo-preview').innerHTML = `<img src="${json.data.url}" alt="Preview" />`;
+    });
+    document.querySelector('#photo-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const payload = { title: document.querySelector('#photo-title')?.value?.trim() || '', image: document.querySelector('#photo-image')?.value?.trim() || '', caption: document.querySelector('#photo-caption')?.value?.trim() || '', status: document.querySelector('#photo-visibility')?.value || 'show', _csrf_token: token };
+      const endpoint = id ? route('admin.photoUpdate', { id }) : route('admin.photoStore');
+      const res = await fetch(endpoint, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin', body: JSON.stringify(payload) });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { Admin.showToast(json.error || 'Gagal menyimpan foto.'); return; }
+      Admin.showToast('Foto berhasil disimpan.');
+      window.location.href = adminUrl('photo');
+    });
   }
 
   function bindSimpleSubmit(selector, title, success) {
@@ -2248,6 +2380,7 @@
     if (document.querySelector('#admin-prestasi-list[data-ssr="true"]')) {
       enhanceAdminSelects(document.querySelector('#admin-content') || document);
       bindPrestasiDeleteButtons();
+      bindPrestasiApproveButtons();
       bindPrestasiDetailButtons();
       // Bind search form Enter key
       const searchInput = document.querySelector('#prestasi-search');
@@ -2373,6 +2506,7 @@
         filterAndRender();
       });
       bindPrestasiDeleteButtons();
+      bindPrestasiApproveButtons();
     };
 
     enhanceAdminSelects(body);
@@ -2397,6 +2531,7 @@
       const status = item.status || 'draft';
       const image = item.image || item.foto_prestasi || '';
       const statusClass = status === 'published' ? 'cms-pill-green' : status === 'draft' ? 'cms-pill-yellow' : '';
+      const approveButton = status !== 'published' ? `<button class="cms-action edit" data-approve-prestasi="${id}">Approve</button>` : '';
 
       return `
         <tr>
@@ -2417,6 +2552,7 @@
           <td><span class="cms-pill ${statusClass}">${status}</span></td>
           <td>
             <div class="flex gap-2">
+              ${approveButton}
               <a href="${adminUrl('prestasi-edit')}?id=${id}" class="cms-action edit">Edit</a>
               <button class="cms-action delete" data-delete data-prestasi-id="${id}">Delete</button>
             </div>
@@ -2441,6 +2577,46 @@
     `;
     root.querySelectorAll('[data-page]').forEach((button) => {
       button.addEventListener('click', () => onPageChange(Number(button.dataset.page) || 1));
+    });
+  }
+
+  function bindPrestasiApproveButtons() {
+    document.querySelectorAll('[data-approve-prestasi]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        if (button.disabled || button.getAttribute('aria-disabled') === 'true') return;
+        const id = button.dataset.approvePrestasi;
+        if (!id) return;
+        const ok = await Admin.showConfirm({
+          title: 'Approve prestasi?',
+          message: 'Prestasi akan dipublikasikan dan tampil di halaman publik.',
+          confirmText: 'Approve',
+        });
+        if (!ok) return;
+        button.disabled = true;
+        try {
+          const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+          const res = await fetch(route('admin.prestasiUpdate', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ status: 'published', _csrf_token: token })
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(json.error || 'Gagal approve prestasi.');
+          Admin.showToast('Prestasi berhasil dipublikasikan.');
+          const row = button.closest('tr');
+          const pill = row?.querySelector('.admin-cell-status .cms-pill, td:nth-child(7) .cms-pill');
+          if (pill) {
+            pill.textContent = 'Published';
+            pill.classList.add('cms-pill-green');
+            pill.classList.remove('cms-pill-yellow');
+          }
+          button.remove();
+        } catch (e) {
+          Admin.showToast(e.message || 'Gagal approve prestasi.');
+          button.disabled = false;
+        }
+      });
     });
   }
 
@@ -2505,6 +2681,174 @@
     return [rank, institution, name ? `- ${name}` : ''].filter(Boolean).join(' ');
   }
 
+  function getPrestasiGalleryUrls() {
+    const field = document.querySelector('#prestasi-gallery-json');
+    try {
+      const parsed = JSON.parse(field?.value || '[]');
+      return Array.isArray(parsed) ? parsed.map((url) => String(url || '').trim()).filter(Boolean) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setPrestasiGalleryUrls(urls) {
+    const normalized = [];
+    urls.forEach((url) => {
+      const value = String(url || '').trim();
+      if (value && !normalized.includes(value)) normalized.push(value);
+    });
+    const imageUrl = document.querySelector('#prestasi-image-url')?.value?.trim() || '';
+    if (imageUrl && !normalized.includes(imageUrl)) normalized.unshift(imageUrl);
+    const field = document.querySelector('#prestasi-gallery-json');
+    if (field) field.value = JSON.stringify(normalized);
+    renderPrestasiGalleryList(normalized);
+  }
+
+  function renderPrestasiGalleryList(urls = getPrestasiGalleryUrls()) {
+    const list = document.querySelector('#prestasi-gallery-list');
+    const status = document.querySelector('#prestasi-gallery-status');
+    const counter = document.querySelector('#prestasi-gallery-counter');
+    const preview = document.querySelector('#prestasi-gallery-preview');
+    const empty = document.querySelector('[data-prestasi-empty]');
+    const scrollLeft = document.querySelector('#prestasi-gallery-scroll-left');
+    const scrollRight = document.querySelector('#prestasi-gallery-scroll-right');
+    if (!list) return;
+    if (status) status.textContent = urls.length ? `${urls.length} foto dipilih. Geser horizontal untuk melihat semua foto.` : 'Belum ada galeri tambahan.';
+    if (counter) counter.textContent = urls.length ? `${urls.length} foto` : '0 foto';
+    preview?.classList.toggle('hidden', !urls.length);
+    empty?.classList.toggle('hidden', !!urls.length);
+    const scrollable = urls.length > 1;
+    if (scrollLeft) scrollLeft.disabled = !scrollable;
+    if (scrollRight) scrollRight.disabled = !scrollable;
+    if (!urls.length) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = urls.map((url, index) => `
+      <article class="public-upload-preview-card admin-upload-gallery-item">
+        <img src="${escape(url)}" alt="Foto prestasi ${index + 1}" loading="lazy" />
+        <div>
+          <strong>${index === 0 ? 'Foto utama' : `Foto ${index + 1}`}</strong>
+          <button type="button" class="cms-action delete" data-remove-prestasi-image="${escape(url)}">Hapus</button>
+        </div>
+      </article>
+    `).join('');
+    list.querySelectorAll('[data-remove-prestasi-image]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const removeUrl = button.dataset.removePrestasiImage || '';
+        const next = getPrestasiGalleryUrls().filter((url) => url !== removeUrl);
+        const mainField = document.querySelector('#prestasi-image-url');
+        if (mainField?.value === removeUrl) mainField.value = next[0] || '';
+        setPrestasiGalleryUrls(next);
+        updatePrestasiMainPreview();
+      });
+    });
+  }
+
+  function updatePrestasiMainPreview() {
+    const url = document.querySelector('#prestasi-image-url')?.value?.trim() || '';
+    const urls = getPrestasiGalleryUrls();
+    renderPrestasiGalleryList(url ? (urls.includes(url) ? urls : [url, ...urls]) : urls);
+  }
+
+  function bindPrestasiImageUpload() {
+    const input = document.querySelector('#prestasi-image-file');
+    const button = document.querySelector('#prestasi-upload-btn');
+    const imageUrl = document.querySelector('#prestasi-image-url');
+    if (!input || !button || !imageUrl) return;
+
+    renderPrestasiGalleryList();
+    button.addEventListener('click', () => input.click());
+    imageUrl.addEventListener('change', () => setPrestasiGalleryUrls(getPrestasiGalleryUrls()));
+    const galleryList = document.querySelector('#prestasi-gallery-list');
+    document.querySelector('#prestasi-gallery-scroll-left')?.addEventListener('click', () => galleryList?.scrollBy({ left: -240, behavior: 'smooth' }));
+    document.querySelector('#prestasi-gallery-scroll-right')?.addEventListener('click', () => galleryList?.scrollBy({ left: 240, behavior: 'smooth' }));
+    input.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+      const uploaded = [];
+      for (const file of files.slice(0, 6)) {
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+          const res = await fetch(route('admin.prestasiUpload'), {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: formData
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const url = json.data?.url || '';
+            if (url) uploaded.push(url);
+          }
+        } catch (err) { /* continue with remaining files */ }
+      }
+      if (uploaded.length) {
+        if (!imageUrl.value.trim()) imageUrl.value = uploaded[0];
+        setPrestasiGalleryUrls([...getPrestasiGalleryUrls(), ...uploaded]);
+        updatePrestasiMainPreview();
+        Admin.showToast(uploaded.length > 1 ? 'Foto berhasil diupload.' : 'Foto berhasil diupload.');
+      } else {
+        Admin.showToast('Gagal upload foto.');
+      }
+      input.value = '';
+    });
+  }
+
+  function buildPrestasiSeo(payload) {
+    const title = payload.title || buildPrestasiTitle() || 'Prestasi GenBI Jambi';
+    const member = payload.name ? ` ${payload.name}` : '';
+    const category = payload.category || 'Prestasi';
+    const year = payload.year || new Date().getFullYear();
+    const institution = payload.institution ? ` oleh ${payload.institution}` : '';
+    return {
+      meta_title: payload.meta_title || `${title} | GenBI Jambi`,
+      meta_keyword: payload.meta_keyword || [category, 'prestasi GenBI Jambi', payload.name, payload.institution, year].filter(Boolean).join(', '),
+      meta_description: payload.meta_description || payload.description || `${category}${member}${institution} tahun ${year}. Dokumentasi prestasi GenBI Jambi.`
+    };
+  }
+
+  function bindPrestasiSeoAutofill() {
+    const fields = {
+      meta_title: document.querySelector('#prestasi-meta-title'),
+      meta_keyword: document.querySelector('#prestasi-meta-keyword'),
+      meta_description: document.querySelector('#prestasi-meta-desc'),
+    };
+    const touched = { meta_title: false, meta_keyword: false, meta_description: false };
+    Object.entries(fields).forEach(([key, field]) => {
+      field?.addEventListener('input', () => { touched[key] = true; });
+    });
+    const sourceSelectors = ['#prestasi-member-search', '#prestasi-category', '#prestasi-institution', '#prestasi-year', '#prestasi-desc-field'];
+    const refresh = () => {
+      const payload = {
+        name: document.querySelector('#prestasi-member-search')?.value?.trim() || '',
+        title: buildPrestasiTitle(),
+        category: document.querySelector('#prestasi-category')?.value?.trim() || '',
+        year: document.querySelector('#prestasi-year')?.value?.trim() || '',
+        description: document.querySelector('#prestasi-desc-field')?.value?.trim() || '',
+        institution: document.querySelector('#prestasi-institution')?.value?.trim() || '',
+        meta_title: '',
+        meta_keyword: '',
+        meta_description: '',
+      };
+      const generated = buildPrestasiSeo(payload);
+      Object.entries(fields).forEach(([key, field]) => {
+        if (field && !touched[key] && !field.value.trim()) field.value = generated[key] || '';
+      });
+    };
+    sourceSelectors.forEach((selector) => document.querySelector(selector)?.addEventListener('input', refresh));
+    refresh();
+  }
+
+  function appendPrestasiGalleryToContent(content) {
+    const cleanContent = String(content || '').replace(/\n?Dokumentasi\s*:\s*[^\n<]*/iu, '').trim();
+    const urls = getPrestasiGalleryUrls();
+    if (!urls.length) return cleanContent;
+    return `${cleanContent}${cleanContent ? '\n\n' : ''}Dokumentasi: ${urls.join(', ')}`;
+  }
+
   async function renderPrestasiEditor(isEdit) {
     const id = Number(new URLSearchParams(location.search).get('id')) || 0;
 
@@ -2525,48 +2869,17 @@
         ).join('');
       }
 
-      // Bind image upload
-      document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
-        document.querySelector('#prestasi-image-file')?.click();
+      const editor = initPrestasiEditor({
+        content: document.querySelector('#prestasi-content-field')?.value || '',
       });
-      document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
-        const formData = new FormData();
-        formData.append('image', file);
-        try {
-          const res = await fetch(route('admin.prestasiUpload'), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': token },
-            credentials: 'same-origin',
-            body: formData
-          });
-          if (res.ok) {
-            const json = await res.json();
-            const url = json.data?.url || '';
-            document.querySelector('#prestasi-image-url').value = url;
-            const preview = document.querySelector('.config-preview');
-            if (preview) { preview.src = url; }
-            else {
-              const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
-              const empty = container?.querySelector('.config-empty');
-              if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
-            }
-            Admin.showToast('Foto berhasil diupload.');
-          } else {
-            Admin.showToast('Gagal upload foto.');
-          }
-        } catch (err) {
-          Admin.showToast('Gagal upload foto.');
-        }
-      });
+      bindPrestasiImageUpload();
+      bindPrestasiSeoAutofill();
 
       // Enhance custom selects
       enhanceAdminSelects(document.querySelector('#cms-body') || document);
 
       // Bind form submission
-      bindPrestasiFormSubmit(ssrIsEdit, ssrItemId);
+      bindPrestasiFormSubmit(ssrIsEdit, ssrItemId, editor);
       return;
     }
 
@@ -2602,6 +2915,7 @@
             description: d.description || d.deskripsi_singkat || '',
             content: d.content || d.deskripsi_detail || '',
             image: d.image || d.foto_prestasi || '',
+            images: Array.isArray(d.images) ? d.images : [],
             institution: d.institution || '',
             status: d.status || 'draft',
             meta_title: d.meta_title || '',
@@ -2631,19 +2945,34 @@
               <datalist id="prestasi-member-list">${memberOptions.map(member => `<option value="${escape(member.name)}">${escape(member.role || member.division || '')}</option>`).join('')}</datalist>`)}
             ${control('Penyelenggara', `<input class="config-input" id="prestasi-institution" value="${escape(item.institution)}" placeholder="Nama penyelenggara" />`)}
             ${control('Tahun', `<input class="config-input" id="prestasi-year" type="number" min="1900" max="2099" step="1" value="${escape(item.year)}" placeholder="2026" />`)}
-            ${control('Peringkat', `<input class="config-input" id="prestasi-category" value="${escape(item.category)}" list="prestasi-rank-list" placeholder="Contoh: Juara 1" />
+            ${control('Kategori', `<input class="config-input" id="prestasi-category" value="${escape(item.category)}" list="prestasi-rank-list" placeholder="Tulis kategori atau pilih rekomendasi" />
               <datalist id="prestasi-rank-list">${prestasiCategories.map(c => `<option value="${escape(c)}"></option>`).join('')}</datalist>`)}
           </section>
           <section class="config-card medium-config-card">
             <h2>Deskripsi</h2>
             ${control('Deskripsi Singkat', `<textarea class="config-input" id="prestasi-desc-field" rows="5" placeholder="Tulis deskripsi singkat prestasi...">${escape(item.description)}</textarea>`)}
           </section>
-          <section class="config-card medium-config-card">
+          <section class="config-card medium-config-card prestasi-photo-card prestasi-photo-uploader">
             <h2>Foto Prestasi</h2>
-            ${item.image ? `<img src="${item.image}" class="config-preview rounded" alt="Foto prestasi" />` : '<div class="config-empty">Belum ada foto</div>'}
-            <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" />
-            <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full mt-2">Upload Foto</button>
-            <input class="config-input mt-2" id="prestasi-image-url" value="${escape(item.image)}" placeholder="URL gambar (opsional)" />
+            <div class="public-upload-field public-prestasi-photo-card prestasi-photo-uploader" data-prestasi-upload-field>
+              <div class="public-upload-empty ${item.image ? 'hidden' : ''}" data-prestasi-empty><strong>Belum ada foto</strong></div>
+              <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" multiple />
+              <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full">Upload Foto</button>
+              <input class="config-input" id="prestasi-image-url" value="${escape(item.image)}" placeholder="URL gambar (opsional)" />
+              <input type="hidden" id="prestasi-gallery-json" value="${escape(JSON.stringify(item.images || (item.image ? [item.image] : [])))}" />
+              <p id="prestasi-gallery-status" class="config-hint">Pilih beberapa foto sekaligus. Foto pertama menjadi foto utama.</p>
+              <div class="public-upload-preview" id="prestasi-gallery-preview">
+                <div class="public-upload-preview-controls">
+                  <strong>Preview foto terpilih</strong>
+                  <span id="prestasi-gallery-counter">0 foto</span>
+                </div>
+                <div class="public-upload-preview-slider">
+                  <button type="button" class="public-upload-scroll" id="prestasi-gallery-scroll-left" aria-label="Geser preview ke kiri">‹</button>
+                  <div id="prestasi-gallery-list" class="admin-upload-gallery public-upload-preview-strip" aria-label="Preview foto prestasi"></div>
+                  <button type="button" class="public-upload-scroll" id="prestasi-gallery-scroll-right" aria-label="Geser preview ke kanan">›</button>
+                </div>
+              </div>
+            </div>
           </section>
           <section class="config-card medium-config-card">
             <h2>SEO Information</h2>
@@ -2660,52 +2989,38 @@
       </form>
     `;
 
-    // Image upload handler
     enhanceAdminSelects(body);
-
-    document.querySelector('#prestasi-upload-btn')?.addEventListener('click', () => {
-      document.querySelector('#prestasi-image-file')?.click();
-    });
-    document.querySelector('#prestasi-image-file')?.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
-      const formData = new FormData();
-      formData.append('image', file);
-      try {
-        const res = await fetch(route('admin.prestasiUpload'), {
-          method: 'POST',
-          headers: { 'X-CSRF-TOKEN': token },
-          credentials: 'same-origin',
-          body: formData
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const url = json.data?.url || '';
-          document.querySelector('#prestasi-image-url').value = url;
-          const preview = document.querySelector('.config-preview');
-          if (preview) { preview.src = url; }
-          else {
-            const container = document.querySelector('#prestasi-upload-btn')?.parentElement;
-            const empty = container?.querySelector('.config-empty');
-            if (empty) { empty.outerHTML = `<img src="${url}" class="config-preview rounded" alt="Foto prestasi" />`; }
-          }
-          Admin.showToast('Foto berhasil diupload.');
-        } else {
-          Admin.showToast('Gagal upload foto.');
-        }
-      } catch (err) {
-        Admin.showToast('Gagal upload foto.');
-      }
-    });
+    bindPrestasiImageUpload();
+    bindPrestasiSeoAutofill();
 
     // Form submission
-    bindPrestasiFormSubmit(isEdit, id);
+    bindPrestasiFormSubmit(isEdit, id, null);
   }
 
-  function bindPrestasiFormSubmit(isEdit, itemId) {
+  function blocksToPrestasiHtml(blocks = []) {
+    return blocksToNewsHtml(blocks);
+  }
+
+  function fallbackPrestasiContent() {
+    return document.querySelector('#prestasi-content-field')?.value?.trim()
+      || document.querySelector('#prestasi-desc-field')?.value?.trim()
+      || '';
+  }
+
+  function bindPrestasiFormSubmit(isEdit, itemId, editor = null) {
     document.querySelector('#prestasi-editor-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();
+
+      let contentHtml = fallbackPrestasiContent();
+      if (editor?.save) {
+        try {
+          const outputData = await editor.save();
+          const savedHtml = blocksToPrestasiHtml(outputData.blocks || []);
+          if (savedHtml.trim()) contentHtml = savedHtml;
+        } catch (error) {
+          contentHtml = fallbackPrestasiContent();
+        }
+      }
 
       const ok = await Admin.showConfirm({
         title: isEdit ? 'Update prestasi?' : 'Submit prestasi?',
@@ -2714,7 +3029,6 @@
       });
       if (!ok) return;
 
-      const contentField = document.querySelector('#prestasi-content-field');
       const descField = document.querySelector('#prestasi-desc-field');
 
       const payload = {
@@ -2723,7 +3037,7 @@
         category: document.querySelector('#prestasi-category')?.value || '',
         year: document.querySelector('#prestasi-year')?.value || '',
         description: descField?.value?.trim() || '',
-        content: contentField?.value?.trim() || descField?.value?.trim() || '',
+        content: appendPrestasiGalleryToContent(contentHtml),
         image: document.querySelector('#prestasi-image-url')?.value?.trim() || '',
         institution: document.querySelector('#prestasi-institution')?.value?.trim() || '',
         status: document.querySelector('#prestasi-status')?.value || 'draft',
@@ -2731,9 +3045,14 @@
         meta_keyword: document.querySelector('#prestasi-meta-keyword')?.value?.trim() || '',
         meta_description: document.querySelector('#prestasi-meta-desc')?.value?.trim() || '',
       };
+      Object.assign(payload, buildPrestasiSeo(payload));
 
       const csrfToken = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
       const url = isEdit ? route('admin.prestasiUpdate', { id: itemId }) : route('admin.prestasiStore');
+      if (isEdit && !itemId) {
+        Admin.showToast('ID prestasi tidak valid. Buka ulang halaman edit dari daftar prestasi.', 'error');
+        return;
+      }
 
       try {
         const res = await fetch(url, {
@@ -2750,10 +3069,10 @@
           }
         } else {
           const details = result.details ? result.details.join(', ') : '';
-          Admin.showToast(result.error || 'Gagal menyimpan prestasi.' + (details ? ' ' + details : ''));
+          Admin.showToast(`${result.error || 'Gagal menyimpan prestasi.'}${details ? ' ' + details : ''} (HTTP ${res.status})`, 'error');
         }
       } catch (e) {
-        Admin.showToast('Gagal menyimpan prestasi. Periksa koneksi.');
+        Admin.showToast(`Gagal menyimpan prestasi. ${e?.message || 'Periksa koneksi.'}`, 'error');
       }
     });
   }
@@ -2787,7 +3106,7 @@
               <h3 class="text-lg font-bold text-neutral-950">${escape(item.title || '')}</h3>
               <div class="mt-3 grid gap-2 text-sm">
                 <div><strong>Nama:</strong> ${escape(item.name || '')}</div>
-                <div><strong>Peringkat:</strong> ${escape(item.category || '')}</div>
+                <div><strong>Kategori:</strong> ${escape(item.category || '')}</div>
                 <div><strong>Tahun:</strong> ${escape(item.year || '')}</div>
                 <div><strong>Penyelenggara:</strong> ${escape(item.institution || '')}</div>
                 <div><strong>Komisariat:</strong> ${escape(item.campus || '')}</div>
@@ -2814,7 +3133,53 @@
 
   // ─── Prestasi Token Management ──────────────────────────────────────────────
 
-  async function renderPrestasiTokenList(generatedLink = '') {
+  const PRESTASI_TOKEN_URL_CACHE_KEY = 'genbi.prestasiTokenUrls';
+
+  function readPrestasiTokenUrlCache() {
+    try {
+      const parsed = JSON.parse(window.sessionStorage.getItem(PRESTASI_TOKEN_URL_CACHE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function writePrestasiTokenUrlCache(cache) {
+    try {
+      window.sessionStorage.setItem(PRESTASI_TOKEN_URL_CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {
+      // Ignore storage failures and keep copy support best-effort.
+    }
+  }
+
+  function cachePrestasiTokenUrl(tokenId, submitUrl) {
+    if (!tokenId || !submitUrl) return;
+    const cache = readPrestasiTokenUrlCache();
+    cache[String(tokenId)] = submitUrl;
+    writePrestasiTokenUrlCache(cache);
+  }
+
+  function getPrestasiTokenUrl(tokenId) {
+    if (!tokenId) return '';
+    const cache = readPrestasiTokenUrlCache();
+    return typeof cache[String(tokenId)] === 'string' ? cache[String(tokenId)] : '';
+  }
+
+  async function copyPrestasiTokenUrl(submitUrl) {
+    if (!submitUrl) {
+      Admin.showToast('URL token ini tidak tersedia lagi. Generate ulang jika perlu.', 'error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(submitUrl);
+      Admin.showToast('Link token disalin ke clipboard.');
+    } catch (e) {
+      Admin.showToast('Gagal menyalin. Silakan coba lagi.', 'error');
+    }
+  }
+
+  async function renderPrestasiTokenList(generated = null) {
     const body = renderShell(
       'Prestasi Token',
       'Generate dan kelola token form prestasi sekali pakai untuk dibagikan ke anggota yang mengisi dari luar admin.',
@@ -2852,7 +3217,7 @@
           </table>
         </div>
       </section>
-      <div id="generated-token-display" class="mt-6 ${generatedLink ? '' : 'hidden'}">
+      <div id="generated-token-display" class="mt-6 ${generated?.url ? '' : 'hidden'}">
         <section class="admin-card p-6 border-2 border-green-200 bg-green-50">
           <h3 class="text-lg font-bold text-green-900">Token Berhasil Dibuat</h3>
           <p class="mt-2 text-sm text-green-800">Salin link di bawah. Token hanya ditampilkan sekali dan tidak bisa dilihat lagi.</p>
@@ -2867,23 +3232,19 @@
     // Bind generate button
     document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
 
-    if (generatedLink) {
+    if (generated?.url) {
       const urlInput = document.querySelector('#generated-token-url');
       if (urlInput) {
-        urlInput.value = generatedLink;
+        urlInput.value = generated.url;
       }
       document.querySelector('#copy-token-url')?.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(generatedLink);
-          Admin.showToast('Link token disalin ke clipboard.');
-        } catch (e) {
-          Admin.showToast('Gagal menyalin. Salin manual dari input.');
-        }
+        await copyPrestasiTokenUrl(generated.url);
       });
     }
 
     // Bind revoke buttons
     bindTokenRevokeButtons();
+    bindTokenCopyButtons();
   }
 
   function renderTokenRows(items) {
@@ -2893,6 +3254,9 @@
     return items.map((item, index) => {
       const status = item.status || 'active';
       const statusClass = status === 'active' ? 'cms-pill-green' : status === 'used' ? 'cms-pill-yellow' : 'cms-pill-red';
+      const tokenId = item.id || item.token_id;
+      const rowUrl = item.submit_url ? new URL(item.submit_url, window.location.origin).toString() : '';
+      const cachedUrl = rowUrl || getPrestasiTokenUrl(tokenId);
       return `
         <tr>
           <td>${index + 1}</td>
@@ -2902,11 +3266,23 @@
           <td class="text-xs">${item.expires_at || 'Tidak ada'}</td>
           <td class="text-xs">${item.used_at || '-'}</td>
           <td>
-            ${status === 'active' ? `<button class="cms-action delete" data-revoke data-token-id="${item.id || item.token_id}">Revoke</button>` : '<span class="text-neutral-400 text-xs">-</span>'}
+            <div class="flex flex-wrap gap-2">
+              <button class="cms-action edit" data-copy-token-url data-token-id="${tokenId}" data-token-url="${escape(cachedUrl)}">Copy URL</button>
+              ${status === 'active' ? `<button class="cms-action delete" data-revoke data-token-id="${tokenId}">Revoke</button>` : '<span class="text-neutral-400 text-xs">-</span>'}
+            </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function bindTokenCopyButtons() {
+    document.querySelectorAll('[data-copy-token-url][data-token-id]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const submitUrl = button.dataset.tokenUrl || getPrestasiTokenUrl(button.dataset.tokenId);
+        await copyPrestasiTokenUrl(submitUrl);
+      });
+    });
   }
 
   function bindTokenRevokeButtons() {
@@ -2970,14 +3346,23 @@
         credentials: 'same-origin',
         body: JSON.stringify({ label, expires_at: expiresAt || null })
       });
-      const result = await res.json();
+      let result = null;
+      try {
+        result = await res.json();
+      } catch (parseError) {
+        result = null;
+      }
+
       if (res.ok && result.data?.token) {
         const baseUrl = window.location.origin;
-        const submitUrl = `${baseUrl}${route('public.prestasiSubmit', { token: result.data.token })}`;
-        await renderPrestasiTokenList(submitUrl);
+        const submitUrl = result.data.submit_url
+          ? new URL(result.data.submit_url, baseUrl).toString()
+          : `${baseUrl}${route('public.prestasiSubmit', { token: result.data.token })}`;
+        cachePrestasiTokenUrl(result.data.id, submitUrl);
+        await renderPrestasiTokenList({ id: result.data.id, url: submitUrl });
         Admin.showToast('Token berhasil dibuat. Salin link sekarang!');
       } else {
-        Admin.showToast(result.error || 'Gagal membuat token.');
+        Admin.showToast(result?.error || 'Gagal membuat token.');
       }
     } catch (e) {
       Admin.showToast('Gagal membuat token. Periksa koneksi.');

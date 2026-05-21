@@ -202,6 +202,40 @@ test('normalizePrestasi maps backend-shaped prestasi into frontend shape', () =>
   assert.equal(item.name, 'Amalia');
   assert.equal(item.campus, 'Universitas Jambi');
   assert.equal(item.category, 'Karya Tulis Ilmiah');
+  assert.deepEqual(item.images, ['https://genbijambi.com/public/uploads/slider-1.png']);
+});
+
+test('normalizePrestasi resolves documentation gallery and submission upload images', () => {
+  const item = Core.normalizePrestasi({
+    prestasi_id: 12,
+    title: 'Kaligrafi Kontemporer',
+    photo: 'https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_',
+    detail: 'Dokumentasi: https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_, https://drive.google.com/open?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR',
+    submission_payload_json: JSON.stringify({
+      photos: [
+        { url: '/uploads/prestasi/prestasi-submit-a.jpg' },
+        { url: '/uploads/prestasi/prestasi-submit-b.jpg' },
+      ],
+    }),
+  });
+
+  assert.equal(item.image, 'https://drive.google.com/thumbnail?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_&sz=w1000');
+  assert.deepEqual(item.images, [
+    'https://drive.google.com/thumbnail?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_&sz=w1000',
+    'https://drive.google.com/thumbnail?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR&sz=w1000',
+    '/uploads/prestasi/prestasi-submit-a.jpg',
+    '/uploads/prestasi/prestasi-submit-b.jpg',
+  ]);
+});
+
+test('normalizePrestasi converts /public/uploads URLs to /uploads URLs', () => {
+  const item = Core.normalizePrestasi({
+    prestasi_id: 13,
+    title: 'Juara Desain',
+    photo: 'https://genbijambi.com/public/uploads/prestasi/juara-desain.jpg',
+  });
+
+  assert.equal(item.image, 'https://genbijambi.com/uploads/prestasi/juara-desain.jpg');
 });
 
 test('createModalController locks body, traps Escape close, and restores focus', () => {

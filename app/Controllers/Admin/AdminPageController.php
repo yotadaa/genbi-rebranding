@@ -66,9 +66,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>
+<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -187,7 +187,7 @@ HTML;
             'filters' => $filters,
             'filterOptions' => $filterOptions,
             'layout' => $layout,
-            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>',
         ]);
     }
 
@@ -203,9 +203,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>
+<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([
@@ -272,7 +272,7 @@ HTML;
             return null;
         }
 
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260510a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260519f"></script>';
 
         if ($page === 'feature') {
             $pg = Paginator::resolve([

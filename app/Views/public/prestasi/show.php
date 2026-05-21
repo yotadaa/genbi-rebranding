@@ -4,6 +4,8 @@
     <div class="article-container text-sm text-neutral-600">Prestasi tidak ditemukan.</div>
   </section>
 <?php else: ?>
+  <?php $images = array_values(array_filter($item['images'] ?? [], static fn($image) => is_string($image) && $image !== '')); ?>
+  <?php if (empty($images) && !empty($item['image'])) { $images = [(string) $item['image']]; } ?>
   <section class="public-inner-hero py-16 md:py-24">
     <div class="article-container">
       <a data-transition href="/prestasi" class="chip chip-dark mb-7">← Kembali ke Prestasi</a>
@@ -19,9 +21,22 @@
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main card -->
         <div class="lg:col-span-2">
-          <?php if (!empty($item['image'])): ?>
-            <div class="soft-card overflow-hidden p-0">
-              <img src="<?= $e($item['image']) ?>" alt="<?= $e($item['title'] ?? '') ?>" class="w-full rounded-2xl object-cover" loading="eager" />
+          <?php if (!empty($images)): ?>
+            <div class="soft-card overflow-hidden p-0 prestasi-gallery" data-prestasi-gallery>
+              <div class="prestasi-gallery-strip" role="list" aria-label="Galeri foto prestasi">
+                <?php foreach ($images as $index => $image): ?>
+                  <button
+                    type="button"
+                    class="prestasi-gallery-card"
+                    data-prestasi-thumb
+                    data-image-src="<?= $e($image) ?>"
+                    data-image-alt="<?= $e(($item['title'] ?? 'Prestasi') . ' foto ' . ($index + 1)) ?>"
+                    aria-label="Buka foto prestasi <?= $index + 1 ?>"
+                  >
+                    <img src="<?= $e($image) ?>" alt="<?= $e(($item['title'] ?? 'Prestasi') . ' foto ' . ($index + 1)) ?>" loading="<?= $index === 0 ? 'eager' : 'lazy' ?>" />
+                  </button>
+                <?php endforeach; ?>
+              </div>
             </div>
           <?php endif; ?>
           <?php if (!empty($item['content'])): ?>
@@ -73,4 +88,11 @@
       </div>
     </div>
   </section>
+  <div class="prestasi-image-modal hidden" data-prestasi-image-modal aria-hidden="true">
+    <button type="button" class="prestasi-image-modal-backdrop" data-prestasi-modal-close aria-label="Tutup preview foto"></button>
+    <div class="prestasi-image-modal-panel" role="dialog" aria-modal="true" aria-label="Preview foto prestasi">
+      <button type="button" class="prestasi-image-modal-close" data-prestasi-modal-close aria-label="Tutup preview foto">×</button>
+      <img src="" alt="" data-prestasi-modal-image />
+    </div>
+  </div>
 <?php endif; ?>

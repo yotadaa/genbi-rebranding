@@ -93,7 +93,7 @@ function trackedTables(): array
         'tbl_news_comment' => ['comment_id', 'news_id', 'parent_id', 'name', 'email', 'content', 'status', 'moderated_by', 'moderated_at', 'deleted_at'],
         'tbl_news_comment_vote' => ['vote_id', 'comment_id', 'news_id', 'voter_key', 'value'],
         'tbl_prestasi' => ['prestasi_id', 'slug', 'title', 'category', 'year', 'member_name', 'institution', 'status', 'deleted_at'],
-        'tbl_prestasi_submission_token' => ['token_id', 'token_hash', 'used_at', 'expires_at'],
+        'tbl_prestasi_submission_token' => ['token_id', 'token_hash', 'max_uses', 'used_count', 'used_at', 'expires_at'],
         'tbl_prestasi_submission' => ['submission_id', 'token_id', 'prestasi_id', 'submitter_name', 'submitter_email', 'payload_json', 'created_at'],
         'tbl_team_member' => ['komisariat', 'divisi', 'jabatan', 'divisi_lain', 'tahun', 'status', 'deleted_at'],
         'tbl_user' => ['password', 'remember_token_hash', 'last_login_at', 'last_login_ip', 'failed_login_count', 'locked_until'],
@@ -104,6 +104,7 @@ function trackedTables(): array
         'tbl_contact_setting' => ['id', 'place_name', 'address', 'email', 'phone', 'coordinates_label', 'maps_url', 'updated_at'],
         'tbl_event' => ['event_id', 'slug', 'event_title', 'event_content', 'event_start_date', 'event_end_date', 'status', 'deleted_at', 'created_at', 'updated_at'],
         'tbl_setting' => ['setting_key', 'setting_value', 'setting_type', 'description', 'updated_by', 'updated_at'],
+        'tbl_photo_gallery' => ['photo_id', 'title', 'image_url', 'caption', 'status', 'sort_order', 'deleted_at'],
     ];
 }
 

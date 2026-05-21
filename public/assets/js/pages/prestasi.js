@@ -68,7 +68,7 @@ if (ssrList) {
 ensurePrestasiModal();
 
 let prestasi = [];
-let layout = 'list';
+let layout = 'grid';
 const list = document.querySelector('#prestasi-list');
 const prestasiModal = createModalController(document.querySelector('#prestasi-modal'));
 

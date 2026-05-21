@@ -6,6 +6,7 @@ $bpiMembers = $bpiMembers ?? [];
 $publicEvents = $publicEvents ?? [];
 $announcements = $announcements ?? [];
 $latestNews = $latestNews ?? [];
+$homeContent = $homeContent ?? ($site['home'] ?? []);
 $heroSlides = $site['heroSlides'] ?? [];
 $initialSlide = $heroSlides[0] ?? null;
 
@@ -75,9 +76,9 @@ $eventIconMarkup = static function (string $type): string {
     <section class="announcement-hero-section home-section-surface py-16 md:py-24" aria-labelledby="announcement-heading">
       <div class="site-container">
         <div class="home-section-intro fade-up">
-          <p class="eyebrow">Pengumuman</p>
-          <h2 id="announcement-heading" class="section-title mt-4">Info penting untuk anggota dan publik.</h2>
-          <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.</p>
+          <p class="eyebrow"><?= $e((string) ($homeContent['announcementEyebrow'] ?? 'Pengumuman')) ?></p>
+          <h2 id="announcement-heading" class="section-title mt-4"><?= $e((string) ($homeContent['announcementTitle'] ?? 'Info penting untuk anggota dan publik.')) ?></h2>
+          <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['announcementDescription'] ?? 'Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.')) ?></p>
           <a data-transition href="<?= $url('news') ?>?category=Pengumuman" class="btn btn-dark mt-7">Lihat semua pengumuman</a>
         </div>
         <div class="carousel-shell fade-up" data-carousel>
@@ -126,9 +127,9 @@ $eventIconMarkup = static function (string $type): string {
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
       <div class="home-section-intro fade-up">
-        <p class="eyebrow">Program utama</p>
-        <h2 class="section-title mt-4">Program yang dekat dengan anggota dan masyarakat.</h2>
-        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.</p>
+        <p class="eyebrow"><?= $e((string) ($homeContent['programEyebrow'] ?? 'Program utama')) ?></p>
+        <h2 class="section-title mt-4"><?= $e((string) ($homeContent['programTitle'] ?? 'Program yang dekat dengan anggota dan masyarakat.')) ?></h2>
+        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['programDescription'] ?? 'Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.')) ?></p>
         <a data-transition href="<?= $url('about') ?>" class="btn btn-dark mt-7">Lihat profil lengkap</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
@@ -170,9 +171,9 @@ $eventIconMarkup = static function (string $type): string {
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
       <div class="home-section-intro fade-up">
-        <p class="eyebrow">GenBI Provinsi Jambi</p>
-        <h2 class="section-title mt-4">Wajah pengurus yang menjaga arah gerak organisasi.</h2>
-        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.</p>
+        <p class="eyebrow"><?= $e((string) ($homeContent['teamEyebrow'] ?? 'GenBI Provinsi Jambi')) ?></p>
+        <h2 class="section-title mt-4"><?= $e((string) ($homeContent['teamTitle'] ?? 'Wajah pengurus yang menjaga arah gerak organisasi.')) ?></h2>
+        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['teamDescription'] ?? 'Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.')) ?></p>
         <a data-transition href="<?= $url('team') ?>" class="btn btn-secondary mt-7">Lihat direktori anggota</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
@@ -204,9 +205,9 @@ $eventIconMarkup = static function (string $type): string {
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
       <div class="home-section-intro fade-up">
-        <p class="eyebrow">Agenda utama</p>
-        <h2 class="section-title mt-4">Kegiatan yang lahir dari kebutuhan sekitar.</h2>
-        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600">Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.</p>
+        <p class="eyebrow"><?= $e((string) ($homeContent['eventEyebrow'] ?? 'Agenda utama')) ?></p>
+        <h2 class="section-title mt-4"><?= $e((string) ($homeContent['eventTitle'] ?? 'Kegiatan yang lahir dari kebutuhan sekitar.')) ?></h2>
+        <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['eventDescription'] ?? 'Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.')) ?></p>
         <a data-transition href="<?= $url('event') ?>" class="btn btn-dark mt-7">Lihat semua agenda</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
@@ -250,8 +251,8 @@ $eventIconMarkup = static function (string $type): string {
     <div class="article-container">
       <div class="fade-up mb-9 flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div>
-          <p class="eyebrow">Latest news</p>
-          <h2 class="section-title mt-4">Berita terbaru</h2>
+          <p class="eyebrow"><?= $e((string) ($homeContent['newsEyebrow'] ?? 'Latest news')) ?></p>
+          <h2 class="section-title mt-4"><?= $e((string) ($homeContent['newsTitle'] ?? 'Berita terbaru')) ?></h2>
         </div>
         <a data-transition href="<?= $url('news') ?>" class="btn btn-secondary w-fit">Lihat semua berita</a>
       </div>

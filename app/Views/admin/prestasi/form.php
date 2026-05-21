@@ -8,13 +8,20 @@ $year = $isEdit ? ($item['year'] ?? (string) date('Y')) : (string) date('Y');
 $description = $isEdit ? ($item['description'] ?? '') : '';
 $content = $isEdit ? ($item['content'] ?? $item['detail'] ?? '') : '';
 $image = $isEdit ? ($item['image'] ?? '') : '';
+$images = $isEdit ? ($item['images'] ?? []) : [];
+if (!is_array($images)) {
+    $images = [];
+}
+if ($image !== '' && !in_array($image, $images, true)) {
+    array_unshift($images, $image);
+}
 $institution = $isEdit ? ($item['institution'] ?? '') : '';
 $status = $isEdit ? ($item['status'] ?? 'draft') : 'draft';
 $metaTitle = $isEdit ? ($item['meta_title'] ?? '') : '';
 $metaKeyword = $isEdit ? ($item['meta_keyword'] ?? '') : '';
 $metaDesc = $isEdit ? ($item['meta_description'] ?? '') : '';
 $itemId = $isEdit ? (int) ($item['id'] ?? 0) : 0;
-$prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
+$prestasiCategories = ['QRIS', 'KTI', 'Essay', 'Inovasi Desa', 'Kreativitas', 'Ekonomi Syariah'];
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -46,8 +53,8 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
             <input class="config-input" id="prestasi-year" type="number" min="1900" max="2099" step="1" value="<?= $e($year) ?>" placeholder="<?= date('Y') ?>" />
           </div>
           <div class="config-field">
-            <span>Peringkat</span>
-            <input class="config-input" id="prestasi-category" value="<?= $e($category) ?>" list="prestasi-rank-list" placeholder="Contoh: Juara 1" />
+            <span>Kategori</span>
+            <input class="config-input" id="prestasi-category" value="<?= $e($category) ?>" list="prestasi-rank-list" placeholder="Tulis kategori atau pilih rekomendasi" />
             <datalist id="prestasi-rank-list">
               <?php foreach ($prestasiCategories as $cat): ?>
                 <option value="<?= $e($cat) ?>"></option>
@@ -65,20 +72,33 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
         <section class="config-card medium-config-card">
           <h2>Detail Prestasi</h2>
           <div id="prestasi-editor" class="medium-editor-host"></div>
-          <div id="prestasi-editor-fallback" class="editor-fallback <?= empty($content) ? '' : '' ?>">
+          <div id="prestasi-editor-fallback" class="editor-fallback hidden">
             <textarea class="config-input" id="prestasi-content-field" rows="8" placeholder="Tulis detail prestasi..."><?= $e($content) ?></textarea>
           </div>
         </section>
-        <section class="config-card medium-config-card">
+        <section class="config-card medium-config-card prestasi-photo-card prestasi-photo-uploader">
           <h2>Foto Prestasi</h2>
-          <?php if (!empty($image)): ?>
-            <img src="<?= $e($image) ?>" class="config-preview rounded" alt="Foto prestasi" />
-          <?php else: ?>
-            <div class="config-empty">Belum ada foto</div>
-          <?php endif; ?>
-          <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" />
-          <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full mt-2">Upload Foto</button>
-          <input class="config-input mt-2" id="prestasi-image-url" value="<?= $e($image) ?>" placeholder="URL gambar (opsional)" />
+          <div class="public-upload-field public-prestasi-photo-card prestasi-photo-uploader" data-prestasi-upload-field>
+            <div class="public-upload-empty <?= !empty($image) ? 'hidden' : '' ?>" data-prestasi-empty>
+              <strong>Belum ada foto</strong>
+            </div>
+            <input id="prestasi-image-file" class="hidden" type="file" accept="image/*" multiple />
+            <button type="button" id="prestasi-upload-btn" class="btn btn-secondary w-full">Upload Foto</button>
+            <input class="config-input" id="prestasi-image-url" value="<?= $e($image) ?>" placeholder="URL gambar (opsional)" />
+            <input type="hidden" id="prestasi-gallery-json" value="<?= $e(json_encode(array_values($images), JSON_UNESCAPED_SLASHES) ?: '[]') ?>" />
+            <p id="prestasi-gallery-status" class="config-hint">Pilih beberapa foto sekaligus. Foto pertama menjadi foto utama.</p>
+            <div class="public-upload-preview" id="prestasi-gallery-preview">
+              <div class="public-upload-preview-controls">
+                <strong>Preview foto terpilih</strong>
+                <span id="prestasi-gallery-counter">0 foto</span>
+              </div>
+              <div class="public-upload-preview-slider">
+                <button type="button" class="public-upload-scroll" id="prestasi-gallery-scroll-left" aria-label="Geser preview ke kiri">‹</button>
+                <div id="prestasi-gallery-list" class="admin-upload-gallery public-upload-preview-strip" aria-label="Preview foto prestasi"></div>
+                <button type="button" class="public-upload-scroll" id="prestasi-gallery-scroll-right" aria-label="Geser preview ke kanan">›</button>
+              </div>
+            </div>
+          </div>
         </section>
         <section class="config-card medium-config-card">
           <h2>SEO Information</h2>

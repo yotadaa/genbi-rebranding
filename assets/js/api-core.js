@@ -36,6 +36,10 @@
       newsEdit: { clean: '/admin/news-edit', static: 'admin/news-edit.html' },
       newsList: { clean: '/admin/news/list' },
       newsCategories: { clean: '/admin/news/categories' },
+      categories: { clean: '/admin/categories' },
+      categoryStore: { clean: '/admin/categories' },
+      categoryUpdate: { clean: '/admin/categories/{id}/update' },
+      categoryDelete: { clean: '/admin/categories/{id}/delete' },
       newsComments: { clean: '/admin/news-comments' },
       newsCommentAction: { clean: '/admin/news-comments/{id}/{action}' },
       commentSetting: { clean: '/admin/comment-setting' },
@@ -52,6 +56,12 @@
       eventStore: { clean: '/admin/events' },
       eventUpdate: { clean: '/admin/events/{id}/update' },
       eventDelete: { clean: '/admin/events/{id}/delete' },
+      photos: { clean: '/admin/photos' },
+      photoShow: { clean: '/admin/photos/{id}' },
+      photoStore: { clean: '/admin/photos' },
+      photoUpdate: { clean: '/admin/photos/{id}/update' },
+      photoDelete: { clean: '/admin/photos/{id}/delete' },
+      photoUpload: { clean: '/admin/photos/upload' },
       prestasi: { clean: '/admin/prestasi', static: 'admin/prestasi.html' },
       prestasiAdd: { clean: '/admin/prestasi-add', static: 'admin/prestasi-add.html' },
       prestasiEdit: { clean: '/admin/prestasi-edit', static: 'admin/prestasi-edit.html' },
@@ -84,6 +94,7 @@
       featureImageReorder: { clean: '/admin/features/{id}/images/reorder' },
       contactSetting: { clean: '/admin/contact-setting' },
       contactSettingUpdate: { clean: '/admin/contact-setting' },
+      pageHomeUpdate: { clean: '/admin/settings/page-home' },
     },
   };
 
@@ -330,6 +341,7 @@
   function normalizePrestasi(item = {}) {
     const title = item.judul_prestasi || item.title || 'Prestasi GenBI Jambi';
     const id = item.prestasi_id || item.id || item.slug || slugify(title);
+    const images = resolvePrestasiImages(item);
     return {
       id,
       slug: item.slug || `${slugify(title)}-${id}`,
@@ -338,7 +350,8 @@
       campus: item.komisariat || item.campus || '',
       category: item.category || item.kategori || 'Prestasi',
       year: item.tahun || item.year || '',
-      image: resolvePrestasiImage(item.foto_prestasi || item.photo || item.image || ''),
+      image: images[0] || DEFAULT_IMAGE,
+      images,
       description: item.deskripsi_singkat || item.description || '',
       detail: item.deskripsi_detail || item.detail || item.content || item.deskripsi_singkat || item.description || '',
       institution: item.institusi_penyelenggara || item.institution || '',
@@ -362,8 +375,75 @@
     const driveId = extractDriveId(text);
     if (driveId) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveId)}&sz=w1000`;
 
-    if (/^https?:\/\//i.test(text) || text.startsWith('/')) return text;
+    if (/^https?:\/\//i.test(text)) return text.replace('/public/uploads/', '/uploads/');
+    if (text.startsWith('/public/uploads/')) return text.replace('/public/uploads/', '/uploads/');
+    if (text.startsWith('/')) return text;
     return `/uploads/prestasi/${text.replace(/^\/+/, '')}`;
+  }
+
+  function resolvePrestasiImages(item = {}) {
+    const detail = String(item.deskripsi_lengkap || item.deskripsi_detail || item.detail || item.content || '');
+    const submissionPhotos = extractSubmissionPhotoUrls(item.submission_payload_json || item.payload_json || '');
+    const candidates = [
+      item.foto,
+      item.foto_prestasi,
+      item.photo,
+      item.image,
+      item.certificate_photo,
+      ...extractDocumentationImageLinks(detail),
+      ...submissionPhotos,
+    ].filter(Boolean);
+
+    const resolved = [];
+    candidates.forEach((candidate) => {
+      const url = resolvePrestasiImage(candidate);
+      if (url && !resolved.includes(url)) resolved.push(url);
+    });
+
+    return resolved.length ? resolved : [DEFAULT_IMAGE];
+  }
+
+  function extractDocumentationImageLinks(detail = '') {
+    const text = String(detail || '');
+    if (!text) return [];
+
+    const links = [];
+    const docMatch = text.match(/Dokumentasi\s*:\s*(.+)/i);
+    if (docMatch?.[1]) {
+      docMatch[1].split(/\s*,\s*/).forEach((part) => {
+        const value = String(part || '').trim();
+        if (value) links.push(value);
+      });
+    }
+
+    const urlMatches = text.match(/https?:\/\/[^\s<>"]+/gi) || [];
+    urlMatches.forEach((match) => {
+      const value = String(match || '').replace(/[.,)]$/, '');
+      if (looksLikePrestasiImageSource(value)) links.push(value);
+    });
+
+    return Array.from(new Set(links.filter(Boolean)));
+  }
+
+  function extractSubmissionPhotoUrls(payloadJson = '') {
+    const text = String(payloadJson || '').trim();
+    if (!text) return [];
+
+    try {
+      const payload = JSON.parse(text);
+      if (!Array.isArray(payload?.photos)) return [];
+      return Array.from(new Set(payload.photos.map((photo) => String(photo?.url || '').trim()).filter(Boolean)));
+    } catch {
+      return [];
+    }
+  }
+
+  function looksLikePrestasiImageSource(value = '') {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    if (extractDriveId(text)) return true;
+    if (/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) return true;
+    return text.startsWith('/uploads/');
   }
 
   function normalizePrestasiList(payload) {

@@ -98,6 +98,26 @@
     `;
   }
 
+  function heroPreview() {
+    const primary = state.site.heroSlides?.[0] || {};
+    const secondary = state.site.heroSlides?.[1] || {};
+    const image = primary.image || secondary.image || '';
+    const eyebrow = primary.eyebrow || 'Energi untuk Negeri';
+    const title = primary.title || 'Bersama GenBI, tumbuh dan berdampak untuk Jambi.';
+    const caption = primary.caption || 'Preview hero halaman utama.';
+    return `
+      <section class="settings-hero-preview" style="--settings-hero-image: url('${escapeHtml(image)}')">
+        <div class="settings-hero-preview-overlay"></div>
+        <div class="settings-hero-preview-copy">
+          <span>${escapeHtml(eyebrow)}</span>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(caption)}</p>
+          <div class="settings-hero-preview-actions"><i></i><i></i></div>
+        </div>
+      </section>
+    `;
+  }
+
   function renderPanel() {
     const root = document.querySelector('#settings-panel');
     if (!root) return;
@@ -108,6 +128,7 @@
       footer: () => renderFormPanel('Footer', 'Konten footer dan identitas organisasi.', 'footer', [field('Site Name', 'site.name', state.site.name), field('Tagline', 'site.tagline', state.site.tagline), field('Footer Copyright', 'site.footer_copyright', state.site.footerCopyright), field('Footer Address', 'site.footer_address', state.site.address, 'textarea'), field('Footer Email', 'site.footer_email', state.site.footerEmail || state.site.email, 'email'), field('Footer Phone', 'site.footer_phone', state.site.footerPhone || ''), field('Recent News Count', 'site.footer_recent_news_count', state.site.footerRecentNewsCount || 3, 'number')]),
       email: () => renderFormPanel('Email', 'Alamat pengirim dan penerima email website.', 'email', [field('Email From', 'site.email_from', state.site.email, 'email'), field('Email To', 'site.email_to', state.site.footerEmail || state.site.email, 'email')]),
       banner: () => renderFormPanel('Banner', 'Copy dan background hero halaman utama.', 'banner', [
+        heroPreview(),
         `<div class="settings-banner-preview-grid">${bannerPreview('Banner Image 1', state.site.heroSlides?.[0]?.image || '', state.site.heroSlides?.[0]?.caption || '')}${bannerPreview('Banner Image 2', state.site.heroSlides?.[1]?.image || '', state.site.heroSlides?.[1]?.caption || '')}</div>`,
         field('Hero Badge', 'site.banner_badge', state.site.heroSlides?.[0]?.eyebrow || ''),
         field('Hero Title', 'site.banner_headline', state.site.heroSlides?.[0]?.title || '', 'textarea'),

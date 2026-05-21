@@ -18,10 +18,10 @@ $endItem = min($page * $perPage, $total);
 <section class="bg-cream py-12 md:py-16">
   <div class="article-container">
     <div class="prestasi-layout-switch mb-8" aria-label="Pilihan layout prestasi">
-      <button type="button" class="prestasi-layout-toggle is-active" data-prestasi-layout="list" aria-label="Tampilkan sebagai list">
+      <button type="button" class="prestasi-layout-toggle" data-prestasi-layout="list" aria-label="Tampilkan sebagai list">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h12M3 9h12M3 14h12"/></svg>
       </button>
-      <button type="button" class="prestasi-layout-toggle" data-prestasi-layout="grid" aria-label="Tampilkan sebagai grid">
+      <button type="button" class="prestasi-layout-toggle is-active" data-prestasi-layout="grid" aria-label="Tampilkan sebagai grid">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="11" y="2" width="5" height="5" rx="1"/><rect x="2" y="11" width="5" height="5" rx="1"/><rect x="11" y="11" width="5" height="5" rx="1"/></svg>
       </button>
     </div>
@@ -32,10 +32,18 @@ $endItem = min($page * $perPage, $total);
         Belum ada data prestasi yang tersedia.
       <?php endif; ?>
     </div>
-    <div class="soft-card overflow-hidden prestasi-list" id="prestasi-list" data-ssr="true">
+    <div class="prestasi-grid" id="prestasi-list" data-ssr="true">
       <?php if (!empty($items)): ?>
         <?php foreach ($items as $index => $item): ?>
+          <?php $image = (string) ($item['image'] ?? $item['photo'] ?? ''); ?>
           <a data-transition href="/prestasi/<?= rawurlencode((string) ($item['slug'] ?? $item['id'])) ?>" class="prestasi-row soft-row" data-id="<?= (int) $item['id'] ?>" data-index="<?= $index ?>">
+            <figure class="prestasi-row-image" aria-hidden="<?= $image === '' ? 'true' : 'false' ?>">
+              <?php if ($image !== ''): ?>
+                <img src="<?= $e($image) ?>" alt="Dokumentasi <?= $e($item['title'] ?? '') ?>" loading="lazy" />
+              <?php else: ?>
+                <span>No image</span>
+              <?php endif; ?>
+            </figure>
             <span class="serif prestasi-number"><?= str_pad((string) ($startItem + $index), 2, '0', STR_PAD_LEFT) ?></span>
             <div class="prestasi-row-copy">
               <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-blue-800">

@@ -13,6 +13,7 @@ use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\EventController as AdminEventController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
+use App\Controllers\Admin\PhotoGalleryController as AdminPhotoGalleryController;
 use App\Controllers\Admin\FeatureController as AdminFeatureController;
 use App\Controllers\Admin\ContactSettingController as AdminContactSettingController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
@@ -29,6 +30,7 @@ use App\Middleware\RoleMiddleware;
 /** @var AdminEventController $adminEventController */
 /** @var AdminPrestasiController $adminPrestasiController */
 /** @var PrestasiTokenController $adminPrestasiTokenController */
+/** @var AdminPhotoGalleryController $adminPhotoGalleryController */
 /** @var AdminTeamMemberController $adminTeamMemberController */
 /** @var AdminFeatureController $adminFeatureController */
 /** @var AdminContactSettingController $adminContactSettingController */
@@ -61,6 +63,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $adminContactSettingController,
     $adminCommentSettingController,
     $adminSettingsController,
+    $adminPhotoGalleryController,
 ) {
     // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
@@ -128,6 +131,14 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/features/{id}/images/reorder', static fn(Request $request, Response $response, array $params) => $adminFeatureController->reorderImages($request, $response, $params));
     $router->post('/admin/features/{id}/images/{imageId}/delete', static fn(Request $request, Response $response, array $params) => $adminFeatureController->deleteImage($request, $response, $params));
 
+    // Photo Gallery CMS
+    $router->get('/admin/photos', static fn(Request $request, Response $response) => $adminPhotoGalleryController->index($request, $response));
+    $router->get('/admin/photos/{id}', static fn(Request $request, Response $response, array $params) => $adminPhotoGalleryController->show($request, $response, $params));
+    $router->post('/admin/photos', static fn(Request $request, Response $response) => $adminPhotoGalleryController->store($request, $response));
+    $router->post('/admin/photos/upload', static fn(Request $request, Response $response) => $adminPhotoGalleryController->upload($request, $response));
+    $router->post('/admin/photos/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPhotoGalleryController->update($request, $response, $params));
+    $router->post('/admin/photos/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPhotoGalleryController->delete($request, $response, $params));
+
     // Live settings
     $router->get('/admin/settings', static fn(Request $request, Response $response) => $adminSettingsController->edit($request, $response));
     $router->get('/admin/settings/data', static fn(Request $request, Response $response) => $adminSettingsController->data($request, $response));
@@ -139,6 +150,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/settings/banner', static fn(Request $request, Response $response) => $adminSettingsController->updateBanner($request, $response));
     $router->post('/admin/settings/sidebar', static fn(Request $request, Response $response) => $adminSettingsController->updateSidebar($request, $response));
     $router->post('/admin/settings/color', static fn(Request $request, Response $response) => $adminSettingsController->updateColor($request, $response));
+    $router->post('/admin/settings/page-home', static fn(Request $request, Response $response) => $adminSettingsController->updateHomePage($request, $response));
     $router->post('/admin/settings/upload', static fn(Request $request, Response $response) => $adminSettingsController->upload($request, $response));
     $router->get('/admin/settings/theme', static fn(Request $request, Response $response) => $adminSettingsController->showTheme($request, $response));
     $router->post('/admin/settings/theme', static fn(Request $request, Response $response) => $adminSettingsController->updateTheme($request, $response));

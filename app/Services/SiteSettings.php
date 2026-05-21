@@ -50,11 +50,19 @@ final class SiteSettings
         $publicTheme = $this->normalizeThemeKey((string) ($data['theme.public_key'] ?? 'genbi'));
         $adminTheme = $this->normalizeThemeKey((string) ($data['theme.admin_key'] ?? 'genbi'));
 
+        $logoUrl = (string) ($data['site.logo_url'] ?? '');
+        $faviconUrl = (string) ($data['site.favicon_url'] ?? '');
+        $defaultFaviconUrl = (string) (self::defaults()['site.favicon_url'] ?? '');
+
+        if ($faviconUrl === '' || $faviconUrl === $defaultFaviconUrl) {
+            $faviconUrl = $logoUrl;
+        }
+
         $site = [
             'name' => (string) ($data['site.name'] ?? ''),
             'tagline' => (string) ($data['site.tagline'] ?? ''),
-            'logo' => (string) ($data['site.logo_url'] ?? ''),
-            'favicon' => (string) ($data['site.favicon_url'] ?? ''),
+            'logo' => $logoUrl,
+            'favicon' => $faviconUrl,
             'email' => (string) ($data['site.topbar_email'] ?? ''),
             'phone' => (string) ($data['site.topbar_phone'] ?? ''),
             'address' => (string) ($data['site.footer_address'] ?? ''),
@@ -77,6 +85,22 @@ final class SiteSettings
                     'title' => (string) ($data['site.banner_headline_alt'] ?? $data['site.banner_headline'] ?? ''),
                     'caption' => (string) ($data['site.banner_subtitle_alt'] ?? $data['site.banner_subtitle'] ?? ''),
                 ],
+            ],
+            'home' => [
+                'announcementEyebrow' => (string) ($data['home.announcement_eyebrow'] ?? ''),
+                'announcementTitle' => (string) ($data['home.announcement_title'] ?? ''),
+                'announcementDescription' => (string) ($data['home.announcement_description'] ?? ''),
+                'programEyebrow' => (string) ($data['home.program_eyebrow'] ?? ''),
+                'programTitle' => (string) ($data['home.program_title'] ?? ''),
+                'programDescription' => (string) ($data['home.program_description'] ?? ''),
+                'teamEyebrow' => (string) ($data['home.team_eyebrow'] ?? ''),
+                'teamTitle' => (string) ($data['home.team_title'] ?? ''),
+                'teamDescription' => (string) ($data['home.team_description'] ?? ''),
+                'eventEyebrow' => (string) ($data['home.event_eyebrow'] ?? ''),
+                'eventTitle' => (string) ($data['home.event_title'] ?? ''),
+                'eventDescription' => (string) ($data['home.event_description'] ?? ''),
+                'newsEyebrow' => (string) ($data['home.news_eyebrow'] ?? ''),
+                'newsTitle' => (string) ($data['home.news_title'] ?? ''),
             ],
             'sidebar' => [
                 'news' => (string) ($data['site.sidebar_heading_news'] ?? ''),
@@ -170,6 +194,20 @@ final class SiteSettings
             'site.color_primary_soft' => '#eef6ff',
             'site.video_resource_url' => 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq',
             'site.base_url' => 'https://genbijambi.com',
+            'home.announcement_eyebrow' => 'Pengumuman',
+            'home.announcement_title' => 'Info penting untuk anggota dan publik.',
+            'home.announcement_description' => 'Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.',
+            'home.program_eyebrow' => 'Program utama',
+            'home.program_title' => 'Program yang dekat dengan anggota dan masyarakat.',
+            'home.program_description' => 'Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.',
+            'home.team_eyebrow' => 'GenBI Provinsi Jambi',
+            'home.team_title' => 'Wajah pengurus yang menjaga arah gerak organisasi.',
+            'home.team_description' => 'Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.',
+            'home.event_eyebrow' => 'Agenda utama',
+            'home.event_title' => 'Kegiatan yang lahir dari kebutuhan sekitar.',
+            'home.event_description' => 'Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.',
+            'home.news_eyebrow' => 'Latest news',
+            'home.news_title' => 'Berita terbaru',
             'theme.public_key' => 'genbi',
             'theme.admin_key' => 'genbi',
             'theme.custom_override_enabled' => false,

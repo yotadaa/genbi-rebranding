@@ -18,7 +18,7 @@ $filterParams = array_filter([
     'year' => $activeYear,
     'status' => $activeStatus,
 ], static fn($v) => $v !== '' && $v !== null);
-$prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2', 'Finalis', 'Peserta Terbaik'];
+$prestasiCategories = ['QRIS', 'KTI', 'Essay', 'Inovasi Desa', 'Kreativitas', 'Ekonomi Syariah'];
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -88,7 +88,7 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
               <th>No.</th>
               <th>Judul</th>
               <th>Nama Anggota</th>
-              <th>Peringkat</th>
+              <th>Kategori</th>
               <th>Tahun</th>
               <th>Penyelenggara</th>
               <th>Status</th>
@@ -133,6 +133,11 @@ $prestasiCategories = ['Juara 1', 'Juara 2', 'Juara 3', 'Harapan 1', 'Harapan 2'
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2.75 10s2.75-4.75 7.25-4.75S17.25 10 17.25 10 14.5 14.75 10 14.75 2.75 10 2.75 10Z" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.25" stroke="currentColor" stroke-width="1.5"/></svg>
                         Detail
                       </button>
+                      <?php if ($itemStatus !== 'published'): ?>
+                        <button class="btn btn-primary btn-sm" data-approve-prestasi="<?= (int) $item['id'] ?>">
+                          Approve
+                        </button>
+                      <?php endif; ?>
                       <a class="btn btn-secondary btn-sm" href="<?= $url('admin.prestasi.edit', ['id' => (int) $item['id']]) ?>">
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M13.25 3.75a2.1 2.1 0 1 1 2.97 2.97L7 16.94 3 17l.06-4 10.19-10.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m12 5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                         Edit

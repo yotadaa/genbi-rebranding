@@ -341,6 +341,24 @@
     return Array.from(root.querySelectorAll(selector)).map((select) => enhanceNativeSelect(select, options));
   }
 
+  function enhanceProjectSelects(root = document) {
+    const publicSelects = enhanceNativeSelects(root, 'select.js-custom-select', {
+      iconHtml: '<span aria-hidden="true">⌄</span>',
+      portal: false,
+      wrapperClass: 'custom-select custom-select-root',
+    });
+
+    const adminSelects = enhanceNativeSelects(root, 'select.js-admin-custom-select', {
+      buttonClass: 'admin-select-button',
+      iconHtml: '<span aria-hidden="true">⌄</span>',
+      menuClass: 'admin-select-menu',
+      portal: true,
+      wrapperClass: 'admin-custom-select',
+    });
+
+    return [...publicSelects, ...adminSelects];
+  }
+
   function createCustomSelect(root, { label = 'Filter', options = [], value = 'Semua', onChange }) {
     if (!root) return null;
 
@@ -418,6 +436,8 @@
   }
 
   if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => enhanceProjectSelects(document));
+
     document.addEventListener('click', (event) => {
       if (activeOverlay && !activeOverlay.contains(event.target)) closeActiveSelect();
     });
@@ -445,6 +465,7 @@
     createModalController,
     enhanceNativeSelect,
     enhanceNativeSelects,
+    enhanceProjectSelects,
     getFocusable,
     lockBody,
     observeFadeUp,

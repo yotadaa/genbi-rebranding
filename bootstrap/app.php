@@ -11,6 +11,7 @@ use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
+use App\Controllers\Admin\PhotoGalleryController as AdminPhotoGalleryController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Controllers\Public\AboutController;
 use App\Controllers\Public\CommentController;
@@ -40,6 +41,7 @@ use App\Models\Category;
 use App\Models\NewsComment;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
+use App\Models\PhotoGallery;
 use App\Models\Event;
 use App\Models\Feature;
 use App\Models\NewsCommentVote;
@@ -84,6 +86,7 @@ $contactSettingModel = null;
 $commentVoteModel = null;
 $categoryModel = null;
 $settingModel = null;
+$photoGalleryModel = null;
 $commentPolicy = null;
 $commentThrottle = null;
 $siteSettings = null;
@@ -100,6 +103,7 @@ try {
     $commentVoteModel = new NewsCommentVote($db);
     $categoryModel = new Category($db);
     $settingModel = new Setting($db);
+    $photoGalleryModel = new PhotoGallery($db);
     $commentPolicy = new CommentPolicy($settingModel);
     $siteSettings = new SiteSettings($settingModel);
     $commentThrottle = new CommentThrottleService();
@@ -117,6 +121,7 @@ try {
     $commentVoteModel = null;
     $categoryModel = null;
     $settingModel = null;
+    $photoGalleryModel = null;
     $commentPolicy = null;
     $commentThrottle = null;
     $siteSettings = new SiteSettings(null);
@@ -156,6 +161,7 @@ $adminFeatureController = new \App\Controllers\Admin\FeatureController($featureM
 $adminContactSettingController = new \App\Controllers\Admin\ContactSettingController($contactSettingModel);
 $adminCommentSettingController = new CommentSettingController($settingModel);
 $adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
+$adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryModel);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';

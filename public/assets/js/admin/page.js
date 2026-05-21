@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  const { site } = window.GenBIData;
+  const { site: fallbackSite } = window.GenBIData;
+  const site = { ...fallbackSite, ...(window.GenBISiteSettings || {}) };
   const { renderAdminShell, showToast, icon } = window.GenBIAdmin;
   const { routeUrl } = window.GenBIApp;
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -22,8 +23,18 @@
     { key: 'portfolio', label: 'Portfolio', title: 'Portfolio Page', description: 'Modul portfolio tetap ada untuk kompatibilitas CMS lama.' },
   ];
 
+  const featureMap = [
+    ['Hero', 'Settings → Banner / Page → Home', 'Mengatur badge, headline, deskripsi, dan gambar hero landing page.'],
+    ['Pengumuman', 'News CMS', 'Berita berkategori Pengumuman otomatis tampil di landing page.'],
+    ['Program utama', 'Program Utama CMS', 'Item published + tampil di beranda muncul pada carousel landing.'],
+    ['BPI / Team', 'Team Member CMS', 'Anggota yang ditandai tampil di beranda muncul pada carousel pengurus.'],
+    ['Agenda utama', 'Agenda CMS', 'Agenda published terbaru muncul pada carousel landing.'],
+    ['Berita terbaru', 'News CMS', 'Berita published terbaru muncul di landing page.'],
+    ['Kontak', 'Page → Contact', 'Alamat, email, telepon, koordinat, dan map dipakai halaman /contact.'],
+  ];
+
   const content = {
-    home: simpleMeta('Title', 'Official GenBI Jambi'),
+    home: [],
     about: simpleMeta('About Heading', 'ABOUT US', 'About Us - GenBI Provinsi Jambi'),
     faq: simpleMeta('FAQ Heading', 'FAQ', 'FAQ - GenBI Provinsi Jambi'),
     service: simpleMeta('Service Heading', 'Our Services', 'Our Services - GenBI Provinsi Jambi'),
@@ -114,6 +125,11 @@
     const tab = pageTabs.find((item) => item.key === active) || pageTabs[0];
     if (!canvas) return;
 
+    if (active === 'home') {
+      renderHomeSettings(canvas, overview, tab);
+      return;
+    }
+
     if (active === 'contact') {
       renderContactSettings(canvas, overview, tab);
       return;
@@ -148,6 +164,70 @@
       });
     }
     attachEditorEvents(canvas);
+  }
+
+  function homeValue(key, fallback = '') {
+    const home = site.home || {};
+    return home[key] || fallback;
+  }
+
+  function renderHomeSettings(canvas, overview, tab) {
+    canvas.innerHTML = `
+      <section class="block-page-hero slide-in">
+        <p class="eyebrow">Admin Page</p>
+        <h2 class="serif mt-3 text-4xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">${tab.title}</h2>
+        <p class="mt-4 max-w-3xl text-base leading-7 text-[rgb(var(--text-secondary))]">${tab.description}</p>
+      </section>
+      <section class="admin-card p-5 md:p-6 slide-in">
+        <h3 class="serif text-2xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">Feature map landing page</h3>
+        <p class="mt-2 text-sm leading-6 text-[rgb(var(--text-secondary))]">Daftar fitur admin yang sekarang menjadi sumber konten landing page.</p>
+        <div class="admin-responsive-table mt-5">
+          <table class="cms-table">
+            <thead><tr><th>Feature</th><th>Admin source</th><th>Definition</th></tr></thead>
+            <tbody>${featureMap.map(([name, source, definition]) => `<tr><td><strong>${escapeHtml(name)}</strong></td><td>${escapeHtml(source)}</td><td>${escapeHtml(definition)}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </section>
+      <section class="admin-contact-grid mt-6 slide-in">
+        <form class="admin-contact-form admin-card p-5 md:p-6" id="admin-home-form">
+          <h3 class="serif text-2xl font-semibold tracking-tight text-[rgb(var(--text-primary))]">Landing page text</h3>
+          <p class="mt-2 text-sm leading-6 text-[rgb(var(--text-secondary))]">Field ini langsung dipakai oleh halaman publik <strong>/</strong>. Data itemnya tetap berasal dari News, Program Utama, Team, dan Agenda CMS.</p>
+          <div class="mt-5 grid gap-4">
+            ${contactInput('Hero Badge', 'site.banner_badge', site.heroSlides?.[0]?.eyebrow || 'GenBI Provinsi Jambi')}
+            ${contactTextarea('Hero Title', 'site.banner_headline', site.heroSlides?.[0]?.title || '')}
+            ${contactTextarea('Hero Subtitle', 'site.banner_subtitle', site.heroSlides?.[0]?.caption || '')}
+            ${contactInput('Announcement Eyebrow', 'home.announcement_eyebrow', homeValue('announcementEyebrow', 'Pengumuman'))}
+            ${contactInput('Announcement Title', 'home.announcement_title', homeValue('announcementTitle', 'Info penting untuk anggota dan publik.'))}
+            ${contactTextarea('Announcement Description', 'home.announcement_description', homeValue('announcementDescription', 'Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.'))}
+            ${contactInput('Program Eyebrow', 'home.program_eyebrow', homeValue('programEyebrow', 'Program utama'))}
+            ${contactInput('Program Title', 'home.program_title', homeValue('programTitle', 'Program yang dekat dengan anggota dan masyarakat.'))}
+            ${contactTextarea('Program Description', 'home.program_description', homeValue('programDescription', 'Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.'))}
+            ${contactInput('Team Eyebrow', 'home.team_eyebrow', homeValue('teamEyebrow', 'GenBI Provinsi Jambi'))}
+            ${contactInput('Team Title', 'home.team_title', homeValue('teamTitle', 'Wajah pengurus yang menjaga arah gerak organisasi.'))}
+            ${contactTextarea('Team Description', 'home.team_description', homeValue('teamDescription', 'Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.'))}
+            ${contactInput('Event Eyebrow', 'home.event_eyebrow', homeValue('eventEyebrow', 'Agenda utama'))}
+            ${contactInput('Event Title', 'home.event_title', homeValue('eventTitle', 'Kegiatan yang lahir dari kebutuhan sekitar.'))}
+            ${contactTextarea('Event Description', 'home.event_description', homeValue('eventDescription', 'Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.'))}
+            ${contactInput('News Eyebrow', 'home.news_eyebrow', homeValue('newsEyebrow', 'Latest news'))}
+            ${contactInput('News Title', 'home.news_title', homeValue('newsTitle', 'Berita terbaru'))}
+          </div>
+          <div class="mt-6"><button type="submit" class="btn btn-primary">Simpan Landing Page</button></div>
+        </form>
+        <aside class="admin-contact-preview admin-card p-5 md:p-6">
+          <p class="eyebrow">Connected modules</p>
+          <div class="mt-4 grid gap-3 text-sm leading-6 text-[rgb(var(--text-secondary))]">
+            <p><strong>Program Utama:</strong> kelola kartu carousel dari menu Program Utama.</p>
+            <p><strong>Team Member:</strong> tombol Add/Remove Beranda menentukan pengurus yang tampil.</p>
+            <p><strong>News:</strong> kategori Pengumuman dan berita terbaru otomatis diambil dari data published.</p>
+            <p><strong>Agenda:</strong> data agenda published otomatis tampil pada section Agenda utama.</p>
+          </div>
+        </aside>
+      </section>
+    `;
+    if (overview) {
+      overview.innerHTML = `<p class="eyebrow">Landing map</p><div class="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark-theme-note">Admin/Page Home sekarang menyimpan teks section landing page. Data card tetap dikelola di modul masing-masing.</div>`;
+    }
+    canvas.querySelector('#admin-home-form')?.addEventListener('submit', submitHomeSettings);
   }
 
   function renderGroup(group, index) {
@@ -358,5 +438,54 @@
     }
     showToast('Contact settings berhasil disimpan.');
     renderPage();
+  }
+
+  async function submitHomeSettings(event) {
+    event?.preventDefault();
+    const form = document.querySelector('#admin-home-form');
+    if (!form) return;
+    const payload = {};
+    form.querySelectorAll('[name]').forEach((field) => {
+      payload[field.name] = field.value.trim();
+    });
+    const res = await fetch(route('pageHomeUpdate'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(json.error || 'Gagal menyimpan landing page.');
+      return;
+    }
+    const home = site.home = site.home || {};
+    site.heroSlides = Array.isArray(site.heroSlides) && site.heroSlides.length ? site.heroSlides : [{}, {}];
+    site.heroSlides[0] = site.heroSlides[0] || {};
+    site.heroSlides[1] = site.heroSlides[1] || {};
+    site.heroSlides[0].eyebrow = payload['site.banner_badge'];
+    site.heroSlides[1].eyebrow = payload['site.banner_badge'];
+    site.heroSlides[0].title = payload['site.banner_headline'];
+    site.heroSlides[0].caption = payload['site.banner_subtitle'];
+    home.announcementEyebrow = payload['home.announcement_eyebrow'];
+    home.announcementTitle = payload['home.announcement_title'];
+    home.announcementDescription = payload['home.announcement_description'];
+    home.programEyebrow = payload['home.program_eyebrow'];
+    home.programTitle = payload['home.program_title'];
+    home.programDescription = payload['home.program_description'];
+    home.teamEyebrow = payload['home.team_eyebrow'];
+    home.teamTitle = payload['home.team_title'];
+    home.teamDescription = payload['home.team_description'];
+    home.eventEyebrow = payload['home.event_eyebrow'];
+    home.eventTitle = payload['home.event_title'];
+    home.eventDescription = payload['home.event_description'];
+    home.newsEyebrow = payload['home.news_eyebrow'];
+    home.newsTitle = payload['home.news_title'];
+    window.GenBISiteSettings = { ...(window.GenBISiteSettings || {}), ...site };
+    showToast('Landing page berhasil disimpan. Buka Visit Website untuk melihat hasil live.');
   }
 })();

@@ -38,6 +38,7 @@ final class HomeController
         if ($this->viewRenderer instanceof ViewRenderer && $this->featureModel instanceof Feature) {
             $html = $this->viewRenderer->renderWithLayout('public/home/index.php', 'layouts/public.php', [
                 'site' => $this->siteSettings?->site() ?? $this->siteData(),
+                'homeContent' => ($this->siteSettings?->site() ?? $this->siteData())['home'] ?? [],
                 'stats' => $this->statsData(),
                 'programs' => $this->featureModel?->homeVisible(12) ?? [],
                 'bpiMembers' => $this->bpiMembers(),
