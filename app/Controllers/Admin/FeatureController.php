@@ -240,8 +240,8 @@ final class FeatureController
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             return ['error' => 'Upload gagal.'];
         }
-        if (($file['size'] ?? 0) > self::MAX_UPLOAD_SIZE) {
-            return ['error' => 'Ukuran file melebihi batas 5MB.'];
+        if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > self::MAX_UPLOAD_SIZE) {
+            return ['error' => 'Upload tidak valid atau melebihi batas 5MB.'];
         }
 
         $tmp = (string) ($file['tmp_name'] ?? '');

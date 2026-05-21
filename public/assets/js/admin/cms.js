@@ -2074,7 +2074,7 @@
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.data?.url) { Admin.showToast(json.error || 'Upload gagal.'); return; }
       document.querySelector('#photo-image').value = json.data.url;
-      document.querySelector('#photo-preview').innerHTML = `<img src="${json.data.url}" alt="Preview" />`;
+      renderSafeImagePreview('#photo-preview', json.data.url, 'Preview');
     });
     document.querySelector('#photo-form')?.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -2156,7 +2156,7 @@
           method: 'POST',
           headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
           credentials: 'same-origin',
-          body: JSON.stringify({ show_on_home: adding }),
+          body: JSON.stringify({ show_on_home: adding, _csrf_token: API.getCsrfToken?.() || '' }),
         });
         Admin.showToast(res.ok ? (adding ? 'Ditambahkan ke BPI Beranda.' : 'Dihapus dari BPI Beranda.') : 'Gagal memperbarui BPI Beranda.');
         if (res.ok) render();
@@ -2303,7 +2303,7 @@
     const json = await res.json().catch(() => ({}));
     if (res.ok && json.data?.url) {
       document.querySelector('#team-photo').value = json.data.url;
-      document.querySelector('#team-photo-preview').innerHTML = `<img src="${json.data.url}" alt="Preview" />`;
+      renderSafeImagePreview('#team-photo-preview', json.data.url, 'Preview');
       Admin.showToast('Foto berhasil diupload.');
     } else {
       Admin.showToast(json.error || 'Upload foto gagal.');
@@ -2372,6 +2372,15 @@
   }
 
   function escape(value = '') { return Admin.escapeHtml(value); }
+
+  function renderSafeImagePreview(selector, src, alt = 'Preview') {
+    const preview = document.querySelector(selector);
+    if (!preview) return;
+    const img = document.createElement('img');
+    img.src = String(src || '');
+    img.alt = alt;
+    preview.replaceChildren(img);
+  }
 
   // ─── Prestasi CMS ───────────────────────────────────────────────────────────
 
@@ -3588,7 +3597,7 @@
               method: 'POST',
               headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
               credentials: 'same-origin',
-              body: JSON.stringify({ show_on_home: adding }),
+              body: JSON.stringify({ show_on_home: adding, _csrf_token: token }),
             });
           } catch (e) { /* continue */ }
         }
@@ -3613,7 +3622,7 @@
             method: 'POST',
             headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
             credentials: 'same-origin',
-            body: JSON.stringify({ show_on_home: adding }),
+            body: JSON.stringify({ show_on_home: adding, _csrf_token: token }),
           });
 
           if (res.ok) {

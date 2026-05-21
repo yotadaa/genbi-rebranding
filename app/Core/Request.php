@@ -6,6 +6,8 @@ namespace App\Core;
 
 final class Request
 {
+    private const MAX_JSON_BODY_BYTES = 1_048_576;
+
     /** @var array<string, mixed>|null */
     private ?array $jsonBody = null;
 
@@ -35,6 +37,11 @@ final class Request
     {
         if ($this->jsonBody !== null) {
             return $this->jsonBody;
+        }
+
+        $contentLength = $_SERVER['CONTENT_LENGTH'] ?? null;
+        if (is_string($contentLength) && ctype_digit($contentLength) && (int) $contentLength > self::MAX_JSON_BODY_BYTES) {
+            throw new PayloadTooLargeException('JSON request body exceeds the allowed size.');
         }
 
         $raw = file_get_contents('php://input');

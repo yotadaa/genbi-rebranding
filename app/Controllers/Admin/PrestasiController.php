@@ -136,8 +136,8 @@ class PrestasiController
             return;
         }
 
-        if ($file['size'] > self::MAX_UPLOAD_SIZE) {
-            $response->json(['error' => 'Ukuran file melebihi batas 5MB'], 422);
+        if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > self::MAX_UPLOAD_SIZE) {
+            $response->json(['error' => 'Upload tidak valid atau melebihi batas 5MB'], 422);
             return;
         }
 

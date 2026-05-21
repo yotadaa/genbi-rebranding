@@ -148,8 +148,8 @@ final class TeamMemberController
             return;
         }
 
-        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
-            $response->json(['error' => 'Ukuran file maksimal 5MB'], 422);
+        if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            $response->json(['error' => 'Upload tidak valid atau melebihi batas 5MB'], 422);
             return;
         }
 
@@ -170,6 +170,10 @@ final class TeamMemberController
         };
         $directory = dirname(__DIR__, 3) . '/public/uploads/team';
         if (!is_dir($directory)) mkdir($directory, 0775, true);
+        $htaccess = $directory . '/.htaccess';
+        if (!is_file($htaccess)) {
+            file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\nOptions -ExecCGI\nAddType text/plain .php .phtml .php3 .php4 .php5\n");
+        }
         $filename = bin2hex(random_bytes(12)) . '.' . $extension;
         if (!move_uploaded_file($tmp, $directory . '/' . $filename)) {
             $response->json(['error' => 'Gagal menyimpan file'], 500);

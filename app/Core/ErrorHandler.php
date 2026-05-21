@@ -11,7 +11,7 @@ final class ErrorHandler
 {
     public static function render(Response $response, int $status, string $title = '', string $message = ''): void
     {
-        $status = in_array($status, [400, 403, 404, 405, 422, 500, 503], true) ? $status : 500;
+        $status = in_array($status, [400, 403, 404, 405, 413, 422, 500, 503], true) ? $status : 500;
         $defaults = self::defaults($status);
         $title = $title !== '' ? $title : $defaults['title'];
         $message = $message !== '' ? $message : $defaults['message'];
@@ -47,6 +47,11 @@ final class ErrorHandler
     public static function renderThrowable(Response $response, Throwable $error): void
     {
         self::log($error);
+        if ($error instanceof PayloadTooLargeException) {
+            self::render($response, 413, 'Payload terlalu besar', 'Ukuran data yang dikirim melebihi batas yang diizinkan.');
+            return;
+        }
+
         self::render($response, 500, 'Terjadi kesalahan', 'Maaf, sistem sedang mengalami gangguan. Silakan coba beberapa saat lagi.');
     }
 
@@ -71,6 +76,7 @@ final class ErrorHandler
             403 => ['title' => 'Akses ditolak', 'message' => 'Anda tidak memiliki akses ke halaman ini.'],
             404 => ['title' => 'Halaman tidak ditemukan', 'message' => 'Halaman yang Anda cari tidak tersedia atau sudah dipindahkan.'],
             405 => ['title' => 'Metode tidak diizinkan', 'message' => 'Metode request tidak tersedia untuk URL ini.'],
+            413 => ['title' => 'Payload terlalu besar', 'message' => 'Ukuran data yang dikirim melebihi batas yang diizinkan.'],
             422 => ['title' => 'Data tidak valid', 'message' => 'Mohon periksa kembali data yang dikirim.'],
             503 => ['title' => 'Layanan belum tersedia', 'message' => 'Fitur ini sedang tidak tersedia. Silakan coba lagi nanti.'],
             default => ['title' => 'Terjadi kesalahan', 'message' => 'Maaf, sistem sedang mengalami gangguan. Silakan coba beberapa saat lagi.'],

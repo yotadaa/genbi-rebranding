@@ -52,7 +52,7 @@
         <div class="site-container fade-up text-center">
           <p class="eyebrow text-red-600">Token Tidak Valid</p>
           <h1 class="page-title mt-5">Akses Ditolak</h1>
-          <p class="lead mt-7 mx-auto max-w-2xl text-red-700">${message}</p>
+          <p class="lead mt-7 mx-auto max-w-2xl text-red-700">${escapeHtml(message)}</p>
           <div class="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6 max-w-lg mx-auto">
             <p class="text-sm text-red-800">Token ini mungkin sudah digunakan, kedaluwarsa, atau tidak valid. Hubungi admin GenBI Jambi untuk mendapatkan token baru.</p>
           </div>
