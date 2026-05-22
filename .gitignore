@@ -5,6 +5,7 @@
 
 # Markdown docs/plans requested to stay out of Git
 *.md
+docs/screenshot
 
 # Dependencies and generated artifacts
 node_modules/
