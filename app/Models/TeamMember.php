@@ -129,7 +129,7 @@ class TeamMember
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function bpiCore(int $limit = 10): array
+    public function bpiCore(?int $limit = 10): array
     {
         if (!$this->db) {
             return [];
@@ -142,6 +142,8 @@ class TeamMember
                 return [];
             }
 
+            $limitSql = $limit !== null && $limit > 0 ? ' LIMIT :limit' : '';
+
             $manualStmt = $this->db->prepare(
                 "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
@@ -150,11 +152,12 @@ class TeamMember
                  WHERE t.deleted_at IS NULL
                    AND CAST(t.tahun AS UNSIGNED) = :year
                    AND t.show_on_home = 1
-                 ORDER BY t.home_sort_order ASC, t.id ASC
-                 LIMIT :limit"
+                  ORDER BY t.home_sort_order ASC, t.id ASC" . $limitSql
             );
             $manualStmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
-            $manualStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            if ($limitSql !== '') {
+                $manualStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            }
             $manualStmt->execute();
             $manualRows = $manualStmt->fetchAll(PDO::FETCH_ASSOC);
             if ($manualRows !== []) {
@@ -169,11 +172,12 @@ class TeamMember
                  WHERE t.deleted_at IS NULL
                    AND CAST(t.tahun AS UNSIGNED) = :year
                    AND LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%'
-                 ORDER BY t.home_sort_order ASC, t.id ASC
-                 LIMIT :limit"
+                  ORDER BY t.home_sort_order ASC, t.id ASC" . $limitSql
             );
             $stmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            if ($limitSql !== '') {
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            }
             $stmt->execute();
 
             return array_map([self::class, 'mapRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));

@@ -96,7 +96,7 @@ final class HomeController
     /** @return array<int, array<string, mixed>> */
     private function bpiMembers(): array
     {
-        $members = $this->teamModel?->bpiCore(10) ?? [];
+        $members = $this->teamModel?->bpiCore(null) ?? [];
         if ($members !== []) {
             return $members;
         }
