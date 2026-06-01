@@ -59,13 +59,18 @@ class TeamMember
         try {
             [$where, $params] = $this->buildPublicFilterSql($filters);
             $stmt = $this->db->prepare(
-                'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                 WHERE ' . $where . '
-                 ORDER BY t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
-                 LIMIT :limit OFFSET :offset'
+                 WHERE " . $where . "
+                 ORDER BY
+                    CASE
+                      WHEN LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%' THEN 0
+                      ELSE 1
+                    END ASC,
+                    t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
+                 LIMIT :limit OFFSET :offset"
             );
             foreach ($params as $key => $value) {
                 $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -152,7 +157,12 @@ class TeamMember
                  WHERE t.deleted_at IS NULL
                    AND CAST(t.tahun AS UNSIGNED) = :year
                    AND t.show_on_home = 1
-                  ORDER BY t.home_sort_order ASC, t.id ASC" . $limitSql
+                  ORDER BY
+                    CASE
+                      WHEN LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%' THEN 0
+                      ELSE 1
+                    END ASC,
+                    t.home_sort_order ASC, t.id ASC" . $limitSql
             );
             $manualStmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
             if ($limitSql !== '') {
