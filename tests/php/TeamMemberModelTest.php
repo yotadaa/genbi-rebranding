@@ -26,22 +26,29 @@ $db->exec('CREATE TABLE teams (
     deleted_at TEXT NULL
 )');
 
-$db->exec("INSERT INTO komsats (id, nama) VALUES (1, 'Universitas Jambi')");
+$db->exec("INSERT INTO komsats (id, nama) VALUES (1, 'Universitas Jambi'), (2, 'GenBI Wilayah Jambi')");
 $db->exec("INSERT INTO divisis (id, nama, komsat_id) VALUES (1, 'Badan Pengurus Inti', 1), (2, 'Divisi PSDM', 1)");
 $db->exec("INSERT INTO teams (id, name, designation, komsat_id, divisi_id, komsat, tahun, show_on_home, home_sort_order, deleted_at) VALUES
     (1, 'Ketua 2024', 'Ketua', 1, 1, 'Universitas Jambi', '2024', 0, 0, NULL),
     (2, 'Ketua 2025', 'Ketua', 1, 1, 'Universitas Jambi', '2025', 0, 0, NULL),
-    (3, 'Override 2025', 'Koordinator', 1, 2, 'Universitas Jambi', '2025', 1, 1, NULL)
+    (3, 'Override 2025', 'Koordinator', 1, 2, 'Universitas Jambi', '2025', 1, 1, NULL),
+    (4, 'BPI Wilayah 2025', 'Ketua Wilayah', 2, 1, 'GenBI Wilayah Jambi', '2025', 1, 99, NULL),
+    (5, 'BPI Komsat 2025', 'Ketua Komsat', 1, 1, 'Universitas Jambi', '2025', 1, 0, NULL)
 ");
 
 $model = new TeamMember($db);
 
 $manualSelection = $model->bpiCore();
-assert(count($manualSelection) === 1);
-assert($manualSelection[0]['name'] === 'Override 2025');
+assert(count($manualSelection) === 3);
+assert($manualSelection[0]['name'] === 'BPI Wilayah 2025');
 assert($manualSelection[0]['show_on_home'] === true);
+assert($manualSelection[1]['name'] === 'BPI Komsat 2025');
+assert($manualSelection[2]['name'] === 'Override 2025');
 
-$db->exec('UPDATE teams SET show_on_home = 0 WHERE id = 3');
+$allActive = $model->allActive([], 10, 0);
+assert($allActive[0]['name'] === 'BPI Wilayah 2025');
+
+$db->exec('UPDATE teams SET show_on_home = 0 WHERE id IN (3, 4, 5)');
 
 $fallbackSelection = $model->bpiCore();
 assert(count($fallbackSelection) === 1);

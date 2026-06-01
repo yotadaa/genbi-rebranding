@@ -66,7 +66,8 @@ class TeamMember
                  WHERE " . $where . "
                  ORDER BY
                     CASE
-                      WHEN LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%' THEN 0
+                      WHEN (LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%')
+                        AND LOWER(COALESCE(k.nama, t.komsat, '')) LIKE '%genbi wilayah%' THEN 0
                       ELSE 1
                     END ASC,
                     t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
@@ -159,7 +160,8 @@ class TeamMember
                    AND t.show_on_home = 1
                   ORDER BY
                     CASE
-                      WHEN LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%' THEN 0
+                      WHEN (LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%')
+                        AND LOWER(COALESCE(k.nama, t.komsat, '')) LIKE '%genbi wilayah%' THEN 0
                       ELSE 1
                     END ASC,
                     t.home_sort_order ASC, t.id ASC" . $limitSql
