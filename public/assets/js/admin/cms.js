@@ -1316,8 +1316,22 @@
     current.heading = document.querySelector('#slider-heading')?.value?.trim() || '';
     current.caption = document.querySelector('#slider-caption')?.value?.trim() || '';
     current.photo = document.querySelector('#slider-image-url')?.value?.trim() || '';
-    const first = live[0];
-    const second = live[1];
+    const fallback = sliders.map((item) => ({
+      eyebrow: 'GenBI Provinsi Jambi',
+      heading: item.heading || 'Bersama GenBI, tumbuh dan berdampak untuk Jambi.',
+      caption: 'Ruang belajar, berkarya, dan mengabdi bersama GenBI Jambi.',
+      photo: item.photo || 'https://genbijambi.com/public/uploads/slider-1.png',
+    }));
+    const first = { ...fallback[0], ...(live[0] || {}) };
+    const second = { ...fallback[1], ...(live[1] || {}) };
+    first.eyebrow = first.eyebrow || current.eyebrow || fallback[0].eyebrow;
+    first.heading = first.heading || fallback[0].heading;
+    first.caption = first.caption || fallback[0].caption;
+    first.photo = first.photo || fallback[0].photo;
+    second.eyebrow = second.eyebrow || first.eyebrow || fallback[1].eyebrow;
+    second.heading = second.heading || first.heading || fallback[1].heading;
+    second.caption = second.caption || first.caption || fallback[1].caption;
+    second.photo = second.photo || first.photo || fallback[1].photo;
     return {
       'site.banner_badge': current.eyebrow || first.eyebrow,
       'site.banner_headline': first.heading,

@@ -198,7 +198,7 @@ final class SettingsController
             'site.banner_subtitle' => ['type' => 'string', 'required' => true, 'max' => 500],
             'site.banner_subtitle_alt' => ['type' => 'string', 'required' => false, 'max' => 500],
             'site.banner_image_1' => ['type' => 'url', 'required' => true, 'max' => 500],
-            'site.banner_image_2' => ['type' => 'url', 'required' => true, 'max' => 500],
+            'site.banner_image_2' => ['type' => 'url', 'required' => false, 'max' => 500],
         ]);
     }
 

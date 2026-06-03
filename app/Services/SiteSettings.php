@@ -58,6 +58,12 @@ final class SiteSettings
             $faviconUrl = $logoUrl;
         }
 
+        $bannerImage1 = (string) ($data['site.banner_image_1'] ?? '');
+        $bannerImage2 = (string) ($data['site.banner_image_2'] ?? '');
+        if ($bannerImage2 === '') {
+            $bannerImage2 = $bannerImage1;
+        }
+
         $site = [
             'name' => (string) ($data['site.name'] ?? ''),
             'tagline' => (string) ($data['site.tagline'] ?? ''),
@@ -74,13 +80,13 @@ final class SiteSettings
             'baseUrl' => (string) ($data['site.base_url'] ?? ''),
             'heroSlides' => [
                 [
-                    'image' => (string) ($data['site.banner_image_1'] ?? ''),
+                    'image' => $bannerImage1,
                     'eyebrow' => (string) ($data['site.banner_badge'] ?? ''),
                     'title' => (string) ($data['site.banner_headline'] ?? ''),
                     'caption' => (string) ($data['site.banner_subtitle'] ?? ''),
                 ],
                 [
-                    'image' => (string) ($data['site.banner_image_2'] ?? ''),
+                    'image' => $bannerImage2,
                     'eyebrow' => (string) ($data['site.banner_badge'] ?? ''),
                     'title' => (string) ($data['site.banner_headline_alt'] ?? $data['site.banner_headline'] ?? ''),
                     'caption' => (string) ($data['site.banner_subtitle_alt'] ?? $data['site.banner_subtitle'] ?? ''),
