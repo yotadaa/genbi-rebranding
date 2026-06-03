@@ -43,7 +43,11 @@ final class StaticPageRenderer
         });
 
         $scripts = array_map(static function (string $script): string {
-            $script = str_replace('/assets/js/admin/cms.js', '/assets/js/dist/admin/cms.js?v=20260519f', $script);
+            $script = str_replace(
+                ['../assets/js/admin/cms.js', '/assets/js/admin/cms.js'],
+                '/assets/js/dist/admin/cms.js?v=20260519f',
+                $script
+            );
 
             if (str_contains($script, ' src=') && !preg_match('/\sdefer\b/i', $script)) {
                 return preg_replace('/<script\b/i', '<script defer', $script, 1) ?? $script;

@@ -1299,7 +1299,7 @@
             <h2>Slider Config</h2>
             ${control('Hero Slot', `<input class="config-input" value="Slider ${slot}" disabled />`)}
             ${control('Image URL', `<input class="config-input" id="slider-image-url" value="${escape(item.photo)}" placeholder="/uploads/branding/..." />`)}
-            ${control('Upload Image', '<input class="admin-file-input" id="slider-image-file" type="file" accept="image/*,.svg" />')}
+            ${control('Upload Image', '<input class="admin-file-input" id="slider-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon" />')}
             <div class="settings-banner-preview mt-4"><div class="settings-banner-preview-media">${item.photo ? `<img src="${escape(item.photo)}" alt="${escape(item.heading || 'Slider preview')}" loading="lazy">` : '<div class="settings-banner-preview-empty">Belum ada gambar</div>'}</div></div>
           </section>
           <button type="submit" class="btn btn-primary w-full">Save Slider ${slot}</button>
@@ -1347,6 +1347,11 @@
       if (!response.ok || !json.data?.url) return Admin.showToast(json.error || 'Upload slider gagal.');
       const input = document.querySelector('#slider-image-url');
       if (input) input.value = json.data.url;
+      const preview = document.querySelector('.settings-banner-preview-media');
+      if (preview) {
+        const heading = document.querySelector('#slider-heading')?.value?.trim() || 'Slider preview';
+        preview.innerHTML = `<img src="${escape(json.data.url)}" alt="${escape(heading)}" loading="lazy">`;
+      }
       Admin.showToast('Gambar slider berhasil diupload. Klik Save untuk menerapkan ke landing page.');
     });
     document.querySelector('#slider-form')?.addEventListener('submit', async (event) => {
