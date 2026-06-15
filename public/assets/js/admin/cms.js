@@ -2779,6 +2779,14 @@
     renderPrestasiGalleryList(url ? (urls.includes(url) ? urls : [url, ...urls]) : urls);
   }
 
+  async function readPrestasiUploadResponse(response, fileName = 'file') {
+    const json = await response.json().catch(() => ({}));
+    if (response.ok && json.data?.url) return json.data.url;
+    const details = Array.isArray(json.details) ? json.details.join(', ') : '';
+    const reason = [json.error || `Upload ${fileName} gagal`, details].filter(Boolean).join(': ');
+    throw new Error(reason || `Upload ${fileName} gagal dengan status ${response.status}.`);
+  }
+
   function bindPrestasiImageUpload() {
     const input = document.querySelector('#prestasi-image-file');
     const button = document.querySelector('#prestasi-upload-btn');
@@ -2796,30 +2804,41 @@
       if (!files.length) return;
       const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
       const uploaded = [];
+      const failures = [];
+      const status = document.querySelector('#prestasi-gallery-status');
+      if (status) status.textContent = 'Mengupload foto prestasi...';
+      button.disabled = true;
       for (const file of files.slice(0, 6)) {
         const formData = new FormData();
         formData.append('image', file);
         try {
           const res = await fetch(route('admin.prestasiUpload'), {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': token },
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
             credentials: 'same-origin',
             body: formData
           });
-          if (res.ok) {
-            const json = await res.json();
-            const url = json.data?.url || '';
-            if (url) uploaded.push(url);
-          }
-        } catch (err) { /* continue with remaining files */ }
+          uploaded.push(await readPrestasiUploadResponse(res, file.name));
+        } catch (err) {
+          failures.push(`${file.name}: ${err.message || 'Upload gagal.'}`);
+        }
       }
+      button.disabled = false;
       if (uploaded.length) {
         if (!imageUrl.value.trim()) imageUrl.value = uploaded[0];
         setPrestasiGalleryUrls([...getPrestasiGalleryUrls(), ...uploaded]);
         updatePrestasiMainPreview();
-        Admin.showToast(uploaded.length > 1 ? 'Foto berhasil diupload.' : 'Foto berhasil diupload.');
+        if (failures.length) {
+          const message = `Foto berhasil sebagian. Gagal: ${failures.slice(0, 2).join(' | ')}`;
+          if (status) status.textContent = message;
+          Admin.showToast(message);
+        } else {
+          Admin.showToast('Foto berhasil diupload.');
+        }
       } else {
-        Admin.showToast('Gagal upload foto.');
+        const message = failures[0] || 'Gagal upload foto.';
+        if (status) status.textContent = message;
+        Admin.showToast(`Gagal upload foto: ${message}`);
       }
       input.value = '';
     });
@@ -3455,15 +3474,14 @@
               try {
                 const res = await fetch(route('admin.prestasiUpload'), {
                   method: 'POST',
-                  headers: { 'X-CSRF-TOKEN': token },
+                  headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token },
                   credentials: 'same-origin',
                   body: formData
                 });
-                if (res.ok) {
-                  const json = await res.json();
-                  return { success: 1, file: { url: json.data.url } };
-                }
-              } catch (e) { /* fallback */ }
+                return { success: 1, file: { url: await readPrestasiUploadResponse(res, file.name) } };
+              } catch (e) {
+                Admin.showToast?.(`Gagal upload gambar prestasi: ${e.message || 'Upload gagal.'}`);
+              }
               return { success: 0 };
             },
             async uploadByUrl(url) {

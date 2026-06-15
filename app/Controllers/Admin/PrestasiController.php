@@ -130,9 +130,14 @@ class PrestasiController
         }
 
         $file = $_FILES['image'];
+        if (!is_array($file)) {
+            $response->json(['error' => 'Payload upload tidak valid'], 422);
+            return;
+        }
 
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $response->json(['error' => 'Upload gagal: error code ' . $file['error']], 422);
+        $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            $response->json(['error' => $this->uploadErrorMessage($uploadError)], 422);
             return;
         }
 
@@ -141,14 +146,20 @@ class PrestasiController
             return;
         }
 
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            $response->json(['error' => 'File sementara upload tidak tersedia'], 422);
+            return;
+        }
+
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($file['tmp_name']);
+        $mimeType = (string) $finfo->file($tmpName);
         if (!in_array($mimeType, self::ALLOWED_IMAGE_TYPES, true)) {
             $response->json(['error' => 'Tipe file tidak diizinkan. Hanya JPEG, PNG, WebP, dan GIF.'], 422);
             return;
         }
 
-        $imageInfo = @getimagesize($file['tmp_name']);
+        $imageInfo = @getimagesize($tmpName);
         if ($imageInfo === false) {
             $response->json(['error' => 'File bukan gambar yang valid'], 422);
             return;
@@ -164,23 +175,48 @@ class PrestasiController
         $filename = 'prestasi-' . bin2hex(random_bytes(8)) . '.' . $ext;
 
         $uploadDir = dirname(__DIR__, 3) . '/public' . self::UPLOAD_DIR;
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+            error_log('[Prestasi Upload] Cannot create upload directory: ' . $uploadDir);
+            $response->json(['error' => 'Folder upload prestasi tidak bisa dibuat'], 500);
+            return;
+        }
+
+        if (!is_writable($uploadDir)) {
+            error_log('[Prestasi Upload] Upload directory is not writable: ' . $uploadDir);
+            $response->json(['error' => 'Folder upload prestasi tidak bisa ditulis'], 500);
+            return;
         }
 
         $htaccess = $uploadDir . '.htaccess';
-        if (!is_file($htaccess)) {
-            file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\n");
+        if (!is_file($htaccess) && file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\nOptions -ExecCGI\nAddType text/plain .php .phtml .php3 .php4 .php5\n") === false) {
+            error_log('[Prestasi Upload] Cannot write upload .htaccess: ' . $htaccess);
+            $response->json(['error' => 'Folder upload prestasi tidak bisa diproteksi'], 500);
+            return;
         }
 
         $destination = $uploadDir . $filename;
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+        if (!move_uploaded_file($tmpName, $destination)) {
+            error_log('[Prestasi Upload] move_uploaded_file failed for ' . $destination);
             $response->json(['error' => 'Gagal menyimpan file'], 500);
             return;
         }
 
         $url = self::UPLOAD_DIR . $filename;
         $response->json(['data' => ['url' => $url, 'filename' => $filename]], 201);
+    }
+
+    private function uploadErrorMessage(int $code): string
+    {
+        return match ($code) {
+            UPLOAD_ERR_INI_SIZE => 'Ukuran file melebihi batas upload_max_filesize server',
+            UPLOAD_ERR_FORM_SIZE => 'Ukuran file melebihi batas form upload',
+            UPLOAD_ERR_PARTIAL => 'File hanya terunggah sebagian. Coba upload ulang.',
+            UPLOAD_ERR_NO_FILE => 'Tidak ada file yang dipilih',
+            UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary upload server tidak tersedia',
+            UPLOAD_ERR_CANT_WRITE => 'Server gagal menulis file upload ke disk',
+            UPLOAD_ERR_EXTENSION => 'Upload dihentikan oleh ekstensi PHP',
+            default => 'Upload gagal dengan kode error ' . $code,
+        };
     }
 
     private function validate(array $body): array
