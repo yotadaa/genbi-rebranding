@@ -33,6 +33,22 @@ final class TeamMemberController
 
     public function options(Request $request, Response $response): void
     {
+        $query = trim((string) ($request->query('q') ?? ''));
+        $divisionId = (int) ($request->query('division_id') ?? $request->query('divisi_id') ?? 0);
+        $activeOnly = (string) ($request->query('active_only') ?? '') === '1';
+        if ($query !== '' || $divisionId > 0 || $activeOnly || $request->query('type') === 'member') {
+            $limit = min(500, max(1, (int) ($request->query('limit') ?? 12)));
+            $filters = [];
+            if ($divisionId > 0) {
+                $filters['division_id'] = $divisionId;
+            }
+            if ($activeOnly) {
+                $filters['active_only'] = true;
+            }
+            $response->json(['data' => $this->team?->searchOptions($query, $limit, $filters) ?? []]);
+            return;
+        }
+
         $response->json(['data' => $this->team?->formOptions() ?? ['divisions' => [], 'commissions' => []]]);
     }
 

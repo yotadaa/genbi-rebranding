@@ -11,6 +11,7 @@ use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\EventController as AdminEventController;
+use App\Controllers\Admin\PresensiController as AdminPresensiController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\PhotoGalleryController as AdminPhotoGalleryController;
@@ -28,6 +29,7 @@ use App\Middleware\RoleMiddleware;
 /** @var AdminCategoryController $adminCategoryController */
 /** @var NewsCommentController $adminNewsCommentController */
 /** @var AdminEventController $adminEventController */
+/** @var AdminPresensiController $adminPresensiController */
 /** @var AdminPrestasiController $adminPrestasiController */
 /** @var PrestasiTokenController $adminPrestasiTokenController */
 /** @var AdminPhotoGalleryController $adminPhotoGalleryController */
@@ -56,6 +58,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $adminCategoryController,
     $adminNewsCommentController,
     $adminEventController,
+    $adminPresensiController,
     $adminPrestasiController,
     $adminPrestasiTokenController,
     $adminTeamMemberController,
@@ -104,6 +107,15 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/prestasi/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPrestasiController->update($request, $response, $params));
     $router->post('/admin/prestasi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPrestasiController->delete($request, $response, $params));
     $router->post('/admin/prestasi/upload', static fn(Request $request, Response $response) => $adminPrestasiController->upload($request, $response));
+
+    // Presensi CMS
+    $router->get('/admin/presensi/list', static fn(Request $request, Response $response) => $adminPresensiController->index($request, $response));
+    $router->get('/admin/presensi/{id}/submissions', static fn(Request $request, Response $response, array $params) => $adminPresensiController->submissions($request, $response, $params));
+    $router->get('/admin/presensi/{id}', static fn(Request $request, Response $response, array $params) => $adminPresensiController->show($request, $response, $params));
+    $router->post('/admin/presensi', static fn(Request $request, Response $response) => $adminPresensiController->store($request, $response));
+    $router->post('/admin/presensi/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPresensiController->update($request, $response, $params));
+    $router->post('/admin/presensi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPresensiController->delete($request, $response, $params));
+    $router->post('/admin/presensi/submissions/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approve($request, $response, $params));
 
     // Prestasi Tokens
     $router->get('/admin/prestasi-tokens', static fn(Request $request, Response $response) => $adminPrestasiTokenController->index($request, $response));

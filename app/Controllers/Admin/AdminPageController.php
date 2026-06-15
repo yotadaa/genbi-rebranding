@@ -11,6 +11,8 @@ use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
 use App\Models\Feature;
+use App\Models\PresensiEvent;
+use App\Models\PresensiSubmission;
 use App\Models\Prestasi;
 use App\Models\TeamMember;
 use App\Services\CsrfService;
@@ -26,6 +28,8 @@ final class AdminPageController
         private ?Prestasi $prestasiModel = null,
         private ?Feature $featureModel = null,
         private ?SiteSettings $siteSettings = null,
+        private ?PresensiEvent $presensiEventModel = null,
+        private ?PresensiSubmission $presensiSubmissionModel = null,
     ) {
     }
 
@@ -320,6 +324,77 @@ HTML;
         return null;
     }
 
+    private function renderAdminPresensiSsr(string $page, Request $request): ?string
+    {
+        if (!$this->presensiEventModel) {
+            return null;
+        }
+
+        $script = '<script defer src="/assets/js/dist/lib/qr-creator.min.js?v=20260616g"></script>' . PHP_EOL
+            . '<script defer src="/assets/js/dist/admin/presensi.js?v=20260616g"></script>';
+
+        if ($page === 'presensi') {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+            $filters = [
+                'q' => $request->query('q'),
+                'status' => $request->query('status'),
+            ];
+            $items = $this->presensiEventModel->allForAdmin($filters, $pg['per_page'], $pg['offset']);
+            $total = $this->presensiEventModel->countForAdmin($filters);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+
+            return $this->viewRenderer->renderWithLayout('admin/presensi/index.php', 'layouts/admin.php', [
+                'title' => 'Presensi | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'presensi',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
+                'scripts' => $script,
+            ]);
+        }
+
+        if ($page === 'presensi-add' || $page === 'presensi-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $page === 'presensi-edit' && $id > 0 ? $this->presensiEventModel->findById($id) : null;
+
+            return $this->viewRenderer->renderWithLayout('admin/presensi/form.php', 'layouts/admin.php', [
+                'title' => ($page === 'presensi-edit' ? 'Edit Presensi' : 'Add Presensi') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => $page === 'presensi-edit' ? 'presensi-edit' : 'presensi',
+                'cmsMode' => 'editor',
+                'isEdit' => $page === 'presensi-edit',
+                'item' => $item,
+                'scripts' => $script,
+            ]);
+        }
+
+        if ($page === 'presensi-detail') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $id > 0 ? $this->presensiEventModel->findById($id) : null;
+            $submissions = $id > 0 ? ($this->presensiSubmissionModel?->forEvent($id) ?? []) : [];
+
+            return $this->viewRenderer->renderWithLayout('admin/presensi/show.php', 'layouts/admin.php', [
+                'title' => ($item ? $item['event_name'] : 'Detail Presensi') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'presensi-detail',
+                'cmsMode' => 'detail',
+                'item' => $item,
+                'submissions' => $submissions,
+                'scripts' => $script,
+            ]);
+        }
+
+        return null;
+    }
+
     /** @param array{page?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
@@ -333,6 +408,9 @@ HTML;
             }
             if ($ssrHtml === null && in_array($page, ['prestasi', 'prestasi-add', 'prestasi-edit'], true)) {
                 $ssrHtml = $this->renderAdminPrestasiSsr($page, $request);
+            }
+            if ($ssrHtml === null && in_array($page, ['presensi', 'presensi-add', 'presensi-edit', 'presensi-detail'], true)) {
+                $ssrHtml = $this->renderAdminPresensiSsr($page, $request);
             }
             if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
                 $ssrHtml = $this->renderAdminFeatureSsr($page, $request);

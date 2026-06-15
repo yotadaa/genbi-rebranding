@@ -13,6 +13,7 @@ use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
 use App\Controllers\Public\ContactController;
 use App\Controllers\Public\PrestasiController;
+use App\Controllers\Public\PresensiController;
 use App\Controllers\Public\SitemapController;
 use App\Controllers\Public\TeamController;
 use App\Middleware\CsrfMiddleware;
@@ -23,6 +24,7 @@ use App\Middleware\CsrfMiddleware;
 /** @var HomeController $homeController */
 /** @var TeamController $teamController */
 /** @var PrestasiController $prestasiController */
+/** @var PresensiController $presensiController */
 /** @var EventController $eventController */
 /** @var NewsController $newsController */
 /** @var CommentController $commentController */
@@ -37,6 +39,8 @@ $router->get('/teams', static fn(Request $request, Response $response) => $teamC
 $router->get('/prestasi', static fn(Request $request, Response $response) => $prestasiController->index($request, $response));
 $router->get('/prestasi/submit/{token}', static fn(Request $request, Response $response, array $params) => $prestasiController->submissionForm($request, $response, $params));
 $router->get('/prestasi/{slug}', static fn(Request $request, Response $response, array $params) => $prestasiController->show($request, $response, $params));
+$router->get('/presensi/{token}/members', static fn(Request $request, Response $response, array $params) => $presensiController->members($request, $response, $params));
+$router->get('/presensi/{token}', static fn(Request $request, Response $response, array $params) => $presensiController->show($request, $response, $params));
 $router->get('/event', static fn(Request $request, Response $response) => $eventController->index($request, $response));
 $router->get('/event/{slug}', static fn(Request $request, Response $response, array $params) => $eventController->show($request, $response, $params));
 $router->get('/contact', static fn(Request $request, Response $response) => $contactController->index($request, $response));
@@ -46,8 +50,9 @@ $router->get('/news/{slug}/comments', static fn(Request $request, Response $resp
 $router->get('/news/{slug}', static fn(Request $request, Response $response, array $params) => $newsController->show($request, $response, $params));
 
 // Public POST routes with CSRF protection
-$router->group([$csrfMiddleware], static function ($router) use ($prestasiController, $commentController) {
+$router->group([$csrfMiddleware], static function ($router) use ($prestasiController, $presensiController, $commentController) {
     $router->post('/prestasi/submit/{token}', static fn(Request $request, Response $response, array $params) => $prestasiController->submitWithToken($request, $response, $params));
+    $router->post('/presensi/{token}', static fn(Request $request, Response $response, array $params) => $presensiController->submit($request, $response, $params));
     $router->post('/news/{slug}/comment', static fn(Request $request, Response $response, array $params) => $commentController->store($request, $response, $params));
     $router->post('/news/{slug}/comment/{id}/vote', static fn(Request $request, Response $response, array $params) => $commentController->vote($request, $response, $params));
 });

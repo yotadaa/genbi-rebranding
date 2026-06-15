@@ -59,6 +59,8 @@
     phoneArrowUp: '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 6h3.75V9.75M18.75 6l-4.5 4.5M2.25 6.75c0 8.28 6.72 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.37c0-.52-.36-.97-.86-1.1l-4.42-1.1a1.13 1.13 0 0 0-1.17.42l-.97 1.3a1.13 1.13 0 0 1-1.21.39 12.04 12.04 0 0 1-7.15-7.15 1.13 1.13 0 0 1 .39-1.21l1.3-.97c.36-.27.52-.73.42-1.17L6.98 3.61a1.13 1.13 0 0 0-1.1-.86H4.5A2.25 2.25 0 0 0 2.25 5v1.75Z"/></svg>'
   };
 
+  icons.xMark = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
+  icons.chevronRight = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>';
   icons.photo = icons.slider;
   icons.image = icons.gallery;
   icons.documentText = icons.page;
@@ -168,6 +170,7 @@
     ] },
     { key: 'page', label: 'Page', href: adminUrl('page'), icon: 'page' },
     { key: 'feature', label: 'Program Utama', href: adminUrl('feature'), icon: 'feature' },
+    { key: 'event', label: 'Agenda', href: adminUrl('event'), icon: 'event' },
     { key: 'team', label: 'Team Member', href: adminUrl('team-member'), icon: 'users' },
     { key: 'news', label: 'News', href: adminUrl('news'), icon: 'news', children: [
       { key: 'category', label: 'Category', href: adminUrl('category') },
@@ -178,7 +181,10 @@
       { key: 'prestasi-list', label: 'Prestasi', href: adminUrl('prestasi') },
       { key: 'prestasi-token', label: 'Token Form', href: adminUrl('prestasi-token') }
     ] },
-    { key: 'event', label: 'Agenda', href: adminUrl('event'), icon: 'event' },
+    { key: 'presensi', label: 'Presensi', href: adminUrl('presensi'), icon: 'qrCode', children: [
+      { key: 'presensi-list', label: 'Event Presensi', href: adminUrl('presensi') },
+      { key: 'presensi-add', label: 'Add Event', href: adminUrl('presensi-add') }
+    ] },
     { key: 'subscriber', label: 'Subscriber', href: '#', icon: 'subscriber' },
     { key: 'slider', label: 'Slider', href: adminUrl('slider'), icon: 'slider' },
     { key: 'testimonial', label: 'Testimonial', href: '#', icon: 'social' },
@@ -200,12 +206,14 @@
     setupAdminMobile();
     ensureConfirmModal();
     document.body.classList.add('page-ready');
+    window.setTimeout(() => normalizeSelectIcons(document), 0);
 
     // Restore visibility when page is loaded from bfcache (back/forward navigation)
     window.addEventListener('pageshow', function (event) {
       if (event.persisted) {
         document.body.classList.remove('page-leaving');
         document.body.classList.add('page-ready');
+        window.setTimeout(() => normalizeSelectIcons(document), 0);
       }
     });
   }
@@ -228,7 +236,7 @@
             return `
               <div class="admin-nav-group ${isActive ? 'is-open' : ''}">
                 <a href="${item.href}" class="admin-link ${isActive ? 'admin-link-active' : ''}">
-                  ${icon(item.icon)}<span>${item.label}</span>${item.children ? '<span class="admin-nav-caret ml-auto">›</span>' : ''}
+                  ${icon(item.icon)}<span>${item.label}</span>${item.children ? icon('chevronRight', 'admin-nav-caret ml-auto') : ''}
                 </a>
                 ${item.children ? `<div class="admin-subnav">${item.children.map((child) => `<a href="${child.href}" class="admin-sub-link ${child.key === active ? 'is-active' : ''}">${child.label}</a>`).join('')}</div>` : ''}
               </div>
@@ -301,6 +309,18 @@
     toast.textContent = message;
     toast.classList.add('is-visible');
     window.setTimeout(() => toast.classList.remove('is-visible'), 2400);
+  }
+
+  function normalizeSelectIcons(root = document) {
+    root.querySelectorAll('.select-button, .admin-select-button').forEach((button) => {
+      Array.from(button.querySelectorAll('span')).forEach((span) => {
+        const text = span.textContent.trim();
+        if (text.length !== 1 || text.charCodeAt(0) !== 0x2304) return;
+        span.className = 'select-button-icon';
+        span.setAttribute('aria-hidden', 'true');
+        span.innerHTML = icon('chevronDown', 'h-4 w-4 shrink-0');
+      });
+    });
   }
 
   function ensureConfirmModal() {
@@ -382,5 +402,5 @@
     return name.split(' ').filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase();
   }
 
-  window.GenBIAdmin = { renderAdminShell, showToast, showConfirm, icon, escapeHtml, initials, programIconChoices, programIconGroups };
+  window.GenBIAdmin = { renderAdminShell, showToast, showConfirm, icon, normalizeSelectIcons, escapeHtml, initials, programIconChoices, programIconGroups };
 })();

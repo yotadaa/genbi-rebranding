@@ -88,11 +88,16 @@ test('routeUrl resolves named public and admin routes', () => {
   assert.equal(Core.routeUrl('public.newsDetail', { slug: 'genbi-peka', id: 7 }, { protocol: 'file:' }), 'news-detail.html?slug=genbi-peka&id=7');
   assert.equal(Core.routeUrl('public.eventDetail', { slug: 'seminar-genbi-12', id: 12 }), '/event/seminar-genbi-12');
   assert.equal(Core.routeUrl('public.prestasiSubmit', { token: 'abc123' }), '/prestasi/submit/abc123');
+  assert.equal(Core.routeUrl('public.presensiShow', { token: 'token-123' }), '/presensi/token-123');
+  assert.equal(Core.routeUrl('public.presensiMembers', { token: 'token-123' }), '/presensi/token-123/members');
   assert.equal(Core.routeUrl('admin.newsDelete', { id: 9 }), '/admin/news/9/delete');
   assert.equal(Core.routeUrl('admin.categories'), '/admin/categories');
   assert.equal(Core.routeUrl('admin.categoryUpdate', { id: 4 }), '/admin/categories/4/update');
   assert.equal(Core.routeUrl('admin.categoryDelete', { id: 4 }), '/admin/categories/4/delete');
   assert.equal(Core.routeUrl('admin.prestasiTokenRevoke', { id: 3 }), '/admin/prestasi-tokens/3/revoke');
+  assert.equal(Core.routeUrl('admin.presensiAdd'), '/admin/presensi-add');
+  assert.equal(Core.routeUrl('admin.presensiShow', { id: 8 }), '/admin/presensi/8');
+  assert.equal(Core.routeUrl('admin.presensiApprove', { id: 14 }), '/admin/presensi/submissions/14/approve');
 });
 
 test('resolveStaticRoute maps clean routes to fallback HTML files', () => {

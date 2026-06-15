@@ -135,6 +135,53 @@ class TeamMember
     }
 
     /** @return array<int, array<string, mixed>> */
+    public function searchOptions(string $query = '', int $limit = 12, array $filters = []): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        try {
+            $limit = max(1, min(500, $limit));
+            $sql = 'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM teams t
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE t.deleted_at IS NULL';
+            $params = [];
+            if (trim($query) !== '') {
+                $search = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim($query)) . '%';
+                $sql .= ' AND (t.name LIKE :q_name OR t.designation LIKE :q_designation OR d.nama LIKE :q_division OR COALESCE(k.nama, t.komsat) LIKE :q_campus)';
+                $params[':q_name'] = $search;
+                $params[':q_designation'] = $search;
+                $params[':q_division'] = $search;
+                $params[':q_campus'] = $search;
+            }
+            $divisionId = (int) ($filters['division_id'] ?? $filters['divisi_id'] ?? 0);
+            if ($divisionId > 0) {
+                $sql .= ' AND t.divisi_id = :division_id';
+                $params[':division_id'] = $divisionId;
+            }
+            if (!empty($filters['active_only'])) {
+                $sql .= " AND LOWER(COALESCE(k.nama, t.komsat, '')) NOT LIKE :alumni_komsat";
+                $params[':alumni_komsat'] = '%alumni%';
+            }
+            $sql .= ' ORDER BY t.name ASC LIMIT :limit';
+
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map([self::class, 'mapRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public function bpiCore(?int $limit = 10): array
     {
         if (!$this->db) {

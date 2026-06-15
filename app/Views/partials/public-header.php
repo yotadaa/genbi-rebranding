@@ -11,6 +11,10 @@ $navItems = [
     ['label' => 'About', 'key' => 'about'],
     ['label' => 'Team', 'key' => 'team'],
     ['label' => 'Prestasi', 'key' => 'prestasi'],
+    ['label' => 'Kegiatan', 'key' => 'kegiatan', 'href' => '/event', 'children' => [
+        ['label' => 'Agenda', 'key' => 'event', 'href' => '/event'],
+        ['label' => 'Program Utama', 'key' => 'feature', 'href' => '/feature'],
+    ]],
     ['label' => 'News', 'key' => 'news'],
     ['label' => 'Contact', 'key' => 'contact'],
 ];
@@ -43,7 +47,25 @@ $activeKey = $activeNav ?? '';
       </a>
       <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
         <?php foreach ($navItems as $item): ?>
-          <a data-transition href="<?= $url($item['key']) ?>" class="nav-link <?= $item['key'] === $activeKey ? 'nav-link-active' : '' ?>"><?= $e($item['label']) ?></a>
+          <?php
+            $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+            $isActive = $item['key'] === $activeKey || array_reduce($children, static fn(bool $carry, array $child): bool => $carry || ($child['key'] ?? '') === $activeKey, false);
+          ?>
+          <?php if ($children): ?>
+            <div class="nav-dropdown <?= $isActive ? 'is-active' : '' ?>">
+              <a data-transition href="<?= $e($item['href'] ?? $url($item['key'])) ?>" class="nav-link nav-dropdown-trigger <?= $isActive ? 'nav-link-active' : '' ?>" aria-haspopup="true" aria-expanded="false">
+                <?= $e($item['label']) ?>
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+              </a>
+              <div class="nav-dropdown-menu" role="menu">
+                <?php foreach ($children as $child): ?>
+                  <a data-transition href="<?= $e($child['href'] ?? $url($child['key'] ?? '')) ?>" role="menuitem" class="<?= ($child['key'] ?? '') === $activeKey ? 'is-active' : '' ?>"><?= $e($child['label'] ?? '') ?></a>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          <?php else: ?>
+            <a data-transition href="<?= $url($item['key']) ?>" class="nav-link <?= $isActive ? 'nav-link-active' : '' ?>"><?= $e($item['label']) ?></a>
+          <?php endif; ?>
         <?php endforeach; ?>
       </nav>
       <div class="hidden items-center gap-3 lg:flex">
@@ -65,7 +87,22 @@ $activeKey = $activeNav ?? '';
     </div>
     <nav class="mt-8 grid gap-2" aria-label="Mobile navigation">
       <?php foreach ($navItems as $item): ?>
-        <a data-transition href="<?= $url($item['key']) ?>" class="mobile-link <?= $item['key'] === $activeKey ? 'mobile-link-active' : '' ?>"><?= $e($item['label']) ?><span>›</span></a>
+        <?php
+          $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+          $isActive = $item['key'] === $activeKey || array_reduce($children, static fn(bool $carry, array $child): bool => $carry || ($child['key'] ?? '') === $activeKey, false);
+        ?>
+        <?php if ($children): ?>
+          <div class="mobile-link-group">
+            <a data-transition href="<?= $e($item['href'] ?? $url($item['key'])) ?>" class="mobile-link <?= $isActive ? 'mobile-link-active' : '' ?>"><?= $e($item['label']) ?><span class="mobile-link-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg></span></a>
+            <div class="mobile-sub-links">
+              <?php foreach ($children as $child): ?>
+                <a data-transition href="<?= $e($child['href'] ?? $url($child['key'] ?? '')) ?>" class="mobile-sub-link <?= ($child['key'] ?? '') === $activeKey ? 'is-active' : '' ?>"><?= $e($child['label'] ?? '') ?></a>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php else: ?>
+          <a data-transition href="<?= $url($item['key']) ?>" class="mobile-link <?= $isActive ? 'mobile-link-active' : '' ?>"><?= $e($item['label']) ?><span class="mobile-link-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg></span></a>
+        <?php endif; ?>
       <?php endforeach; ?>
     </nav>
     <div class="mt-8 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">

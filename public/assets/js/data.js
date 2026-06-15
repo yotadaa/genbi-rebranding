@@ -32,7 +32,15 @@ const navItems = [
   { label: 'About', href: '/about', key: 'about' },
   { label: 'Team', href: '/team', key: 'team' },
   { label: 'Prestasi', href: '/prestasi', key: 'prestasi' },
-  { label: 'Event', href: '/event', key: 'event' },
+  {
+    label: 'Kegiatan',
+    href: '/event',
+    key: 'kegiatan',
+    children: [
+      { label: 'Agenda', href: '/event', key: 'event' },
+      { label: 'Program Utama', href: '/feature', key: 'feature' }
+    ]
+  },
   { label: 'News', href: '/news', key: 'news' },
   { label: 'Contact', href: '/contact', key: 'contact' }
 ];

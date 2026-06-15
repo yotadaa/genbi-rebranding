@@ -12,13 +12,16 @@
     "watch:css": "tailwindcss -c tailwind.config.js -i ./assets/css/input.css -o ./assets/css/tailwind.css --watch",
     "test": "node --test && node tools/check-theme-contrast.js",
     "serve": "node tools/static-server.js",
-    "serve:php": "php -S 127.0.0.1:8000 -t public public/index.php",
+    "serve:php": "php -S 127.0.0.1:8120 -t public public/index.php",
     "serve:php:hot": "php -S 0.0.0.0:8120 -t public public/index.php"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.0",
-    "esbuild": "0.28.0",
+    "esbuild": "^0.28.1",
     "postcss": "^8.5.14",
     "tailwindcss": "^3.4.19"
+  },
+  "dependencies": {
+    "qr-creator": "^1.0.0"
   }
 }

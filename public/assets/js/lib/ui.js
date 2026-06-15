@@ -12,6 +12,7 @@
 
   let lockCount = 0;
   let activeOverlay = null;
+  const chevronDownIcon = '<span class="select-button-icon" aria-hidden="true"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></span>';
 
   const focusableSelector = [
     'a[href]',
@@ -259,7 +260,7 @@
 
     const {
       buttonClass = 'select-button',
-      iconHtml = '<span aria-hidden="true">⌄</span>',
+      iconHtml = chevronDownIcon,
       menuClass = 'select-menu',
       offset = 6,
       portal = false,
@@ -343,14 +344,14 @@
 
   function enhanceProjectSelects(root = document) {
     const publicSelects = enhanceNativeSelects(root, 'select.js-custom-select', {
-      iconHtml: '<span aria-hidden="true">⌄</span>',
+      iconHtml: chevronDownIcon,
       portal: false,
       wrapperClass: 'custom-select custom-select-root',
     });
 
     const adminSelects = enhanceNativeSelects(root, 'select.js-admin-custom-select', {
       buttonClass: 'admin-select-button',
-      iconHtml: '<span aria-hidden="true">⌄</span>',
+      iconHtml: chevronDownIcon,
       menuClass: 'admin-select-menu',
       portal: true,
       wrapperClass: 'admin-custom-select',
@@ -369,7 +370,7 @@
         root.classList.add('custom-select-root');
         root.innerHTML = `
           <div class="custom-select">
-            <button class="select-button" type="button" aria-expanded="false"><span>${current}</span><span>⌄</span></button>
+            <button class="select-button" type="button" aria-expanded="false"><span>${current}</span>${chevronDownIcon}</button>
             <div class="select-menu hidden">
               ${options.map((option) => `<button type="button" class="${option === current ? 'is-active' : ''}" data-value="${option}">${option}</button>`).join('')}
             </div>
@@ -421,7 +422,7 @@
     root.appendChild(select);
 
     const enhanced = enhanceNativeSelect(select, {
-      iconHtml: '<span aria-hidden="true">⌄</span>',
+      iconHtml: chevronDownIcon,
       portal: false,
       wrapperClass: 'custom-select custom-select-root',
     });
@@ -435,8 +436,54 @@
     };
   }
 
+  function setupPublicMobileMenu() {
+    const panel = document.querySelector('#mobile-panel');
+    const open = document.querySelector('#open-menu');
+    const close = document.querySelector('#close-menu');
+    if (!panel || !open || !close) return;
+    if (panel.dataset.mobileMenuReady === '1') return;
+    panel.dataset.mobileMenuReady = '1';
+
+    const show = () => {
+      panel.classList.remove('hidden');
+      lockBody();
+      open.setAttribute('aria-expanded', 'true');
+      window.addEventListener('keydown', onKeydown);
+    };
+
+    const hide = () => {
+      if (panel.classList.contains('hidden')) return;
+      panel.classList.add('hidden');
+      unlockBody();
+      open.setAttribute('aria-expanded', 'false');
+      window.removeEventListener('keydown', onKeydown);
+    };
+
+    const onKeydown = (event) => {
+      if (event.key === 'Escape') hide();
+    };
+
+    open.setAttribute('aria-expanded', 'false');
+    open.setAttribute('aria-controls', 'mobile-panel');
+    open.addEventListener('click', show);
+    close.addEventListener('click', hide);
+    panel.addEventListener('click', (event) => {
+      if (event.target === panel) hide();
+    });
+    panel.querySelectorAll('a').forEach((link) => link.addEventListener('click', hide));
+  }
+
   if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => enhanceProjectSelects(document));
+    const initUi = () => {
+      enhanceProjectSelects(document);
+      setupPublicMobileMenu();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initUi);
+    } else {
+      initUi();
+    }
 
     document.addEventListener('click', (event) => {
       if (activeOverlay && !activeOverlay.contains(event.target)) closeActiveSelect();
@@ -471,6 +518,7 @@
     observeFadeUp,
     positionFloatingMenu,
     safeImage,
+    setupPublicMobileMenu,
     unique,
     unlockBody,
   };
