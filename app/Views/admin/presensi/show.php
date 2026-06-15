@@ -11,6 +11,7 @@ foreach ($roleOptions as $roleOption) {
     $roleScores[$roleName] = (int) ($roleOption['score'] ?? 0);
   }
 }
+$roleNames = array_values(array_keys($roleScores));
 $formatPresensiTime = static function (mixed $value): string {
   $raw = trim((string) $value);
   if ($raw === '') {
@@ -195,6 +196,14 @@ foreach ($submissions as $submission) {
                     </td>
                   </tr>
                 <?php else: ?>
+                  <?php
+                    $manualApprovePayload = [
+                      'event_id' => (int) ($item['id'] ?? 0),
+                      'team_id' => $memberId,
+                      'member_name' => (string) ($member['name'] ?? ''),
+                      'roles' => $roleNames,
+                    ];
+                  ?>
                   <tr class="presensi-row-missing">
                     <td class="admin-cell-title"><strong><?= $e($member['name'] ?? '') ?></strong></td>
                     <td class="admin-cell-meta">-</td>
@@ -202,7 +211,13 @@ foreach ($submissions as $submission) {
                     <td class="admin-cell-meta">-</td>
                     <td class="admin-cell-meta">-</td>
                     <td class="admin-cell-status"><span class="cms-pill presensi-pill-missing">Belum Presensi</span></td>
-                    <td class="admin-cell-actions">-</td>
+                    <td class="admin-cell-actions">
+                      <?php if ($memberId > 0 && $roleNames !== []): ?>
+                        <button class="btn btn-primary btn-sm" type="button" data-presensi-manual-approve='<?= $e(json_encode($manualApprovePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Approve Manual</button>
+                      <?php else: ?>
+                        -
+                      <?php endif; ?>
+                    </td>
                   </tr>
                 <?php endif; ?>
               <?php endforeach; ?>

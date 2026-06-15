@@ -116,6 +116,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/presensi/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPresensiController->update($request, $response, $params));
     $router->post('/admin/presensi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPresensiController->delete($request, $response, $params));
     $router->post('/admin/presensi/submissions/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approve($request, $response, $params));
+    $router->post('/admin/presensi/{eventId}/members/{teamId}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approveMember($request, $response, $params));
 
     // Prestasi Tokens
     $router->get('/admin/prestasi-tokens', static fn(Request $request, Response $response) => $adminPrestasiTokenController->index($request, $response));

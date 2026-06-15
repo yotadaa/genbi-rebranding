@@ -110,6 +110,38 @@ final class PresensiSubmission
         return $stmt->rowCount() > 0;
     }
 
+    /** @param array<string, mixed> $data */
+    public function createManualApproved(array $data): ?int
+    {
+        if (!$this->db) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                "INSERT INTO tbl_presensi_submission
+                    (presensi_event_id, team_id, role, photo_path, status, approved_by, approved_at, ip_address, user_agent, created_at, updated_at)
+                 VALUES
+                    (:event_id, :team_id, :role, '', 'approved', :approved_by, CURRENT_TIMESTAMP, :ip_address, :user_agent, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            );
+            $stmt->execute([
+                ':event_id' => (int) ($data['presensi_event_id'] ?? 0),
+                ':team_id' => (int) ($data['team_id'] ?? 0),
+                ':role' => strip_tags(mb_substr(trim((string) ($data['role'] ?? '')), 0, 120)),
+                ':approved_by' => !empty($data['approved_by']) ? (int) $data['approved_by'] : null,
+                ':ip_address' => mb_substr(trim((string) ($data['ip_address'] ?? '')), 0, 45) ?: null,
+                ':user_agent' => mb_substr(trim((string) ($data['user_agent'] ?? '')), 0, 255) ?: null,
+            ]);
+
+            return (int) $this->db->lastInsertId();
+        } catch (Throwable $error) {
+            if ($error instanceof \PDOException && (($error->errorInfo[1] ?? null) === 1062 || $error->getCode() === '23000')) {
+                return null;
+            }
+            throw $error;
+        }
+    }
+
     public function existsForEventMember(int $eventId, int $teamId): bool
     {
         if (!$this->db || $eventId <= 0 || $teamId <= 0) {

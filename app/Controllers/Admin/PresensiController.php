@@ -158,6 +158,53 @@ final class PresensiController
         $response->json(['data' => $after]);
     }
 
+    public function approveMember(Request $request, Response $response, array $params): void
+    {
+        $eventId = (int) ($params['eventId'] ?? 0);
+        $teamId = (int) ($params['teamId'] ?? 0);
+        $event = $this->events?->findById($eventId);
+        if (!$event) {
+            $response->json(['error' => 'Event presensi tidak ditemukan'], 404);
+            return;
+        }
+
+        if ($teamId <= 0 || !($this->events?->memberBelongsToEvent($eventId, $teamId) ?? false)) {
+            $response->json(['error' => 'Anggota tidak terdaftar pada event ini'], 422);
+            return;
+        }
+
+        if ($this->submissions?->existsForEventMember($eventId, $teamId)) {
+            $response->json(['error' => 'Anggota ini sudah memiliki data presensi'], 409);
+            return;
+        }
+
+        $body = $request->json();
+        $role = strip_tags(mb_substr(trim((string) ($body['role'] ?? '')), 0, 120));
+        if ($role === '' || !($this->events?->roleIsAllowed($event, $role) ?? false)) {
+            $response->json(['error' => 'Role presensi tidak valid untuk event ini'], 422);
+            return;
+        }
+
+        $userId = $this->userId();
+        $submissionId = $this->submissions?->createManualApproved([
+            'presensi_event_id' => $eventId,
+            'team_id' => $teamId,
+            'role' => $role,
+            'approved_by' => $userId,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        if (!$submissionId) {
+            $response->json(['error' => 'Gagal membuat presensi manual. Data mungkin sudah ada.'], 409);
+            return;
+        }
+
+        $after = $this->submissions?->find($submissionId);
+        $this->events?->logAudit('manual_approve', 'presensi_submission', (string) $submissionId, $userId, null, $after, $request->ip(), $request->userAgent());
+        $response->json(['data' => $after], 201);
+    }
+
     /** @param array<string, mixed> $body @return array{0: array<string, mixed>, 1: string[]} */
     private function validatedPayload(array $body): array
     {

@@ -135,6 +135,61 @@
     `);
   }
 
+  function showManualApproveModal(item = {}) {
+    const eventId = Number(item.event_id || item.presensi_event_id || 0);
+    const teamId = Number(item.team_id || 0);
+    const memberName = String(item.member_name || item.name || '');
+    const roles = Array.isArray(item.roles) ? item.roles.map((role) => String(role || '').trim()).filter(Boolean) : [];
+    if (!eventId || !teamId || !roles.length) {
+      Admin.showToast?.('Data approve manual tidak lengkap.');
+      return;
+    }
+
+    openHtmlModal('Approve Manual', `
+      <form class="category-editor-form" data-presensi-manual-approve-form>
+        <p class="config-hint">Buat presensi approved untuk ${escape(memberName)} tanpa menunggu form publik.</p>
+        <label class="config-field">
+          <span>Role</span>
+          <select class="config-input js-admin-custom-select" data-presensi-manual-role required>
+            <option value="">Pilih role</option>
+            ${roles.map((role) => `<option value="${escape(role)}">${escape(role)}</option>`).join('')}
+          </select>
+        </label>
+        <p class="config-hint" data-presensi-manual-status role="status"></p>
+        <div class="category-editor-actions">
+          <button type="button" class="btn btn-secondary" data-modal-close>Batal</button>
+          <button type="submit" class="btn btn-primary">${checkIcon} Approve</button>
+        </div>
+      </form>
+    `, (modal) => {
+      window.GenBIUI?.enhanceProjectSelects?.(modal);
+      const form = modal.querySelector('[data-presensi-manual-approve-form]');
+      const roleInput = modal.querySelector('[data-presensi-manual-role]');
+      const status = modal.querySelector('[data-presensi-manual-status]');
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const role = String(roleInput?.value || '').trim();
+        if (!role) {
+          if (status) status.textContent = 'Pilih role terlebih dahulu.';
+          return;
+        }
+        try {
+          if (status) status.textContent = 'Memproses approve manual...';
+          await requestJson(route('admin.presensiMemberApprove', { eventId, teamId }), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role }),
+          });
+          Admin.showToast?.('Presensi manual disetujui.');
+          window.setTimeout(() => window.location.reload(), 500);
+        } catch (error) {
+          if (status) status.textContent = error.message || 'Gagal approve manual.';
+          Admin.showToast?.(error.message || 'Gagal approve manual.');
+        }
+      });
+    });
+  }
+
   function bindListActions() {
     document.querySelectorAll('[data-copy-link]').forEach((button) => {
       button.addEventListener('click', () => copyText(button.dataset.copyLink || ''));
@@ -716,6 +771,15 @@
             showPhotoModal({ url: item.photo_url || '', name: item.member_name || '' });
           });
         });
+      });
+    });
+    document.querySelectorAll('[data-presensi-manual-approve]').forEach((button) => {
+      button.addEventListener('click', () => {
+        try {
+          showManualApproveModal(JSON.parse(button.dataset.presensiManualApprove || '{}'));
+        } catch {
+          Admin.showToast?.('Data approve manual tidak valid.');
+        }
       });
     });
     document.querySelectorAll('[data-approve-presensi]').forEach((button) => {

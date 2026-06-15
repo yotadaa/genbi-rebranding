@@ -86,6 +86,7 @@
       presensiDelete: { clean: '/admin/presensi/{id}/delete' },
       presensiSubmissions: { clean: '/admin/presensi/{id}/submissions' },
       presensiApprove: { clean: '/admin/presensi/submissions/{id}/approve' },
+      presensiMemberApprove: { clean: '/admin/presensi/{eventId}/members/{teamId}/approve' },
       teamMembers: { clean: '/admin/team-members' },
       teamMemberOptions: { clean: '/admin/team-members/options' },
       teamMembersBulk: { clean: '/admin/team-members/bulk' },
