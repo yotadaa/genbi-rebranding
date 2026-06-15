@@ -11,6 +11,7 @@ use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
 use App\Models\Feature;
+use App\Models\GenBIPoint;
 use App\Models\PresensiEvent;
 use App\Models\PresensiSubmission;
 use App\Models\Prestasi;
@@ -30,6 +31,7 @@ final class AdminPageController
         private ?SiteSettings $siteSettings = null,
         private ?PresensiEvent $presensiEventModel = null,
         private ?PresensiSubmission $presensiSubmissionModel = null,
+        private ?GenBIPoint $genbiPointModel = null,
     ) {
     }
 
@@ -395,6 +397,61 @@ HTML;
         return null;
     }
 
+    private function renderAdminGenBIPoinSsr(string $page, Request $request): ?string
+    {
+        if (!$this->genbiPointModel) {
+            return null;
+        }
+
+        $script = '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260616g"></script>';
+
+        if ($page === 'genbi-poin') {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+            $filters = [
+                'q' => $request->query('q'),
+            ];
+            $items = $this->genbiPointModel->membersWithPoints($filters, $pg['per_page'], $pg['offset']);
+            $total = $this->genbiPointModel->countMembers($filters);
+            $totalPages = Paginator::totalPages($total, $pg['per_page']);
+            $activities = $this->genbiPointModel->activities([], 10, 0);
+
+            return $this->viewRenderer->renderWithLayout('admin/genbi-poin/index.php', 'layouts/admin.php', [
+                'title' => 'GenBI Poin | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'genbi-poin',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'activities' => $activities,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => $totalPages,
+                'filters' => $filters,
+                'scripts' => $script,
+            ]);
+        }
+
+        if ($page === 'genbi-poin-add' || $page === 'genbi-poin-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $page === 'genbi-poin-edit' && $id > 0 ? $this->genbiPointModel->findActivity($id) : null;
+
+            return $this->viewRenderer->renderWithLayout('admin/genbi-poin/form.php', 'layouts/admin.php', [
+                'title' => ($page === 'genbi-poin-edit' ? 'Edit Aktivitas Poin' : 'Tambah Aktivitas Poin') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'genbi-poin-add',
+                'cmsMode' => 'editor',
+                'isEdit' => $page === 'genbi-poin-edit',
+                'item' => $item,
+                'scripts' => $script,
+            ]);
+        }
+
+        return null;
+    }
+
     /** @param array{page?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
@@ -411,6 +468,9 @@ HTML;
             }
             if ($ssrHtml === null && in_array($page, ['presensi', 'presensi-add', 'presensi-edit', 'presensi-detail'], true)) {
                 $ssrHtml = $this->renderAdminPresensiSsr($page, $request);
+            }
+            if ($ssrHtml === null && in_array($page, ['genbi-poin', 'genbi-poin-add', 'genbi-poin-edit'], true)) {
+                $ssrHtml = $this->renderAdminGenBIPoinSsr($page, $request);
             }
             if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
                 $ssrHtml = $this->renderAdminFeatureSsr($page, $request);

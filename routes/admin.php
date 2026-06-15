@@ -11,6 +11,7 @@ use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
 use App\Controllers\Admin\NewsCommentController;
 use App\Controllers\Admin\EventController as AdminEventController;
+use App\Controllers\Admin\GenBIPointController as AdminGenBIPointController;
 use App\Controllers\Admin\PresensiController as AdminPresensiController;
 use App\Controllers\Admin\PrestasiController as AdminPrestasiController;
 use App\Controllers\Admin\PrestasiTokenController;
@@ -30,6 +31,7 @@ use App\Middleware\RoleMiddleware;
 /** @var NewsCommentController $adminNewsCommentController */
 /** @var AdminEventController $adminEventController */
 /** @var AdminPresensiController $adminPresensiController */
+/** @var AdminGenBIPointController $adminGenBIPointController */
 /** @var AdminPrestasiController $adminPrestasiController */
 /** @var PrestasiTokenController $adminPrestasiTokenController */
 /** @var AdminPhotoGalleryController $adminPhotoGalleryController */
@@ -59,6 +61,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $adminNewsCommentController,
     $adminEventController,
     $adminPresensiController,
+    $adminGenBIPointController,
     $adminPrestasiController,
     $adminPrestasiTokenController,
     $adminTeamMemberController,
@@ -117,6 +120,13 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/presensi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPresensiController->delete($request, $response, $params));
     $router->post('/admin/presensi/submissions/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approve($request, $response, $params));
     $router->post('/admin/presensi/{eventId}/members/{teamId}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approveMember($request, $response, $params));
+
+    // GenBI Poin CMS
+    $router->get('/admin/genbi-poin/members', static fn(Request $request, Response $response) => $adminGenBIPointController->members($request, $response));
+    $router->get('/admin/genbi-poin/activities', static fn(Request $request, Response $response) => $adminGenBIPointController->activities($request, $response));
+    $router->get('/admin/genbi-poin/activities/{id}', static fn(Request $request, Response $response, array $params) => $adminGenBIPointController->showActivity($request, $response, $params));
+    $router->post('/admin/genbi-poin/activities', static fn(Request $request, Response $response) => $adminGenBIPointController->storeActivity($request, $response));
+    $router->post('/admin/genbi-poin/activities/{id}/update', static fn(Request $request, Response $response, array $params) => $adminGenBIPointController->updateActivity($request, $response, $params));
 
     // Prestasi Tokens
     $router->get('/admin/prestasi-tokens', static fn(Request $request, Response $response) => $adminPrestasiTokenController->index($request, $response));

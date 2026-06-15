@@ -185,6 +185,10 @@
       { key: 'presensi-list', label: 'Event Presensi', href: adminUrl('presensi') },
       { key: 'presensi-add', label: 'Add Event', href: adminUrl('presensi-add') }
     ] },
+    { key: 'genbi-poin', label: 'GenBI Poin', href: adminUrl('genbi-poin'), icon: 'chartBar', children: [
+      { key: 'genbi-poin-list', label: 'Rekap Poin', href: adminUrl('genbi-poin') },
+      { key: 'genbi-poin-add', label: 'Tambah Aktivitas', href: adminUrl('genbi-poin-add') }
+    ] },
     { key: 'subscriber', label: 'Subscriber', href: '#', icon: 'subscriber' },
     { key: 'slider', label: 'Slider', href: adminUrl('slider'), icon: 'slider' },
     { key: 'testimonial', label: 'Testimonial', href: '#', icon: 'social' },
