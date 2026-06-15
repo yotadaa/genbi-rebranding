@@ -134,6 +134,15 @@ body.page-leaving {
   position: relative;
 }
 
+.nav-dropdown::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 0.7rem;
+}
+
 .nav-dropdown-trigger {
   display: inline-flex;
   align-items: center;
