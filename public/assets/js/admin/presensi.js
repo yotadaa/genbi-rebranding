@@ -496,6 +496,7 @@
           </div>
         </div>
       `, (modal) => {
+        modal.classList.add('presensi-member-picker-modal');
         const divisionInput = modal.querySelector('[data-member-picker-division]');
         const searchInput = modal.querySelector('[data-member-picker-search]');
         const checkAllInput = modal.querySelector('[data-member-picker-check-all]');

@@ -4896,6 +4896,11 @@ input[type="file"].config-input::file-selector-button:hover {
   box-shadow: 0 30px 80px rgb(15 23 42 / 0.28);
 }
 
+.presensi-member-picker-modal .category-editor-panel {
+  width: min(920px, calc(100vw - 2rem));
+  max-height: min(90vh, 760px);
+}
+
 .category-editor-head {
   display: flex;
   align-items: flex-start;
@@ -5492,6 +5497,12 @@ input[type="file"].config-input::file-selector-button:hover {
   padding-right: 0.15rem;
 }
 
+@media (min-width: 760px) {
+  .presensi-member-picker-modal .presensi-picker-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .presensi-picker-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -5579,6 +5590,28 @@ input[type="file"].config-input::file-selector-button:hover {
   color: rgb(var(--text-primary, 23 23 23));
   font-size: 0.9rem;
   font-weight: 850;
+}
+
+.presensi-table-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(var(--border-subtle, 23 23 23) / 0.1);
+}
+
+.presensi-row-missing {
+  background: rgb(var(--surface-soft, 248 250 252) / 0.62);
+}
+
+.presensi-row-missing .admin-cell-title strong,
+.presensi-row-missing .admin-cell-meta {
+  color: rgb(var(--text-secondary, 82 82 82));
+}
+
+.presensi-pill-missing {
+  background: rgb(241 245 249);
+  color: rgb(71 85 105);
 }
 
 @media (max-width: 640px) {

@@ -51,6 +51,21 @@ $formatPresensiTime = static function (mixed $value): string {
   $month = $months[(int) $date->format('n')] ?? $date->format('m');
   return sprintf('%s, %s %s %s %s', $day, $date->format('H:i'), $date->format('j'), $month, $date->format('Y'));
 };
+$members = $item && is_array($item['members'] ?? null) ? $item['members'] : [];
+$submissionsByTeamId = [];
+$memberIds = [];
+foreach ($members as $member) {
+  $memberId = (int) ($member['id'] ?? 0);
+  if ($memberId > 0) {
+    $memberIds[$memberId] = true;
+  }
+}
+foreach ($submissions as $submission) {
+  $teamId = (int) ($submission['team_id'] ?? 0);
+  if ($teamId > 0 && !isset($submissionsByTeamId[$teamId])) {
+    $submissionsByTeamId[$teamId] = $submission;
+  }
+}
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -105,31 +120,6 @@ $formatPresensiTime = static function (mixed $value): string {
             <?php endforeach; ?>
           </div>
         </div>
-        <div class="mt-5">
-          <p class="eyebrow">Anggota</p>
-          <div class="admin-data-table-wrap presensi-member-table-wrap mt-2">
-            <table class="admin-table admin-data-table presensi-member-table">
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Jabatan</th>
-                  <th>Divisi</th>
-                  <th>Kampus</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach (($item['members'] ?? []) as $member): ?>
-                  <tr>
-                    <td><strong><?= $e($member['name'] ?? '') ?></strong></td>
-                    <td><?= $e($member['role'] ?? '-') ?></td>
-                    <td><?= $e($member['division'] ?? '-') ?></td>
-                    <td><?= $e($member['campus'] ?? '-') ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </section>
 
       <aside class="admin-card p-5 md:p-6">
@@ -143,6 +133,13 @@ $formatPresensiTime = static function (mixed $value): string {
     </div>
 
     <section class="admin-card p-0 mt-5">
+      <div class="presensi-table-header p-5 md:p-6">
+        <div>
+          <p class="eyebrow">List Presensi Anggota</p>
+          <h2 class="mt-2 text-xl font-bold text-neutral-950">Daftar Kehadiran</h2>
+        </div>
+        <p class="text-sm font-semibold text-neutral-500"><?= count($members) ?> anggota event</p>
+      </div>
       <div class="admin-data-table-wrap">
         <table class="admin-table admin-data-table">
           <thead>
@@ -157,11 +154,64 @@ $formatPresensiTime = static function (mixed $value): string {
             </tr>
           </thead>
           <tbody id="presensi-submission-list" data-event-id="<?= (int) $item['id'] ?>">
-            <?php if (empty($submissions)): ?>
-              <tr><td colspan="7" class="text-center text-sm text-neutral-500">Belum ada presensi masuk.</td></tr>
+            <?php if (empty($members) && empty($submissions)): ?>
+              <tr><td colspan="7" class="text-center text-sm text-neutral-500">Belum ada anggota event.</td></tr>
             <?php else: ?>
+              <?php foreach ($members as $member): ?>
+                <?php
+                  $memberId = (int) ($member['id'] ?? 0);
+                  $submission = $memberId > 0 ? ($submissionsByTeamId[$memberId] ?? null) : null;
+                ?>
+                <?php if ($submission): ?>
+                  <?php
+                    $status = strtolower((string) ($submission['status'] ?? 'pending'));
+                    $submissionRole = (string) ($submission['role'] ?? '');
+                    $submissionScore = (int) ($roleScores[$submissionRole] ?? 0);
+                    $submissionTime = $formatPresensiTime($submission['created_at'] ?? '');
+                    $detailSubmission = array_merge($submission, ['role_score' => $submissionScore, 'created_at_label' => $submissionTime]);
+                    $photoPayload = [
+                      'url' => (string) ($submission['photo_url'] ?? ''),
+                      'name' => (string) ($submission['member_name'] ?? $member['name'] ?? ''),
+                    ];
+                  ?>
+                  <tr>
+                    <td class="admin-cell-title"><strong><?= $e($submission['member_name'] ?? $member['name'] ?? '') ?></strong></td>
+                    <td class="admin-cell-meta"><?= $e($submission['role'] ?? '') ?></td>
+                    <td class="admin-cell-meta"><?= $submissionScore ?> poin</td>
+                    <td class="admin-cell-meta">
+                      <?php if (!empty($submission['photo_url'])): ?>
+                        <button class="btn btn-outline btn-sm" type="button" data-presensi-photo='<?= $e(json_encode($photoPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Lihat Foto</button>
+                      <?php endif; ?>
+                    </td>
+                    <td class="admin-cell-meta"><?= $e($submissionTime) ?></td>
+                    <td class="admin-cell-status"><span class="cms-pill <?= $status === 'approved' ? 'cms-pill-green' : 'cms-pill-yellow' ?>"><?= $e(ucfirst($status)) ?></span></td>
+                    <td class="admin-cell-actions">
+                      <div class="admin-table-actions">
+                        <button class="btn btn-outline btn-sm" type="button" data-presensi-detail='<?= $e(json_encode($detailSubmission, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Detail</button>
+                        <?php if ($status !== 'approved'): ?>
+                          <button class="btn btn-primary btn-sm" type="button" data-approve-presensi="<?= (int) ($submission['id'] ?? 0) ?>">Approve</button>
+                        <?php endif; ?>
+                      </div>
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <tr class="presensi-row-missing">
+                    <td class="admin-cell-title"><strong><?= $e($member['name'] ?? '') ?></strong></td>
+                    <td class="admin-cell-meta">-</td>
+                    <td class="admin-cell-meta">0 poin</td>
+                    <td class="admin-cell-meta">-</td>
+                    <td class="admin-cell-meta">-</td>
+                    <td class="admin-cell-status"><span class="cms-pill presensi-pill-missing">Belum Presensi</span></td>
+                    <td class="admin-cell-actions">-</td>
+                  </tr>
+                <?php endif; ?>
+              <?php endforeach; ?>
               <?php foreach ($submissions as $submission): ?>
                 <?php
+                  $teamId = (int) ($submission['team_id'] ?? 0);
+                  if ($teamId > 0 && isset($memberIds[$teamId])) {
+                    continue;
+                  }
                   $status = strtolower((string) ($submission['status'] ?? 'pending'));
                   $submissionRole = (string) ($submission['role'] ?? '');
                   $submissionScore = (int) ($roleScores[$submissionRole] ?? 0);
