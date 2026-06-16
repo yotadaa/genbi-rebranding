@@ -6999,7 +6999,7 @@ input[type="file"].config-input::file-selector-button:hover {
 .admin-col-institution { width: 11rem; }
 
 .genbi-point-table {
-  min-width: 860px;
+  min-width: 960px;
 }
 
 .genbi-point-table .genbi-point-col-no {
@@ -7007,7 +7007,11 @@ input[type="file"].config-input::file-selector-button:hover {
 }
 
 .genbi-point-table .genbi-point-col-member {
-  width: 19rem;
+  width: 17rem;
+}
+
+.genbi-point-table .genbi-point-col-detail {
+  width: 11rem;
 }
 
 .genbi-point-table .genbi-point-col-meta {
@@ -7038,15 +7042,8 @@ input[type="file"].config-input::file-selector-button:hover {
   line-height: 1.3;
 }
 
-.genbi-point-table .genbi-point-member-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem;
-}
-
 .genbi-point-table .admin-cell-title strong {
-  display: inline-block;
+  display: block;
   font-size: 0.98rem;
   line-height: 1.25;
 }

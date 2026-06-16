@@ -102,6 +102,7 @@ $eyeIcon = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="current
           <colgroup>
             <col class="genbi-point-col-no">
             <col class="genbi-point-col-member">
+            <col class="genbi-point-col-detail">
             <col class="genbi-point-col-meta">
             <col class="genbi-point-col-meta">
             <col class="genbi-point-col-score">
@@ -112,6 +113,7 @@ $eyeIcon = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="current
             <tr>
               <th>No.</th>
               <th>Anggota</th>
+              <th>Detail Aktivitas</th>
               <th>Divisi</th>
               <th>Kampus</th>
               <th>Poin Presensi</th>
@@ -122,21 +124,21 @@ $eyeIcon = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="current
           <tbody>
             <?php if ($items === []): ?>
               <tr>
-                <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
+                <td colspan="8" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($items as $index => $item): ?>
                 <tr>
                   <td class="admin-cell-index"><?= $startItem + $index ?></td>
                   <td class="admin-cell-title">
-                    <div class="genbi-point-member-head">
-                      <strong><?= $e($item['name'] ?? '') ?></strong>
-                      <a class="btn btn-outline btn-sm genbi-point-detail-link" href="<?= $url('admin.genbiPoin.show', ['id' => (int) ($item['id'] ?? 0)]) ?>">
-                        <?= $eyeIcon ?>
-                        <span>Lihat Detail Aktivitas</span>
-                      </a>
-                    </div>
+                    <strong><?= $e($item['name'] ?? '') ?></strong>
                     <p><?= $e($item['role'] ?? '-') ?></p>
+                  </td>
+                  <td class="admin-cell-actions">
+                    <a class="btn btn-outline btn-sm genbi-point-detail-link" href="<?= $url('admin.genbiPoin.show', ['id' => (int) ($item['id'] ?? 0)]) ?>">
+                      <?= $eyeIcon ?>
+                      <span>Lihat Detail Aktivitas</span>
+                    </a>
                   </td>
                   <td class="admin-cell-meta"><?= $e($item['division'] ?? '-') ?></td>
                   <td class="admin-cell-meta"><?= $e($item['campus'] ?? '-') ?></td>
