@@ -57,6 +57,7 @@ $paginationWindow = static function (int $current, int $total): array {
 };
 $chevronLeft = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>';
 $chevronRight = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>';
+$eyeIcon = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 15.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z"/></svg>';
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -106,7 +107,6 @@ $chevronRight = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="cu
             <col class="genbi-point-col-score">
             <col class="genbi-point-col-score">
             <col class="genbi-point-col-score">
-            <col class="genbi-point-col-action">
           </colgroup>
           <thead>
             <tr>
@@ -117,20 +117,25 @@ $chevronRight = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="cu
               <th>Poin Presensi</th>
               <th>Poin Manual</th>
               <th>Total Poin</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             <?php if ($items === []): ?>
               <tr>
-                <td colspan="8" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
+                <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($items as $index => $item): ?>
                 <tr>
                   <td class="admin-cell-index"><?= $startItem + $index ?></td>
                   <td class="admin-cell-title">
-                    <strong><?= $e($item['name'] ?? '') ?></strong>
+                    <div class="genbi-point-member-head">
+                      <strong><?= $e($item['name'] ?? '') ?></strong>
+                      <a class="btn btn-outline btn-sm genbi-point-detail-link" href="<?= $url('admin.genbiPoin.show', ['id' => (int) ($item['id'] ?? 0)]) ?>">
+                        <?= $eyeIcon ?>
+                        <span>Lihat Detail Aktivitas</span>
+                      </a>
+                    </div>
                     <p><?= $e($item['role'] ?? '-') ?></p>
                   </td>
                   <td class="admin-cell-meta"><?= $e($item['division'] ?? '-') ?></td>
@@ -138,9 +143,6 @@ $chevronRight = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="cu
                   <td class="admin-cell-meta"><?= (int) ($item['presensi_points'] ?? 0) ?> poin</td>
                   <td class="admin-cell-meta"><?= (int) ($item['manual_points'] ?? 0) ?> poin</td>
                   <td class="admin-cell-title"><strong><?= (int) ($item['total_points'] ?? 0) ?> poin</strong></td>
-                  <td class="admin-cell-actions">
-                    <a class="btn btn-outline btn-sm" href="<?= $url('admin.genbiPoin.show', ['id' => (int) ($item['id'] ?? 0)]) ?>">Lihat Detail</a>
-                  </td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>
