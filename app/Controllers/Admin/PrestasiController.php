@@ -152,8 +152,11 @@ class PrestasiController
             return;
         }
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = (string) $finfo->file($tmpName);
+        $mimeType = $this->detectUploadedMime($tmpName);
+        if ($mimeType === '') {
+            $response->json(['error' => 'Server tidak bisa membaca tipe file upload'], 422);
+            return;
+        }
         if (!in_array($mimeType, self::ALLOWED_IMAGE_TYPES, true)) {
             $response->json(['error' => 'Tipe file tidak diizinkan. Hanya JPEG, PNG, WebP, dan GIF.'], 422);
             return;
@@ -217,6 +220,35 @@ class PrestasiController
             UPLOAD_ERR_EXTENSION => 'Upload dihentikan oleh ekstensi PHP',
             default => 'Upload gagal dengan kode error ' . $code,
         };
+    }
+
+    private function detectUploadedMime(string $tmpName): string
+    {
+        if ($tmpName === '' || !is_file($tmpName)) {
+            return '';
+        }
+
+        if (class_exists(\finfo::class)) {
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = (string) $finfo->file($tmpName);
+            if ($mime !== '') {
+                return $mime;
+            }
+        }
+
+        if (function_exists('mime_content_type')) {
+            $mime = (string) @mime_content_type($tmpName);
+            if ($mime !== '') {
+                return $mime;
+            }
+        }
+
+        $imageInfo = @getimagesize($tmpName);
+        if (is_array($imageInfo) && isset($imageInfo['mime'])) {
+            return (string) $imageInfo['mime'];
+        }
+
+        return 'application/octet-stream';
     }
 
     private function validate(array $body): array

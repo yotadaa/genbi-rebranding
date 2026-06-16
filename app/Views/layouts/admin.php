@@ -21,7 +21,7 @@ $content = $content ?? '';
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
   <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260616g">
   <link rel="stylesheet" href="/assets/css/theme.css?v=20260517a">
-  <link rel="stylesheet" href="/assets/css/styles.min.css?v=20260616h">
+  <link rel="stylesheet" href="/assets/css/styles.min.css?v=20260616i">
   <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
 <body class="admin-body" data-cms-page="<?= $e($cmsPage ?? '') ?>" data-cms-mode="<?= $e($cmsMode ?? '') ?>">

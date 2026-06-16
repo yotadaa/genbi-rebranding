@@ -140,7 +140,8 @@ body.page-leaving {
   top: 100%;
   left: 0;
   right: 0;
-  height: 0.7rem;
+  height: 1.25rem;
+  pointer-events: auto;
 }
 
 .nav-dropdown-trigger {
@@ -158,7 +159,7 @@ body.page-leaving {
 .nav-dropdown-menu {
   position: absolute;
   z-index: 80;
-  top: calc(100% + 0.45rem);
+  top: calc(100% + 0.35rem);
   left: 0;
   display: grid;
   min-width: 12.5rem;
