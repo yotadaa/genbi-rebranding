@@ -27,6 +27,36 @@ $formatActivityDate = static function (mixed $value): string {
     return $raw;
   }
 };
+$paginationWindow = static function (int $current, int $total): array {
+  if ($total <= 7) {
+    return range(1, $total);
+  }
+
+  $pages = [1, 2, $total - 1, $total, $current - 1, $current, $current + 1];
+  if ($current <= 3) {
+    $pages[] = 3;
+  }
+  if ($current >= $total - 2) {
+    $pages[] = $total - 2;
+  }
+
+  $pages = array_values(array_unique(array_filter($pages, static fn($value): bool => $value >= 1 && $value <= $total)));
+  sort($pages);
+
+  $window = [];
+  $previous = null;
+  foreach ($pages as $value) {
+    if ($previous !== null && $value - $previous > 1) {
+      $window[] = 'ellipsis-' . $previous . '-' . $value;
+    }
+    $window[] = $value;
+    $previous = $value;
+  }
+
+  return $window;
+};
+$chevronLeft = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>';
+$chevronRight = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>';
 ?>
 <section class="mx-auto max-w-7xl">
   <header class="cms-header slide-in">
@@ -67,7 +97,17 @@ $formatActivityDate = static function (mixed $value): string {
 
     <section class="admin-card p-0 mt-5">
       <div class="admin-data-table-wrap">
-        <table class="admin-table admin-data-table">
+        <table class="admin-table admin-data-table genbi-point-table">
+          <colgroup>
+            <col class="genbi-point-col-no">
+            <col class="genbi-point-col-member">
+            <col class="genbi-point-col-meta">
+            <col class="genbi-point-col-meta">
+            <col class="genbi-point-col-score">
+            <col class="genbi-point-col-score">
+            <col class="genbi-point-col-score">
+            <col class="genbi-point-col-action">
+          </colgroup>
           <thead>
             <tr>
               <th>No.</th>
@@ -77,12 +117,13 @@ $formatActivityDate = static function (mixed $value): string {
               <th>Poin Presensi</th>
               <th>Poin Manual</th>
               <th>Total Poin</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             <?php if ($items === []): ?>
               <tr>
-                <td colspan="7" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
+                <td colspan="8" class="text-center text-sm text-neutral-500">Belum ada anggota yang cocok.</td>
               </tr>
             <?php else: ?>
               <?php foreach ($items as $index => $item): ?>
@@ -97,6 +138,9 @@ $formatActivityDate = static function (mixed $value): string {
                   <td class="admin-cell-meta"><?= (int) ($item['presensi_points'] ?? 0) ?> poin</td>
                   <td class="admin-cell-meta"><?= (int) ($item['manual_points'] ?? 0) ?> poin</td>
                   <td class="admin-cell-title"><strong><?= (int) ($item['total_points'] ?? 0) ?> poin</strong></td>
+                  <td class="admin-cell-actions">
+                    <a class="btn btn-outline btn-sm" href="<?= $url('admin.genbiPoin.show', ['id' => (int) ($item['id'] ?? 0)]) ?>">Lihat Detail</a>
+                  </td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>
@@ -108,21 +152,23 @@ $formatActivityDate = static function (mixed $value): string {
     <?php if ($totalPages > 1): ?>
       <nav class="admin-pagination mt-5" aria-label="Pagination GenBI Poin">
         <?php if ($page > 1): ?>
-          <a class="pager-button" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+          <a class="pager-button pager-button-icon" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>" aria-label="Halaman sebelumnya"><?= $chevronLeft ?></a>
         <?php else: ?>
-          <span class="pager-button" aria-disabled="true">Sebelumnya</span>
+          <span class="pager-button pager-button-icon" aria-disabled="true"><?= $chevronLeft ?></span>
         <?php endif; ?>
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-          <?php if ($i === $page): ?>
-            <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
+        <?php foreach ($paginationWindow((int) $page, (int) $totalPages) as $entry): ?>
+          <?php if (is_string($entry)): ?>
+            <span class="pager-ellipsis" aria-hidden="true">...</span>
+          <?php elseif ($entry === $page): ?>
+            <span class="pager-button is-active" aria-current="page"><?= $entry ?></span>
           <?php else: ?>
-            <a class="pager-button" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+            <a class="pager-button" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery((int) $entry, $filterParams)) ?>"><?= $entry ?></a>
           <?php endif; ?>
-        <?php endfor; ?>
+        <?php endforeach; ?>
         <?php if ($page < $totalPages): ?>
-          <a class="pager-button" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+          <a class="pager-button pager-button-icon" href="<?= $url('admin.genbiPoin') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>" aria-label="Halaman berikutnya"><?= $chevronRight ?></a>
         <?php else: ?>
-          <span class="pager-button" aria-disabled="true">Berikutnya</span>
+          <span class="pager-button pager-button-icon" aria-disabled="true"><?= $chevronRight ?></span>
         <?php endif; ?>
       </nav>
     <?php endif; ?>

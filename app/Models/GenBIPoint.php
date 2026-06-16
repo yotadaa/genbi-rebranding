@@ -66,6 +66,34 @@ final class GenBIPoint
         return (int) $stmt->fetchColumn();
     }
 
+    /** @return array<string, mixed>|null */
+    public function memberWithPoints(int $teamId): ?array
+    {
+        if (!$this->db || $teamId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+             FROM teams t
+             LEFT JOIN divisis d ON d.id = t.divisi_id
+             LEFT JOIN komsats k ON k.id = t.komsat_id
+             WHERE t.id = :id AND t.deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->bindValue(':id', $teamId, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+
+        $member = TeamMember::mapRow($row);
+        $totals = $this->pointTotalsForTeamIds([$teamId]);
+
+        return array_merge($member, $totals[$teamId] ?? ['presensi_points' => 0, 'manual_points' => 0, 'total_points' => 0]);
+    }
+
     /** @param array<int, int> $teamIds @return array<int, array{presensi_points: int, manual_points: int, total_points: int}> */
     public function pointTotalsForTeamIds(array $teamIds): array
     {
@@ -171,6 +199,78 @@ final class GenBIPoint
             return $row ? $this->mapActivityRow($row) : null;
         } catch (Throwable) {
             return null;
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function manualActivitiesForTeam(int $teamId, int $limit = 100): array
+    {
+        if (!$this->db || $teamId <= 0) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT a.*, t.*, t.name AS member_name, t.designation AS member_role, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM tbl_genbi_point_activity a
+                 INNER JOIN teams t ON t.id = a.team_id
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE a.team_id = :team_id AND a.deleted_at IS NULL AND t.deleted_at IS NULL
+                 ORDER BY COALESCE(a.activity_date, DATE(a.created_at)) DESC, a.activity_id DESC
+                 LIMIT :limit'
+            );
+            $stmt->bindValue(':team_id', $teamId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', max(1, min(500, $limit)), PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map([$this, 'mapActivityRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function presensiActivitiesForTeam(int $teamId, int $limit = 100): array
+    {
+        if (!$this->db || $teamId <= 0) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT ps.*, e.event_name, e.location, e.roles_json
+                 FROM tbl_presensi_submission ps
+                 INNER JOIN tbl_presensi_event e ON e.presensi_event_id = ps.presensi_event_id
+                 WHERE ps.team_id = :team_id AND e.deleted_at IS NULL
+                 ORDER BY ps.created_at DESC, ps.submission_id DESC
+                 LIMIT :limit'
+            );
+            $stmt->bindValue(':team_id', $teamId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', max(1, min(500, $limit)), PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map(static function (array $row): array {
+                $status = strtolower((string) ($row['status'] ?? 'pending'));
+                $role = (string) ($row['role'] ?? '');
+                $score = $status === 'approved'
+                    ? PresensiEvent::roleScore(['role_options' => $row['roles_json'] ?? ''], $role)
+                    : 0;
+
+                return [
+                    'id' => (int) ($row['submission_id'] ?? 0),
+                    'event_id' => (int) ($row['presensi_event_id'] ?? 0),
+                    'event_name' => (string) ($row['event_name'] ?? ''),
+                    'location' => (string) ($row['location'] ?? ''),
+                    'role' => $role,
+                    'points' => $score,
+                    'status' => $status,
+                    'created_at' => (string) ($row['created_at'] ?? ''),
+                    'approved_at' => (string) ($row['approved_at'] ?? ''),
+                ];
+            }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable) {
+            return [];
         }
     }
 

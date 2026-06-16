@@ -58,6 +58,7 @@ final class ViewRenderer
             'admin.genbiPoin' => '/admin/genbi-poin',
             'admin.genbiPoin.add' => '/admin/genbi-poin-add',
             'admin.genbiPoin.edit' => '/admin/genbi-poin-edit?id=' . ($params['id'] ?? ''),
+            'admin.genbiPoin.show' => '/admin/genbi-poin-detail?id=' . ($params['id'] ?? ''),
             'admin.feature' => '/admin/feature',
             'admin.feature.add' => '/admin/feature-add',
             'admin.feature.edit' => '/admin/feature-edit?id=' . ($params['id'] ?? ''),

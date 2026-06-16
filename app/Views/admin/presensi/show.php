@@ -142,7 +142,7 @@ foreach ($submissions as $submission) {
         <p class="text-sm font-semibold text-neutral-500"><?= count($members) ?> anggota event</p>
       </div>
       <div class="admin-data-table-wrap">
-        <table class="admin-table admin-data-table">
+        <table class="admin-table admin-data-table presensi-attendance-table">
           <thead>
             <tr>
               <th>Nama</th>
@@ -181,7 +181,7 @@ foreach ($submissions as $submission) {
                     <td class="admin-cell-meta"><?= $submissionScore ?> poin</td>
                     <td class="admin-cell-meta">
                       <?php if (!empty($submission['photo_url'])): ?>
-                        <button class="btn btn-outline btn-sm" type="button" data-presensi-photo='<?= $e(json_encode($photoPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Lihat Foto</button>
+                        <button class="btn btn-outline btn-sm presensi-photo-button" type="button" data-presensi-photo='<?= $e(json_encode($photoPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Lihat Foto</button>
                       <?php endif; ?>
                     </td>
                     <td class="admin-cell-meta"><?= $e($submissionTime) ?></td>
@@ -213,7 +213,7 @@ foreach ($submissions as $submission) {
                     <td class="admin-cell-status"><span class="cms-pill presensi-pill-missing">Belum Presensi</span></td>
                     <td class="admin-cell-actions">
                       <?php if ($memberId > 0 && $roleNames !== []): ?>
-                        <button class="btn btn-primary btn-sm" type="button" data-presensi-manual-approve='<?= $e(json_encode($manualApprovePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Approve Manual</button>
+                        <button class="btn btn-primary btn-sm" type="button" data-presensi-manual-approve='<?= $e(json_encode($manualApprovePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Approve</button>
                       <?php else: ?>
                         -
                       <?php endif; ?>
@@ -243,7 +243,7 @@ foreach ($submissions as $submission) {
                   <td class="admin-cell-meta"><?= $submissionScore ?> poin</td>
                   <td class="admin-cell-meta">
                     <?php if (!empty($submission['photo_url'])): ?>
-                      <button class="btn btn-outline btn-sm" type="button" data-presensi-photo='<?= $e(json_encode($photoPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Lihat Foto</button>
+                      <button class="btn btn-outline btn-sm presensi-photo-button" type="button" data-presensi-photo='<?= $e(json_encode($photoPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}') ?>'>Lihat Foto</button>
                     <?php endif; ?>
                   </td>
                   <td class="admin-cell-meta"><?= $e($submissionTime) ?></td>

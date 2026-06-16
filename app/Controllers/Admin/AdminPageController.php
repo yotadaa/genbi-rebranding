@@ -449,6 +449,24 @@ HTML;
             ]);
         }
 
+        if ($page === 'genbi-poin-detail') {
+            $id = (int) ($request->query('id') ?? 0);
+            $member = $id > 0 ? $this->genbiPointModel->memberWithPoints($id) : null;
+            $presensiActivities = $id > 0 ? $this->genbiPointModel->presensiActivitiesForTeam($id, 200) : [];
+            $manualActivities = $id > 0 ? $this->genbiPointModel->manualActivitiesForTeam($id, 200) : [];
+
+            return $this->viewRenderer->renderWithLayout('admin/genbi-poin/show.php', 'layouts/admin.php', [
+                'title' => ($member ? ($member['name'] ?? 'Detail Aktivitas') : 'Detail Aktivitas') . ' | GenBI Poin',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'genbi-poin',
+                'cmsMode' => 'detail',
+                'member' => $member,
+                'presensiActivities' => $presensiActivities,
+                'manualActivities' => $manualActivities,
+                'scripts' => $script,
+            ]);
+        }
+
         return null;
     }
 
@@ -469,7 +487,7 @@ HTML;
             if ($ssrHtml === null && in_array($page, ['presensi', 'presensi-add', 'presensi-edit', 'presensi-detail'], true)) {
                 $ssrHtml = $this->renderAdminPresensiSsr($page, $request);
             }
-            if ($ssrHtml === null && in_array($page, ['genbi-poin', 'genbi-poin-add', 'genbi-poin-edit'], true)) {
+            if ($ssrHtml === null && in_array($page, ['genbi-poin', 'genbi-poin-add', 'genbi-poin-edit', 'genbi-poin-detail'], true)) {
                 $ssrHtml = $this->renderAdminGenBIPoinSsr($page, $request);
             }
             if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
