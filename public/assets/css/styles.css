@@ -1561,6 +1561,7 @@ body.page-leaving {
   display: flex;
   align-items: flex-end;
   overflow: hidden;
+  background: rgb(var(--blue-900, 12 53 114));
 }
 
 @media (min-width: 768px) {
@@ -1573,12 +1574,16 @@ body.page-leaving {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: saturate(0.92) contrast(0.96);
 }
 
 .news-detail-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, var(--blue-900) 0%, rgba(12, 53, 114, 0.85) 40%, rgba(12, 53, 114, 0.4) 70%, transparent 100%);
+  background:
+    radial-gradient(circle at 20% 20%, rgb(255 255 255 / 0.16), transparent 25%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.18)),
+    linear-gradient(90deg, rgb(var(--blue-900, 12 53 114) / 0.92), rgb(var(--blue-900, 12 53 114) / 0.70) 42%, rgb(var(--blue-900, 12 53 114) / 0.30) 70%, rgb(var(--blue-900, 12 53 114) / 0.18));
 }
 
 

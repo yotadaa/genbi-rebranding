@@ -21,7 +21,7 @@ $content = $content ?? '';
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap"></noscript>
   <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260616g">
   <link rel="stylesheet" href="/assets/css/theme.css?v=20260510a">
-  <link rel="stylesheet" href="/assets/css/styles.css?v=20260616i">
+  <link rel="stylesheet" href="/assets/css/styles.css?v=20260616j">
   <?= $jsonld ?? '' ?>
   <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
