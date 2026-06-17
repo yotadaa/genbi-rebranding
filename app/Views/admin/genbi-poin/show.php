@@ -1,5 +1,6 @@
 <?php
 $member = $member ?? null;
+$teamId = (int) ($teamId ?? ($member['id'] ?? 0));
 $presensiActivities = $presensiActivities ?? [];
 $manualActivities = $manualActivities ?? [];
 $formatDateTime = static function (mixed $value): string {
@@ -69,7 +70,7 @@ $formatDate = static function (mixed $value): string {
     </div>
     <div class="cms-actions">
       <a href="<?= $url('admin.genbiPoin') ?>" class="btn btn-secondary">Kembali</a>
-      <a href="<?= $url('admin.genbiPoin.add') ?>" class="btn btn-primary">Tambah Aktivitas</a>
+      <a href="<?= $url('admin.genbiPoin.add', ['team_id' => $teamId]) ?>" class="btn btn-primary">Tambah Aktivitas</a>
     </div>
   </header>
 

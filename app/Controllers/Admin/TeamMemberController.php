@@ -113,6 +113,18 @@ final class TeamMemberController
         $response->json(['data' => ['id' => $id, 'deleted' => true]]);
     }
 
+    public function alumni(Request $request, Response $response, array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $count = $this->team?->setAlumniStatus([$id]) ?? 0;
+        if ($count < 1) {
+            $response->json(['error' => 'Gagal menjadikan anggota alumni'], 404);
+            return;
+        }
+
+        $response->json(['data' => ['id' => $id, 'alumni' => true]]);
+    }
+
     public function setHome(Request $request, Response $response, array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -140,6 +152,7 @@ final class TeamMemberController
             'home_add' => $this->team?->setHomeVisibility($ids, true) ?? 0,
             'home_remove' => $this->team?->setHomeVisibility($ids, false) ?? 0,
             'delete' => $this->team?->bulkDelete($ids) ?? 0,
+            'alumni' => $this->team?->setAlumniStatus($ids) ?? 0,
             default => -1,
         };
 

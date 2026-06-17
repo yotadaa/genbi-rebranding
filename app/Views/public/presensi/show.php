@@ -46,7 +46,7 @@ $roleOptions = is_array($event['role_options'] ?? null)
         <input class="config-input" id="public-presensi-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
       </div>
 
-      <button type="submit" class="btn btn-primary w-full">Submit Presensi</button>
+      <button type="submit" class="btn btn-primary w-full" data-presensi-submit>Submit Presensi</button>
       <p id="public-presensi-status" class="config-hint" role="status"></p>
     </form>
   </div>

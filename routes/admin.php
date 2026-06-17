@@ -119,6 +119,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/presensi/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPresensiController->update($request, $response, $params));
     $router->post('/admin/presensi/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPresensiController->delete($request, $response, $params));
     $router->post('/admin/presensi/submissions/{id}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approve($request, $response, $params));
+    $router->post('/admin/presensi/submissions/{id}/cancel', static fn(Request $request, Response $response, array $params) => $adminPresensiController->cancel($request, $response, $params));
     $router->post('/admin/presensi/{eventId}/members/{teamId}/approve', static fn(Request $request, Response $response, array $params) => $adminPresensiController->approveMember($request, $response, $params));
 
     // GenBI Poin CMS
@@ -143,6 +144,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/team-members/{id}/update', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->update($request, $response, $params));
     $router->post('/admin/team-members/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->delete($request, $response, $params));
     $router->post('/admin/team-members/{id}/home', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->setHome($request, $response, $params));
+    $router->post('/admin/team-members/{id}/alumni', static fn(Request $request, Response $response, array $params) => $adminTeamMemberController->alumni($request, $response, $params));
 
     // Program Utama
     $router->get('/admin/features', static fn(Request $request, Response $response) => $adminFeatureController->index($request, $response));

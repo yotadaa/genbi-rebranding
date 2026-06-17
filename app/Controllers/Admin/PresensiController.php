@@ -158,6 +158,26 @@ final class PresensiController
         $response->json(['data' => $after]);
     }
 
+    public function cancel(Request $request, Response $response, array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $before = $this->submissions?->find($id);
+        if (!$before) {
+            $response->json(['error' => 'Data kehadiran tidak ditemukan'], 404);
+            return;
+        }
+
+        $userId = $this->userId();
+        $success = $this->submissions?->cancel($id) ?? false;
+        if (!$success) {
+            $response->json(['error' => 'Gagal membatalkan presensi'], 500);
+            return;
+        }
+
+        $this->events?->logAudit('cancel', 'presensi_submission', (string) $id, $userId, $before, null, $request->ip(), $request->userAgent());
+        $response->json(['data' => ['id' => $id, 'cancelled' => true]]);
+    }
+
     public function approveMember(Request $request, Response $response, array $params): void
     {
         $eventId = (int) ($params['eventId'] ?? 0);

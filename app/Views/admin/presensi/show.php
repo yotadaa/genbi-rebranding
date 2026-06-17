@@ -192,6 +192,7 @@ foreach ($submissions as $submission) {
                         <?php if ($status !== 'approved'): ?>
                           <button class="btn btn-primary btn-sm" type="button" data-approve-presensi="<?= (int) ($submission['id'] ?? 0) ?>">Approve</button>
                         <?php endif; ?>
+                        <button class="btn btn-danger btn-sm" type="button" data-cancel-presensi="<?= (int) ($submission['id'] ?? 0) ?>">Batalkan</button>
                       </div>
                     </td>
                   </tr>
@@ -254,6 +255,7 @@ foreach ($submissions as $submission) {
                       <?php if ($status !== 'approved'): ?>
                         <button class="btn btn-primary btn-sm" type="button" data-approve-presensi="<?= (int) ($submission['id'] ?? 0) ?>">Approve</button>
                       <?php endif; ?>
+                      <button class="btn btn-danger btn-sm" type="button" data-cancel-presensi="<?= (int) ($submission['id'] ?? 0) ?>">Batalkan</button>
                     </div>
                   </td>
                 </tr>

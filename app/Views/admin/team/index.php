@@ -124,9 +124,9 @@ $filterParams = array_filter([
       </form>
 
       <div class="team-batch-bar mt-3 hidden" id="team-batch-bar">
-        <a href="<?= $url('admin.team.add') ?>" class="cms-action edit">Add Team Member</a>
         <strong><span id="team-selection-count">0</span> dipilih</strong>
-        <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
+        <button type="button" class="cms-action delete" data-team-bulk="delete">Delete</button>
+        <button type="button" class="cms-action" data-team-bulk="alumni">Jadikan Alumni</button>
         <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
       </div>
 
@@ -168,7 +168,8 @@ $filterParams = array_filter([
             </div>
             <div class="team-card-actions">
               <button type="button" class="cms-action" data-team-home="<?= (int) $item['id'] ?>"
-                title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda' ?>"><?= !empty($item['show_on_home']) ? 'Remove' : 'Add' ?></button>
+                title="<?= !empty($item['show_on_home']) ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda' ?>"><?= !empty($item['show_on_home']) ? 'Hapus BPI' : 'BPI Beranda' ?></button>
+              <button type="button" class="cms-action" data-team-alumni="<?= (int) $item['id'] ?>">Jadikan Alumni</button>
               <a href="<?= $url('admin.team.edit', ['id' => (int) $item['id']]) ?>" class="cms-action edit">Edit</a>
               <button class="cms-action delete" data-delete-team="<?= (int) $item['id'] ?>">Delete</button>
             </div>

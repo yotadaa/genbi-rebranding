@@ -398,6 +398,35 @@ class TeamMember
     }
 
     /** @param array<int, int> $ids */
+    public function setAlumniStatus(array $ids): int
+    {
+        if (!$this->db || empty($ids)) return 0;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        if (empty($ids)) return 0;
+
+        try {
+            $alumniId = $this->ensureAlumniCommissionId();
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $komsatIdSql = $alumniId > 0 ? 'komsat_id = ?' : 'komsat_id = NULL';
+            $stmt = $this->db->prepare(
+                "UPDATE teams
+                 SET {$komsatIdSql},
+                     komsat = 'Alumni',
+                     show_on_home = 0,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id IN ($placeholders) AND deleted_at IS NULL"
+            );
+            $params = $alumniId > 0 ? array_merge([$alumniId], $ids) : $ids;
+            $stmt->execute($params);
+
+            return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /** @param array<int, int> $ids */
     public function setHomeVisibility(array $ids, bool $visible): int
     {
         if (!$this->db || empty($ids)) return 0;
@@ -430,6 +459,28 @@ class TeamMember
             $stmt->execute($ids);
 
             return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    private function ensureAlumniCommissionId(): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        try {
+            $stmt = $this->db->query("SELECT id FROM komsats WHERE LOWER(nama) = 'alumni' OR LOWER(nama) LIKE '%alumni%' ORDER BY CASE WHEN LOWER(nama) = 'alumni' THEN 0 ELSE 1 END, id ASC LIMIT 1");
+            $existing = (int) ($stmt?->fetchColumn() ?: 0);
+            if ($existing > 0) {
+                return $existing;
+            }
+
+            $insert = $this->db->prepare("INSERT INTO komsats (nama) VALUES ('Alumni')");
+            $insert->execute();
+
+            return (int) $this->db->lastInsertId();
         } catch (Throwable) {
             return 0;
         }

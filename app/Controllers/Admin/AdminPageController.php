@@ -72,9 +72,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>
+<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -193,7 +193,7 @@ HTML;
             'filters' => $filters,
             'filterOptions' => $filterOptions,
             'layout' => $layout,
-            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>',
         ]);
     }
 
@@ -209,9 +209,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>
+<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([
@@ -278,7 +278,7 @@ HTML;
             return null;
         }
 
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260603a"></script>';
+        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
 
         if ($page === 'feature') {
             $pg = Paginator::resolve([
@@ -333,7 +333,7 @@ HTML;
         }
 
         $script = '<script defer src="/assets/js/dist/lib/qr-creator.min.js?v=20260616g"></script>' . PHP_EOL
-            . '<script defer src="/assets/js/dist/admin/presensi.js?v=20260616g"></script>';
+            . '<script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>';
 
         if ($page === 'presensi') {
             $pg = Paginator::resolve([
@@ -403,7 +403,7 @@ HTML;
             return null;
         }
 
-        $script = '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260616g"></script>';
+        $script = '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260617a"></script>';
 
         if ($page === 'genbi-poin') {
             $pg = Paginator::resolve([
@@ -437,6 +437,8 @@ HTML;
         if ($page === 'genbi-poin-add' || $page === 'genbi-poin-edit') {
             $id = (int) ($request->query('id') ?? 0);
             $item = $page === 'genbi-poin-edit' && $id > 0 ? $this->genbiPointModel->findActivity($id) : null;
+            $prefillTeamId = $page === 'genbi-poin-add' ? (int) ($request->query('team_id') ?? 0) : 0;
+            $prefillMember = $prefillTeamId > 0 ? $this->genbiPointModel->memberWithPoints($prefillTeamId) : null;
 
             return $this->viewRenderer->renderWithLayout('admin/genbi-poin/form.php', 'layouts/admin.php', [
                 'title' => ($page === 'genbi-poin-edit' ? 'Edit Aktivitas Poin' : 'Tambah Aktivitas Poin') . ' | Admin GenBI',
@@ -445,6 +447,7 @@ HTML;
                 'cmsMode' => 'editor',
                 'isEdit' => $page === 'genbi-poin-edit',
                 'item' => $item,
+                'prefillMember' => $prefillMember,
                 'scripts' => $script,
             ]);
         }
@@ -461,6 +464,7 @@ HTML;
                 'cmsPage' => 'genbi-poin',
                 'cmsMode' => 'detail',
                 'member' => $member,
+                'teamId' => $id,
                 'presensiActivities' => $presensiActivities,
                 'manualActivities' => $manualActivities,
                 'scripts' => $script,

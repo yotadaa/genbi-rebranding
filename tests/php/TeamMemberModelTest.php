@@ -28,6 +28,7 @@ $db->exec('CREATE TABLE teams (
     tahun TEXT,
     show_on_home INTEGER DEFAULT 0,
     home_sort_order INTEGER DEFAULT 0,
+    updated_at TEXT NULL,
     deleted_at TEXT NULL
 )');
 
@@ -57,6 +58,16 @@ assert($allActive[0]['name'] === 'BPI Wilayah 2025');
 $activeOptions = $model->searchOptions('', 10, ['active_only' => true]);
 $activeOptionIds = array_map(static fn(array $item): int => (int) $item['id'], $activeOptions);
 assert(!in_array(6, $activeOptionIds, true));
+
+$alumniUpdated = $model->setAlumniStatus([1]);
+assert($alumniUpdated === 1);
+$alumniRow = $db->query('SELECT komsat_id, komsat, show_on_home FROM teams WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+assert((int) $alumniRow['komsat_id'] === 3);
+assert($alumniRow['komsat'] === 'Alumni');
+assert((int) $alumniRow['show_on_home'] === 0);
+$activeAfterAlumni = $model->searchOptions('', 10, ['active_only' => true]);
+$activeAfterAlumniIds = array_map(static fn(array $item): int => (int) $item['id'], $activeAfterAlumni);
+assert(!in_array(1, $activeAfterAlumniIds, true));
 
 $db->exec('UPDATE teams SET show_on_home = 0 WHERE id IN (3, 4, 5)');
 

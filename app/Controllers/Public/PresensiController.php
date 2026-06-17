@@ -53,7 +53,7 @@ final class PresensiController
             'csrfToken' => CsrfService::token(),
             'meta' => $meta,
             'bodyClass' => 'page-presensi page-ready',
-            'scripts' => '<script defer src="/assets/js/dist/pages/presensi.js?v=20260616g"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/pages/presensi.js?v=20260617a"></script>',
         ]);
         $response->html($html, 200, ['X-Robots-Tag' => 'noindex, nofollow']);
     }

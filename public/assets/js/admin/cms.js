@@ -1387,6 +1387,7 @@
       bindTeamDeleteButtons();
       bindTeamBatchMode();
       bindTeamHomeToggle();
+      bindTeamAlumniButtons();
       return;
     }
 
@@ -2129,7 +2130,7 @@
           <p>${escape(item.role)}</p>
           <div class="team-tags"><span>${escape(item.commission)}</span><span>${escape(item.division)}</span><span>${escape(item.status)}</span></div>
         </div>
-        <div class="team-card-actions"><button type="button" class="cms-action" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? 'Remove' : 'Add'}</button><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
+        <div class="team-card-actions"><button type="button" class="cms-action" data-team-home="${item.id}" title="${item.show_on_home ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda'}">${item.show_on_home ? 'Hapus BPI' : 'BPI Beranda'}</button><button type="button" class="cms-action" data-team-alumni="${item.id}">Jadikan Alumni</button><a href="${adminUrl('team-member-edit')}?id=${item.id}" class="cms-action edit">Edit</a><button class="cms-action delete" data-team-delete="${item.id}">Delete</button></div>
       </article>
     `;
   }
@@ -2150,6 +2151,7 @@
         if (res.ok) {
           Admin.showToast('Anggota dihapus.');
           button.closest('tr')?.remove();
+          button.closest('.team-admin-card')?.remove();
         } else {
           Admin.showToast('Gagal menghapus anggota.');
         }
@@ -2201,6 +2203,30 @@
         }
       });
     });
+    document.querySelectorAll('[data-team-alumni]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamAlumni);
+        const ok = await Admin.showConfirm({
+          title: 'Jadikan alumni?',
+          message: 'Anggota akan dipindahkan ke komisariat Alumni dan tidak masuk daftar anggota aktif.',
+          confirmText: 'Jadikan Alumni',
+        });
+        if (!ok) return;
+        const res = await fetch(route('admin.teamMemberAlumni', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': API.getCsrfToken?.() || '' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ _csrf_token: API.getCsrfToken?.() || '' }),
+        });
+        if (res.ok) {
+          teamSelection.delete(id);
+          Admin.showToast('Anggota dijadikan alumni.');
+          render();
+        } else {
+          Admin.showToast('Gagal menjadikan anggota alumni.');
+        }
+      });
+    });
   }
 
   function renderTeamFilterButtons(state, render) {
@@ -2242,7 +2268,8 @@
 
     bar.innerHTML = `
       <strong><span id="team-selection-count">${teamSelection.size}</span> dipilih</strong>
-      <button type="button" class="cms-action" data-team-bulk="home_remove">Hapus BPI dari Beranda</button>
+      <button type="button" class="cms-action delete" data-team-bulk="delete">Delete</button>
+      <button type="button" class="cms-action" data-team-bulk="alumni">Jadikan Alumni</button>
       <button type="button" class="cms-action" id="team-selection-clear">Clear</button>
     `;
 
@@ -2258,10 +2285,13 @@
       }
 
       const action = button.dataset.teamBulk;
+      const isDelete = action === 'delete';
+      const isAlumni = action === 'alumni';
       const ok = await Admin.showConfirm({
-        title: 'Jalankan batch operation?',
+        title: isDelete ? 'Delete anggota terpilih?' : 'Jadikan alumni?',
         message: `${teamSelection.size} anggota akan diproses.`,
-        confirmText: 'Proses',
+        confirmText: isDelete ? 'Delete' : isAlumni ? 'Jadikan Alumni' : 'Proses',
+        danger: isDelete,
       });
       if (!ok) return;
 
@@ -3565,7 +3595,6 @@
     const batchToggle = document.querySelector('#team-batch-toggle');
     const batchBar = document.querySelector('#team-batch-bar');
     const teamList = document.querySelector('#admin-team-list[data-ssr="true"]');
-    const selectionCount = document.querySelector('#team-selection-count');
     const clearBtn = document.querySelector('#team-selection-clear');
     
     if (!batchToggle || !batchBar || !teamList) return;
@@ -3574,6 +3603,7 @@
     const selection = new Set();
 
     const updateCount = () => {
+      const selectionCount = document.querySelector('#team-selection-count');
       if (selectionCount) selectionCount.textContent = String(selection.size);
     };
 
@@ -3625,21 +3655,31 @@
         }
 
         const action = button.dataset.teamBulk;
-        const adding = action === 'home_add';
+        const isDelete = action === 'delete';
+        const isAlumni = action === 'alumni';
+        const ok = await Admin.showConfirm({
+          title: isDelete ? 'Delete anggota terpilih?' : 'Jadikan alumni?',
+          message: `${selection.size} anggota akan diproses.`,
+          confirmText: isDelete ? 'Delete' : isAlumni ? 'Jadikan Alumni' : 'Proses',
+          danger: isDelete,
+        });
+        if (!ok) return;
         const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
 
-        for (const id of selection) {
-          try {
-            await fetch(route('admin.teamMemberHome', { id }), {
-              method: 'POST',
-              headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-              credentials: 'same-origin',
-              body: JSON.stringify({ show_on_home: adding, _csrf_token: token }),
-            });
-          } catch (e) { /* continue */ }
+        try {
+          const res = await fetch(route('admin.teamMembersBulk'), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ action, ids: Array.from(selection), _csrf_token: token }),
+          });
+          if (!res.ok) throw new Error('Batch operation gagal.');
+        } catch (e) {
+          Admin.showToast('Batch operation gagal.');
+          return;
         }
 
-        Admin.showToast(adding ? 'Anggota ditambahkan ke BPI Beranda.' : 'Anggota dihapus dari BPI Beranda.');
+        Admin.showToast(isDelete ? 'Anggota terpilih dihapus.' : 'Anggota terpilih dijadikan alumni.');
         setTimeout(() => location.reload(), 800);
       });
     });
@@ -3667,13 +3707,42 @@
             card?.classList.toggle('is-home', adding);
             card?.querySelectorAll('[data-team-home]').forEach((teamHomeButton) => {
               teamHomeButton.title = adding ? 'Hapus BPI dari Beranda' : 'Tambah Anggota ke Beranda';
-              teamHomeButton.textContent = adding ? 'Remove' : 'Add';
+              teamHomeButton.textContent = adding ? 'Hapus BPI' : 'BPI Beranda';
             });
           } else {
             Admin.showToast('Gagal memperbarui BPI Beranda.');
           }
         } catch (e) {
           Admin.showToast('Gagal memperbarui BPI Beranda.');
+        }
+      });
+    });
+  }
+
+  function bindTeamAlumniButtons() {
+    document.querySelectorAll('[data-team-alumni]').forEach(button => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.teamAlumni);
+        if (!id) return;
+        const ok = await Admin.showConfirm({
+          title: 'Jadikan alumni?',
+          message: 'Anggota akan dipindahkan ke komisariat Alumni dan tidak masuk daftar anggota aktif.',
+          confirmText: 'Jadikan Alumni',
+        });
+        if (!ok) return;
+        const token = (API && API.getCsrfToken) ? API.getCsrfToken() : '';
+        try {
+          const res = await fetch(route('admin.teamMemberAlumni', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ _csrf_token: token }),
+          });
+          if (!res.ok) throw new Error('Gagal menjadikan anggota alumni.');
+          Admin.showToast('Anggota dijadikan alumni.');
+          setTimeout(() => location.reload(), 700);
+        } catch (e) {
+          Admin.showToast('Gagal menjadikan anggota alumni.');
         }
       });
     });

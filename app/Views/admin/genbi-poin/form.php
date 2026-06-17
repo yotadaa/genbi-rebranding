@@ -1,9 +1,10 @@
 <?php
 $isEdit = $isEdit ?? false;
 $item = $item ?? null;
+$prefillMember = $prefillMember ?? null;
 $itemId = $isEdit ? (int) ($item['id'] ?? 0) : 0;
-$teamId = $isEdit ? (int) ($item['team_id'] ?? 0) : 0;
-$memberName = $isEdit ? (string) ($item['member_name'] ?? '') : '';
+$teamId = $isEdit ? (int) ($item['team_id'] ?? 0) : (int) ($prefillMember['id'] ?? 0);
+$memberName = $isEdit ? (string) ($item['member_name'] ?? '') : (string) ($prefillMember['name'] ?? '');
 $activityName = $isEdit ? (string) ($item['activity_name'] ?? '') : '';
 $points = $isEdit ? (int) ($item['points'] ?? 0) : 0;
 $activityDate = $isEdit ? (string) ($item['activity_date'] ?? '') : '';

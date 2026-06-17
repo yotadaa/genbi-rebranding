@@ -385,7 +385,6 @@
               <thead>
                 <tr>
                   <th>Nama</th>
-                  <th>Jabatan</th>
                   <th>Divisi</th>
                   <th>Kampus</th>
                   <th class="text-right">Aksi</th>
@@ -395,7 +394,6 @@
                 ${members.map((member) => `
                   <tr>
                     <td><strong>${escape(member.name)}</strong></td>
-                    <td>${escape(member.role || '-')}</td>
                     <td>${escape(member.division || '-')}</td>
                     <td>${escape(member.campus || '-')}</td>
                     <td class="text-right">
@@ -794,6 +792,22 @@
         if (!ok) return;
         await requestJson(route('admin.presensiApprove', { id }), { method: 'POST' });
         Admin.showToast?.('Presensi disetujui.');
+        window.setTimeout(() => window.location.reload(), 500);
+      });
+    });
+    document.querySelectorAll('[data-cancel-presensi]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = Number(button.dataset.cancelPresensi || 0);
+        if (!id) return;
+        const ok = await Admin.showConfirm?.({
+          title: 'Batalkan presensi?',
+          message: 'Data kehadiran anggota ini akan dihapus dari event sehingga bisa presensi ulang atau di-approve lagi.',
+          confirmText: 'Batalkan',
+          danger: true,
+        });
+        if (!ok) return;
+        await requestJson(route('admin.presensiCancel', { id }), { method: 'POST' });
+        Admin.showToast?.('Presensi dibatalkan.');
         window.setTimeout(() => window.location.reload(), 500);
       });
     });

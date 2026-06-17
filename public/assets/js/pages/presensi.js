@@ -56,8 +56,11 @@
     const teamIdInput = form.querySelector('#public-presensi-team-id');
     const suggestions = form.querySelector('#public-presensi-suggestions');
     const status = form.querySelector('#public-presensi-status');
+    const submitButton = form.querySelector('[data-presensi-submit]') || form.querySelector('button[type="submit"]');
+    const submitIdleHtml = submitButton?.innerHTML || 'Submit Presensi';
     let selectedName = '';
     let searchTimer = 0;
+    let isSubmitting = false;
 
     const setStatus = (message, isError = false) => {
       if (!status) return;
@@ -69,6 +72,17 @@
     const clearSelection = () => {
       if (teamIdInput) teamIdInput.value = '';
       selectedName = '';
+    };
+
+    const setSubmitting = (nextState) => {
+      isSubmitting = nextState;
+      form.classList.toggle('is-submitting', nextState);
+      form.setAttribute('aria-busy', nextState ? 'true' : 'false');
+      if (!submitButton) return;
+      submitButton.disabled = nextState;
+      submitButton.innerHTML = nextState
+        ? '<span class="presensi-submit-spinner" aria-hidden="true"></span><span>Mengirim Presensi...</span>'
+        : submitIdleHtml;
     };
 
     const selectMember = (member) => {
@@ -125,6 +139,7 @@
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (isSubmitting) return;
       setStatus('');
       const teamId = Number(teamIdInput?.value || 0);
       const role = form.querySelector('#public-presensi-role')?.value || '';
@@ -148,12 +163,15 @@
       formData.set('photo', photo);
 
       try {
+        setSubmitting(true);
         await (API.submitPresensi ? API.submitPresensi(token, formData) : requestJson(route('public.presensiShow', { token }), { method: 'POST', body: formData }));
         setStatus('Presensi berhasil dikirim dan menunggu approval admin.');
         form.querySelectorAll('input, select, button').forEach((node) => {
           node.disabled = true;
         });
+        if (submitButton) submitButton.innerHTML = '<span>Terkirim</span>';
       } catch (error) {
+        setSubmitting(false);
         setStatus(error.message || 'Gagal mengirim presensi.', true);
       }
     });

@@ -110,6 +110,19 @@ final class PresensiSubmission
         return $stmt->rowCount() > 0;
     }
 
+    public function cancel(int $id): bool
+    {
+        if (!$this->db || $id <= 0) {
+            return false;
+        }
+
+        $stmt = $this->db->prepare('DELETE FROM tbl_presensi_submission WHERE submission_id = :id');
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->rowCount() > 0;
+    }
+
     /** @param array<string, mixed> $data */
     public function createManualApproved(array $data): ?int
     {

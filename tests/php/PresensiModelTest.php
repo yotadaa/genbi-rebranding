@@ -142,6 +142,11 @@ expect($approved === true);
 $approvedSubmission = $submissions->find($firstSubmission);
 expect($approvedSubmission['status'] === 'approved');
 expect((int) $approvedSubmission['approved_by'] === 7);
+
+$cancelled = $submissions->cancel($firstSubmission);
+expect($cancelled === true);
+expect($submissions->find($firstSubmission) === null);
+$firstSubmission = null;
 } finally {
     if ($firstSubmission) {
         $stmt = $db->prepare('DELETE FROM tbl_presensi_submission WHERE submission_id = :id');
