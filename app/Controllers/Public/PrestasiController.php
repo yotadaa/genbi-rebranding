@@ -195,20 +195,21 @@ class PrestasiController
                 return;
             }
 
-            $slug = $this->generateUniqueSlug($body['title'] ?? 'prestasi');
-            $imageUrl = HtmlSanitizer::sanitizeUrl($body['image_url'] ?? '');
+            $sanitizedBody = $this->sanitizeSubmissionBody($body);
+            $slug = $this->generateUniqueSlug($sanitizedBody['title'] !== '' ? $sanitizedBody['title'] : 'prestasi');
+            $imageUrl = $sanitizedBody['image_url'];
             $primaryImage = $uploadedImages[0]['url'] ?? $imageUrl;
-            $seo = $this->buildSubmissionSeo($body);
+            $seo = $this->buildSubmissionSeo($sanitizedBody);
 
             $id = $this->prestasi?->create([
-                'title' => strip_tags(mb_substr(trim($body['title'] ?? ''), 0, 255)),
+                'title' => $sanitizedBody['title'],
                 'slug' => $slug,
-                'name' => strip_tags(mb_substr(trim($body['name'] ?? ''), 0, 255)),
-                'category' => strip_tags(mb_substr(trim($body['category'] ?? ''), 0, 100)),
-                'year' => strip_tags(mb_substr(trim($body['year'] ?? ''), 0, 4)),
-                'description' => strip_tags(mb_substr(trim($body['description'] ?? ''), 0, 5000)),
-                'content' => strip_tags(mb_substr(trim($body['content'] ?? ''), 0, 50000)),
-                'institution' => strip_tags(mb_substr(trim($body['institution'] ?? ''), 0, 255)),
+                'name' => $sanitizedBody['name'],
+                'category' => $sanitizedBody['category'],
+                'year' => $sanitizedBody['year'],
+                'description' => $sanitizedBody['description'],
+                'content' => $sanitizedBody['content'],
+                'institution' => $sanitizedBody['institution'],
                 'image' => $primaryImage,
                 // tbl_prestasi currently only allows draft/published/archived. Token
                 // submissions still return "pending" to the client, but are stored as
@@ -220,54 +221,53 @@ class PrestasiController
             ]);
 
             if ($id) {
-                $this->storeSubmissionLog($db, $valid['id'], $id, $body, $uploadedImages, $request);
+                $this->storeSubmissionLog($db, $valid['id'], $id, $sanitizedBody, $uploadedImages, $request);
                 $db->commit();
                 $response->json(['data' => ['id' => $id, 'status' => 'pending']], 201);
             } else {
                 $this->deleteUploadedImages($uploadedImages);
                 $db->rollBack();
-                $this->logSubmissionFailure('prestasi_create_returned_empty_id', null, $token, $body, $uploadedImages);
-                $response->json($this->submissionFailurePayload('prestasi_create_returned_empty_id'), 500);
+                $requestId = $this->logSubmissionFailure('prestasi_create_returned_empty_id', null, $token, $sanitizedBody, $uploadedImages);
+                $response->json($this->submissionFailurePayload('prestasi_create_returned_empty_id', $requestId), 500);
             }
         } catch (\Throwable $e) {
             $this->deleteUploadedImages($uploadedImages);
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
-            $this->logSubmissionFailure('submission_transaction_failed', $e, $token, $body, $uploadedImages);
-            $response->json($this->submissionFailurePayload('submission_transaction_failed', $e), 500);
+            $requestId = $this->logSubmissionFailure('submission_transaction_failed', $e, $token, $body, $uploadedImages);
+            $response->json($this->submissionFailurePayload('submission_transaction_failed', $requestId), 500);
         }
     }
 
     /** @param array<string, mixed> $body @param array<int, array{url: string, filename: string, mime: string, size: int}> $uploadedImages */
-    private function logSubmissionFailure(string $stage, ?\Throwable $error, string $token, array $body, array $uploadedImages): void
+    private function logSubmissionFailure(string $stage, ?\Throwable $error, string $token, array $body, array $uploadedImages): string
     {
+        $requestId = 'prestasi_submit_' . bin2hex(random_bytes(8));
+
         ErrorHandler::log($error ?? 'Prestasi token submission failed', [
+            'request_id' => $requestId,
             'stage' => $stage,
             'token_prefix' => substr(hash('sha256', trim($token)), 0, 12),
-            'title_length' => mb_strlen(trim((string) ($body['title'] ?? ''))),
-            'category' => mb_substr(trim((string) ($body['category'] ?? '')), 0, 80),
-            'year' => trim((string) ($body['year'] ?? '')),
-            'campus_length' => mb_strlen(trim((string) ($body['campus'] ?? ''))),
+            'title_length' => mb_strlen($this->sanitizeSubmissionText((string) ($body['title'] ?? ''), 255)),
+            'category' => $this->sanitizeSubmissionText((string) ($body['category'] ?? ''), 80),
+            'year' => $this->sanitizeSubmissionText((string) ($body['year'] ?? ''), 4),
+            'campus_length' => mb_strlen($this->sanitizeSubmissionText((string) ($body['campus'] ?? ''), 255)),
             'upload_count' => count($uploadedImages),
         ]);
+
+        return $requestId;
     }
 
     /** @return array<string, string> */
-    private function submissionFailurePayload(string $stage, ?\Throwable $error = null): array
+    private function submissionFailurePayload(string $stage, string $requestId): array
     {
-        $payload = [
+        return [
             'error' => 'Gagal menyimpan data',
             'code' => $stage,
+            'request_id' => $requestId,
             'detail' => 'Detail error sudah dicatat di log server.',
         ];
-
-        if ($error) {
-            $payload['exception'] = $error::class;
-            $payload['message'] = $error->getMessage();
-        }
-
-        return $payload;
     }
 
     private function validateSubmission(array $body): array
@@ -313,16 +313,47 @@ class PrestasiController
         $requestBody = !empty($_POST) ? $_POST : $request->json();
 
         return [
-            'title' => (string) ($requestBody['title'] ?? ''),
-            'category' => (string) ($requestBody['category'] ?? ''),
-            'year' => (string) ($requestBody['year'] ?? ''),
-            'campus' => (string) ($requestBody['campus'] ?? ''),
-            'name' => (string) ($requestBody['name'] ?? ''),
-            'institution' => (string) ($requestBody['institution'] ?? ''),
-            'description' => (string) ($requestBody['description'] ?? ''),
-            'content' => (string) ($requestBody['content'] ?? ''),
-            'image_url' => (string) ($requestBody['image_url'] ?? ''),
+            'title' => $this->submissionInputString($requestBody, 'title'),
+            'category' => $this->submissionInputString($requestBody, 'category'),
+            'year' => $this->submissionInputString($requestBody, 'year'),
+            'campus' => $this->submissionInputString($requestBody, 'campus'),
+            'name' => $this->submissionInputString($requestBody, 'name'),
+            'institution' => $this->submissionInputString($requestBody, 'institution'),
+            'description' => $this->submissionInputString($requestBody, 'description'),
+            'content' => $this->submissionInputString($requestBody, 'content'),
+            'image_url' => $this->submissionInputString($requestBody, 'image_url'),
         ];
+    }
+
+    private function submissionInputString(array $body, string $key): string
+    {
+        $value = $body[$key] ?? '';
+
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /** @param array<string, string> $body @return array<string, string> */
+    private function sanitizeSubmissionBody(array $body): array
+    {
+        return [
+            'title' => $this->sanitizeSubmissionText($body['title'] ?? '', 255),
+            'category' => $this->sanitizeSubmissionText($body['category'] ?? '', 100),
+            'year' => $this->sanitizeSubmissionText($body['year'] ?? '', 4),
+            'campus' => $this->sanitizeSubmissionText($body['campus'] ?? '', 255),
+            'name' => $this->sanitizeSubmissionText($body['name'] ?? '', 255),
+            'institution' => $this->sanitizeSubmissionText($body['institution'] ?? '', 255),
+            'description' => $this->sanitizeSubmissionText($body['description'] ?? '', 5000),
+            'content' => $this->sanitizeSubmissionText($body['content'] ?? '', 50000),
+            'image_url' => HtmlSanitizer::sanitizeUrl($body['image_url'] ?? ''),
+        ];
+    }
+
+    private function sanitizeSubmissionText(string $value, int $maxLength): string
+    {
+        $value = trim(strip_tags($value));
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value) ?? '';
+
+        return mb_substr(trim($value), 0, $maxLength);
     }
 
     /** @return array{meta_title: string, meta_keyword: string, meta_description: string} */

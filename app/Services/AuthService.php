@@ -150,17 +150,7 @@ final class AuthService
 
     private function verifyPassword(string $input, string $stored): bool
     {
-        // Try modern password_hash first
-        if (password_verify($input, $stored)) {
-            return true;
-        }
-
-        // Legacy MD5 fallback (transition period only)
-        if (strlen($stored) === 32 && hash_equals($stored, md5($input))) {
-            return true;
-        }
-
-        return false;
+        return password_verify($input, $stored);
     }
 
     private function rehashPassword(int $userId, string $plainPassword): void

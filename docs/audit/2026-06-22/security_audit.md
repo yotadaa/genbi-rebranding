@@ -16,9 +16,9 @@ Namun ada beberapa celah nyata yang perlu diprioritaskan:
 | SEC-02 | Medium | Remediated 2026-06-23 | Token Presensi publik sebelumnya disimpan/dikembalikan plaintext; sekarang plain token hanya muncul pada create response. |
 | SEC-03 | Medium | Remediated 2026-06-23 | Delete image Program Utama sebelumnya memakai prefix check tanpa canonicalization; sekarang memakai validasi path + containment `realpath()`. |
 | SEC-04 | Medium | Remediated 2026-06-23 | Admin news fallback sebelumnya render rich HTML DB raw; sekarang konten fallback disanitasi saat output. |
-| SEC-05 | Low | Confirmed | Public Prestasi submission mengembalikan exception class dan message pada error transaksi. |
-| SEC-06 | Low | Hardening | JSON-LD script tidak memakai `JSON_HEX_TAG`; saat ini input umumnya sudah disanitasi, tapi helper raw script terlalu rapuh untuk data masa depan. |
-| SEC-07 | Low | Security debt | Legacy MD5 password fallback masih diterima saat login, walau direhash setelah login sukses. |
+| SEC-05 | Low | Remediated 2026-06-23 | Public Prestasi submission sebelumnya mengembalikan exception class dan message pada error transaksi. |
+| SEC-06 | Low | Remediated 2026-06-23 | JSON-LD script helper sekarang memakai hex encoding untuk karakter berbahaya di konteks `<script>`. |
+| SEC-07 | Low | Remediated 2026-06-23 | Legacy MD5 password fallback sudah tidak diterima saat login. |
 
 ## Threat model singkat
 
@@ -59,7 +59,7 @@ Asumsi audit:
 
 | Route | Controller | Server-side validation | Status |
 | --- | --- | --- | --- |
-| `POST /prestasi/submit/{token}` | `Public\PrestasiController::submitWithToken` | Body divalidasi `validateSubmission()`, upload dibatasi 6 image, MIME server-side, `getimagesize()`, random filename, `.htaccess`; token divalidasi via `validateTokenForUpdate()`. | Finding SEC-01 dan SEC-05. Input/form cukup divalidasi, tapi hash-as-bearer dan error response bermasalah. |
+| `POST /prestasi/submit/{token}` | `Public\PrestasiController::submitWithToken` | Body divalidasi `validateSubmission()`, upload dibatasi 6 image, MIME server-side, `getimagesize()`, random filename, `.htaccess`; token divalidasi via `validateTokenForUpdate()`; request JSON dinormalisasi ke scalar string dan disanitasi sebelum persistence/log sink. | Remediated SEC-01 dan SEC-05. |
 | `POST /presensi/{token}` | `Public\PresensiController::submit` | Token event dicari by hash, event harus `open`, team/role dicek terhadap event, upload photo wajib dan divalidasi MIME + `getimagesize()`. | Form validation OK; token storage policy dilaporkan di SEC-02. |
 | `POST /news/{slug}/comment` | `Public\CommentController::store` | News lookup by slug, policy comment, throttle, name/email/comment min/max, `strip_tags`, parent validation. | OK. |
 | `POST /news/{slug}/comment/{id}/vote` | `Public\CommentController::vote` | News/comment lookup, vote value enum, throttle, voter key. | OK, dengan catatan salt default sebaiknya wajib env production. |
@@ -70,7 +70,7 @@ Semua route di tabel ini berada di admin protected group kecuali login/logout, s
 
 | Route family | Routes | Controller validation | Status |
 | --- | --- | --- | --- |
-| Auth | `/admin/login`, `/admin/logout` | Login validasi email/password, throttle service, session regenerate. Logout hanya destroy session. | OK; lihat SEC-07 untuk MD5 fallback. |
+| Auth | `/admin/login`, `/admin/logout` | Login validasi email/password, throttle service, session regenerate. Logout hanya destroy session. | OK; legacy MD5 fallback telah dihapus di SEC-07. |
 | News | `/admin/news`, `/admin/news/{id}/update`, `/admin/news/{id}/delete`, `/admin/news/upload` | Store memanggil `validate()` dan `sanitize()`. Update bersifat partial update dan sanitize field; upload cek size/MIME/`getimagesize()`/random filename/`.htaccess`. | Mostly OK; raw fallback view dilaporkan SEC-04. Partial update perlu dokumentasi intent. |
 | Categories | `/admin/categories`, `/admin/categories/{id}/update`, `/admin/categories/{id}/delete` | `validatedName()` trim/length; delete model mencegah kategori yang masih dipakai. | OK. |
 | Events | `/admin/events`, `/admin/events/{id}/update`, `/admin/events/{id}/delete` | Store/update validate title, sanitize content via `HtmlSanitizer`, map URL via `sanitizeMapEmbedUrl`. | Partial: date/location/meta lebih banyak sanitize daripada strict validate; bukan exploit langsung. |
@@ -325,6 +325,13 @@ Rekomendasi:
 2. Kirim correlation ID/log ID dan simpan detail hanya di server log.
 3. Pastikan mode debug lokal saja yang dapat menampilkan detail, dan tidak aktif production.
 
+Status remediation 2026-06-23:
+
+- Implemented: response publik Prestasi submission sekarang hanya mengirim generic error, safe `code`, `request_id`, dan detail generik.
+- Implemented: exception class, SQLSTATE, raw message, dan path internal tetap hanya masuk server log via `ErrorHandler::log()`, bukan response JSON.
+- Implemented: request body JSON dinormalisasi ke scalar string, field teks disanitasi dengan `strip_tags` + control-char removal sebelum model/log sink, dan `image_url` melewati `HtmlSanitizer::sanitizeUrl()`.
+- Regression/API evidence: `tests/php/LowSecurityApiTest.php`, `tests/php/LowSecurityApiEvidence.php`.
+
 ### SEC-06 — JSON-LD script helper lacks `JSON_HEX_TAG`
 
 Severity: Low  
@@ -354,6 +361,11 @@ Gunakan flags:
 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
 ```
 
+Status remediation 2026-06-23:
+
+- Implemented: `StructuredData::script()` sekarang memakai `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, dan `JSON_HEX_QUOT` selain flag output lama.
+- Regression/API evidence: `tests/php/StructuredDataSecurityTest.php`, `tests/php/LowSecurityApiEvidence.php`.
+
 ### SEC-07 — Legacy MD5 password fallback remains accepted
 
 Severity: Low  
@@ -372,9 +384,15 @@ Assessment:
 
 Rekomendasi:
 
-1. Tambahkan migration/command untuk memaksa reset password legacy.
-2. Tambahkan cutoff date/env flag untuk menonaktifkan MD5 fallback.
-3. Monitor jumlah akun yang masih legacy.
+1. Selesai 2026-06-23: nonaktifkan fallback MD5 saat login.
+2. Berikutnya bila masih ada akun legacy di production: jalankan admin reset-password untuk akun yang masih menyimpan hash MD5.
+3. Monitor jumlah akun yang masih legacy sebelum deployment production.
+
+Status remediation 2026-06-23:
+
+- Implemented: `AuthService::verifyPassword()` sekarang hanya menerima hash modern yang valid via `password_verify()`.
+- Implemented: stored MD5 32-char dengan password benar ditolak sebagai login gagal generik dan tidak direhash menjadi password valid.
+- Regression/API evidence: `tests/php/AuthServiceLegacyHashTest.php`, `tests/php/LowSecurityApiEvidence.php`.
 
 ## Suppressed / not found
 
@@ -401,8 +419,8 @@ Rekomendasi:
 2. Selesai 2026-06-23: Hilangkan plaintext Presensi token di DB/API dan tambahkan optional expiry field (SEC-02).
 3. Selesai 2026-06-23: Tambahkan canonical path containment sebelum `unlink()` Program Utama (SEC-03).
 4. Selesai 2026-06-23: Sanitize rich HTML saat output ke admin news fallback (SEC-04).
-5. Berikutnya: Hilangkan detail exception dari response publik (SEC-05).
-6. Berikutnya: Hardening JSON-LD encoding dan legacy MD5 migration debt (SEC-06/SEC-07).
+5. Selesai 2026-06-23: Hilangkan detail exception dari response publik (SEC-05).
+6. Selesai 2026-06-23: Hardening JSON-LD encoding dan legacy MD5 migration debt (SEC-06/SEC-07).
 
 ## Verifikasi audit
 
@@ -414,3 +432,7 @@ Commands/evidence yang digunakan:
 - `rg -n "function submitWithToken|validateTokenForUpdate|markUsed|tokenHash|submit_url|public_token|public_url" app database`
 - `rg -n "deleteImage|removeUploadedFile|normalizeImagePath|unlink" app/Controllers app/Models`
 - `rg -n "MAX_UPLOAD_SIZE|ALLOWED_IMAGE_TYPES|finfo|getimagesize|move_uploaded_file|.htaccess" app/Controllers app/Services`
+- `php -d zend.assertions=1 -d assert.exception=1 tests/php/LowSecurityApiTest.php`
+- `php -d zend.assertions=1 -d assert.exception=1 tests/php/StructuredDataSecurityTest.php`
+- `php -d zend.assertions=1 -d assert.exception=1 tests/php/AuthServiceLegacyHashTest.php`
+- `php tests/php/LowSecurityApiEvidence.php`
