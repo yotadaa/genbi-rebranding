@@ -235,6 +235,9 @@ final class PresensiController
         $memberIds = $this->extractIds($body['member_ids'] ?? []);
         $validMemberIds = $this->events?->validTeamIds($memberIds) ?? [];
         $status = strtolower(trim((string) ($body['status'] ?? 'open')));
+        $hasTokenExpiry = array_key_exists('public_token_expires_at', $body) || array_key_exists('token_expires_at', $body);
+        $tokenExpiryInput = $body['public_token_expires_at'] ?? $body['token_expires_at'] ?? null;
+        $tokenExpiresAt = $this->validateTokenExpiresAt($tokenExpiryInput);
 
         if ($eventName === '') {
             $errors[] = 'Nama event wajib diisi';
@@ -257,14 +260,23 @@ final class PresensiController
         if (!in_array($status, self::STATUSES, true)) {
             $errors[] = 'Status event tidak valid';
         }
+        if ($hasTokenExpiry && $tokenExpiresAt === null && trim((string) $tokenExpiryInput) !== '') {
+            $errors[] = 'Tanggal kedaluwarsa token publik tidak valid';
+        }
 
-        return [[
+        $payload = [
             'event_name' => $eventName,
             'location' => $location,
             'roles' => $roles,
             'member_ids' => $validMemberIds,
             'status' => in_array($status, self::STATUSES, true) ? $status : 'open',
-        ], $errors];
+        ];
+
+        if ($hasTokenExpiry) {
+            $payload['public_token_expires_at'] = $tokenExpiresAt;
+        }
+
+        return [$payload, $errors];
     }
 
     /** @return int[] */
@@ -279,6 +291,21 @@ final class PresensiController
         }
 
         return array_values(array_unique(array_filter(array_map('intval', $value), static fn(int $id): bool => $id > 0)));
+    }
+
+    private function validateTokenExpiresAt(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = strip_tags(trim((string) $value));
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+
+        return $date ? $date->format('Y-m-d H:i:s') : null;
     }
 
     private function userId(): int

@@ -11,12 +11,14 @@ final class PresensiEvent
 {
     private const STATUSES = ['draft', 'open', 'closed', 'archived'];
 
+    /** @var array<int, string>|null */
+    private ?array $eventColumns = null;
+
     public function __construct(private ?PDO $db = null) {}
 
     /** @return array<string, mixed> */
     public static function mapRow(array $row): array
     {
-        $token = trim((string) ($row['public_token'] ?? ''));
         $id = (int) ($row['presensi_event_id'] ?? $row['id'] ?? 0);
         $roleOptions = self::normalizeRoleOptions($row['role_options'] ?? $row['roles'] ?? $row['roles_json'] ?? []);
         $roles = array_column($roleOptions, 'name');
@@ -25,9 +27,10 @@ final class PresensiEvent
             'id' => $id,
             'presensi_event_id' => $id,
             'slug' => (string) ($row['slug'] ?? ''),
-            'public_token' => $token,
+            'public_token' => '',
             'public_token_hash' => (string) ($row['public_token_hash'] ?? ''),
-            'public_url' => $token !== '' ? '/presensi/' . rawurlencode($token) : (string) ($row['public_url'] ?? ''),
+            'public_url' => '',
+            'public_token_expires_at' => $row['public_token_expires_at'] ?? null,
             'event_name' => (string) ($row['event_name'] ?? $row['name'] ?? ''),
             'name' => (string) ($row['event_name'] ?? $row['name'] ?? ''),
             'location' => (string) ($row['location'] ?? ''),
@@ -177,6 +180,9 @@ final class PresensiEvent
         if ($openOnly) {
             $sql .= " AND e.status = 'open'";
         }
+        if ($this->hasEventColumn('public_token_expires_at')) {
+            $sql .= ' AND (e.public_token_expires_at IS NULL OR e.public_token_expires_at > CURRENT_TIMESTAMP)';
+        }
         $sql .= ' LIMIT 1';
 
         $stmt = $this->db->prepare($sql);
@@ -221,23 +227,34 @@ final class PresensiEvent
         $status = $this->sanitizeStatus((string) ($data['status'] ?? 'open'));
         $token = $this->generateUniqueToken();
         $hash = hash('sha256', $token);
+        $storageMarker = self::storageTokenMarker($hash);
         $slug = $this->generateUniqueSlug($eventName !== '' ? $eventName : 'presensi');
 
         $this->db->beginTransaction();
         try {
-            $stmt = $this->db->prepare(
-                'INSERT INTO tbl_presensi_event (slug, public_token, public_token_hash, event_name, location, roles_json, status, created_by, created_at) VALUES (:slug, :public_token, :public_token_hash, :event_name, :location, :roles_json, :status, :created_by, CURRENT_TIMESTAMP)'
-            );
-            $stmt->execute([
+            $columns = ['slug', 'public_token', 'public_token_hash', 'event_name', 'location', 'roles_json', 'status', 'created_by', 'created_at'];
+            $values = [':slug', ':public_token', ':public_token_hash', ':event_name', ':location', ':roles_json', ':status', ':created_by', 'CURRENT_TIMESTAMP'];
+            $params = [
                 ':slug' => $slug,
-                ':public_token' => $token,
+                ':public_token' => $storageMarker,
                 ':public_token_hash' => $hash,
                 ':event_name' => $eventName,
                 ':location' => $location,
                 ':roles_json' => json_encode($roles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ':status' => $status,
                 ':created_by' => !empty($data['created_by']) ? (int) $data['created_by'] : null,
-            ]);
+            ];
+
+            if ($this->hasEventColumn('public_token_expires_at')) {
+                $columns[] = 'public_token_expires_at';
+                $values[] = ':public_token_expires_at';
+                $params[':public_token_expires_at'] = $this->normalizePublicTokenExpiresAt($data['public_token_expires_at'] ?? null);
+            }
+
+            $stmt = $this->db->prepare(
+                'INSERT INTO tbl_presensi_event (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $values) . ')'
+            );
+            $stmt->execute($params);
             $id = (int) $this->db->lastInsertId();
             $this->replaceMembers($id, is_array($data['member_ids'] ?? null) ? $data['member_ids'] : []);
             $this->db->commit();
@@ -275,6 +292,10 @@ final class PresensiEvent
         if (array_key_exists('status', $data)) {
             $fields[] = 'status = :status';
             $params[':status'] = $this->sanitizeStatus((string) $data['status']);
+        }
+        if (array_key_exists('public_token_expires_at', $data) && $this->hasEventColumn('public_token_expires_at')) {
+            $fields[] = 'public_token_expires_at = :public_token_expires_at';
+            $params[':public_token_expires_at'] = $this->normalizePublicTokenExpiresAt($data['public_token_expires_at']);
         }
         if (array_key_exists('updated_by', $data)) {
             $fields[] = 'updated_by = :updated_by';
@@ -504,12 +525,63 @@ final class PresensiEvent
     private function generateUniqueToken(): string
     {
         do {
-            $token = bin2hex(random_bytes(24));
+            $token = self::newPublicToken();
             $stmt = $this->db->prepare('SELECT 1 FROM tbl_presensi_event WHERE public_token_hash = :hash LIMIT 1');
             $stmt->execute([':hash' => hash('sha256', $token)]);
         } while ($stmt->fetchColumn());
 
         return $token;
+    }
+
+    private static function newPublicToken(): string
+    {
+        return 'prs_' . rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    }
+
+    private static function storageTokenMarker(string $tokenHash): string
+    {
+        return 'sha256:' . strtolower($tokenHash);
+    }
+
+    private function normalizePublicTokenExpiresAt(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = strip_tags(trim((string) $value));
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $value)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+
+        return $date ? $date->format('Y-m-d H:i:s') : null;
+    }
+
+    private function hasEventColumn(string $column): bool
+    {
+        return in_array($column, $this->eventColumns(), true);
+    }
+
+    /** @return array<int, string> */
+    private function eventColumns(): array
+    {
+        if ($this->eventColumns !== null) {
+            return $this->eventColumns;
+        }
+
+        if (!$this->db) {
+            return $this->eventColumns = [];
+        }
+
+        try {
+            $statement = $this->db->query('SHOW COLUMNS FROM tbl_presensi_event');
+            $columns = $statement ? array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'Field') : [];
+
+            return $this->eventColumns = array_map('strval', $columns);
+        } catch (Throwable) {
+            return $this->eventColumns = [];
+        }
     }
 
     private function generateUniqueSlug(string $value): string

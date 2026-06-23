@@ -461,7 +461,11 @@ final class Feature
                 if ($path === '') {
                     continue;
                 }
-                $normalized[] = ['id' => 0, 'path' => $this->normalizeImagePath($path), 'sort_order' => $index];
+                $normalizedPath = $this->normalizeImagePath($path);
+                if ($normalizedPath === '') {
+                    continue;
+                }
+                $normalized[] = ['id' => 0, 'path' => $normalizedPath, 'sort_order' => $index];
                 continue;
             }
             if (!is_array($image)) {
@@ -471,9 +475,13 @@ final class Feature
             if ($path === '') {
                 continue;
             }
+            $normalizedPath = $this->normalizeImagePath($path);
+            if ($normalizedPath === '') {
+                continue;
+            }
             $normalized[] = [
                 'id' => (int) ($image['id'] ?? 0),
-                'path' => $this->normalizeImagePath($path),
+                'path' => $normalizedPath,
                 'sort_order' => (int) ($image['sort_order'] ?? $index),
             ];
         }
@@ -534,13 +542,36 @@ final class Feature
 
     private function normalizeImagePath(string $path): string
     {
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        $path = trim($path);
+        if ($path === '' || str_contains($path, "\0")) {
+            return '';
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
             return $path;
         }
-        if (str_starts_with($path, '/uploads/features/')) {
-            return $path;
+
+        $decodedPath = rawurldecode($path);
+        if (str_contains($decodedPath, "\0") || str_contains($decodedPath, '\\') || str_contains($decodedPath, '..')) {
+            return '';
         }
-        return '/uploads/features/' . ltrim(str_replace('/uploads/features/', '', $path), '/');
+        if (preg_match('/[\x00-\x1F\x7F]/', $decodedPath)) {
+            return '';
+        }
+
+        $relative = $decodedPath;
+        if (str_starts_with($relative, '/uploads/features/')) {
+            $relative = substr($relative, strlen('/uploads/features/'));
+        } elseif (str_starts_with($relative, 'uploads/features/')) {
+            $relative = substr($relative, strlen('uploads/features/'));
+        }
+
+        $relative = ltrim($relative, '/');
+        if ($relative === '' || str_starts_with($relative, 'uploads/') || str_contains($relative, '//')) {
+            return '';
+        }
+
+        return '/uploads/features/' . $relative;
     }
 
     private static function resolveImageUrl(string $path): string

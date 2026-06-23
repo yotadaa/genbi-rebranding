@@ -284,12 +284,24 @@ final class FeatureController
 
     private function removeUploadedFile(string $path): void
     {
-        if (!str_starts_with($path, self::UPLOAD_DIR)) {
+        $path = trim($path);
+        if ($path === '' || str_contains($path, "\0") || !str_starts_with($path, self::UPLOAD_DIR)) {
             return;
         }
-        $file = dirname(__DIR__, 3) . '/public' . $path;
-        if (is_file($file)) {
-            @unlink($file);
+
+        $publicDir = dirname(__DIR__, 3) . '/public';
+        $base = realpath($publicDir . self::UPLOAD_DIR);
+        $target = realpath($publicDir . $path);
+        if ($base === false || $target === false || !is_file($target)) {
+            return;
         }
+
+        $base = rtrim(str_replace('\\', '/', $base), '/') . '/';
+        $target = str_replace('\\', '/', $target);
+        if (!str_starts_with($target, $base)) {
+            return;
+        }
+
+        @unlink($target);
     }
 }

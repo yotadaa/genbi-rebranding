@@ -105,7 +105,7 @@ function trackedTables(): array
         'tbl_event' => ['event_id', 'slug', 'event_title', 'event_content', 'event_start_date', 'event_end_date', 'status', 'deleted_at', 'created_at', 'updated_at'],
         'tbl_setting' => ['setting_key', 'setting_value', 'setting_type', 'description', 'updated_by', 'updated_at'],
         'tbl_photo_gallery' => ['photo_id', 'title', 'image_url', 'caption', 'status', 'sort_order', 'deleted_at'],
-        'tbl_presensi_event' => ['presensi_event_id', 'slug', 'public_token', 'public_token_hash', 'event_name', 'location', 'roles_json', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at'],
+        'tbl_presensi_event' => ['presensi_event_id', 'slug', 'public_token', 'public_token_hash', 'public_token_expires_at', 'event_name', 'location', 'roles_json', 'status', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at'],
         'tbl_presensi_event_member' => ['event_member_id', 'presensi_event_id', 'team_id', 'created_at'],
         'tbl_presensi_submission' => ['submission_id', 'presensi_event_id', 'team_id', 'role', 'photo_path', 'status', 'approved_by', 'approved_at', 'ip_address', 'user_agent', 'created_at', 'updated_at'],
         'tbl_genbi_point_activity' => ['activity_id', 'team_id', 'activity_name', 'points', 'activity_date', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at'],

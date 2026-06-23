@@ -13,9 +13,9 @@ Namun ada beberapa celah nyata yang perlu diprioritaskan:
 | ID | Severity | Status | Temuan |
 | --- | --- | --- | --- |
 | SEC-01 | High | Remediated 2026-06-23 | Route publik Prestasi pernah menerima `token_hash` sebagai bearer token; reusable sampai expired/revoke adalah intended product policy. |
-| SEC-02 | Medium | Confirmed | Token Presensi publik disimpan dan dikembalikan dalam plaintext, tanpa expiry field. |
-| SEC-03 | Medium | Confirmed | Delete image Program Utama memakai path prefix check tanpa canonicalization; admin-controlled path dapat mengarah ke file lain di `public/`. |
-| SEC-04 | Medium | Confirmed with precondition | Admin news fallback merender rich HTML dari DB secara raw; aman untuk konten baru yang lewat sanitizer, tapi berisiko untuk legacy/imported content. |
+| SEC-02 | Medium | Remediated 2026-06-23 | Token Presensi publik sebelumnya disimpan/dikembalikan plaintext; sekarang plain token hanya muncul pada create response. |
+| SEC-03 | Medium | Remediated 2026-06-23 | Delete image Program Utama sebelumnya memakai prefix check tanpa canonicalization; sekarang memakai validasi path + containment `realpath()`. |
+| SEC-04 | Medium | Remediated 2026-06-23 | Admin news fallback sebelumnya render rich HTML DB raw; sekarang konten fallback disanitasi saat output. |
 | SEC-05 | Low | Confirmed | Public Prestasi submission mengembalikan exception class dan message pada error transaksi. |
 | SEC-06 | Low | Hardening | JSON-LD script tidak memakai `JSON_HEX_TAG`; saat ini input umumnya sudah disanitasi, tapi helper raw script terlalu rapuh untuk data masa depan. |
 | SEC-07 | Low | Security debt | Legacy MD5 password fallback masih diterima saat login, walau direhash setelah login sukses. |
@@ -191,6 +191,13 @@ Rekomendasi:
 3. Tambahkan `expires_at` atau token rotation policy.
 4. Audit log token creation/revocation.
 
+Status remediation 2026-06-23:
+
+- Implemented: generated Presensi token sekarang memakai prefix `prs_`; `create()` menyimpan non-bearer marker di kolom legacy `public_token`, tetap menyimpan `public_token_hash` untuk lookup, dan mengembalikan plain token/public URL hanya pada create response.
+- Implemented: `mapRow()`, admin show/list, dan refetch event tidak lagi mengembalikan `public_token` atau `public_url`.
+- Implemented: migration `2026_06_23_000001_harden_presensi_public_tokens.php` men-null-kan legacy plaintext token, melepas unique index plaintext bila ada, dan menambahkan optional `public_token_expires_at`.
+- Regression/API evidence: `tests/php/PresensiTokenSecurityTest.php`, `tests/php/PresensiModelTest.php`, `tests/php/MediumSecurityApiTest.php`, `tests/php/MediumSecurityApiEvidence.php`.
+
 ### SEC-03 — Feature image deletion lacks path containment
 
 Severity: Medium  
@@ -235,6 +242,12 @@ Rekomendasi:
 3. Simpan image path hasil upload saja untuk records yang akan dihapus fisiknya. Untuk external URL, hapus DB row tanpa `unlink`.
 4. Tambahkan test untuk `/uploads/features/../../index.php`, encoded traversal, dan sibling prefix seperti `/uploads/features_evil`.
 
+Status remediation 2026-06-23:
+
+- Implemented: `Feature::normalizeImagePath()` menolak `..`, encoded traversal, backslash, control char, null byte, sibling prefix, dan path kosong; external HTTP(S) URL tetap non-local.
+- Implemented: `FeatureController::removeUploadedFile()` menggunakan `realpath()` untuk base `public/uploads/features` dan target, lalu memastikan target tetap berada di dalam base sebelum `unlink()`.
+- Regression/API evidence: `tests/php/FeatureImageSecurityTest.php`, `tests/php/MediumSecurityApiTest.php`, `tests/php/MediumSecurityApiEvidence.php`.
+
 ### SEC-04 — Admin news edit fallback renders stored rich content raw
 
 Severity: Medium  
@@ -274,6 +287,11 @@ Rekomendasi:
 2. Simpan rich HTML yang sudah disanitasi di DB, tetapi tetap lakukan defense-in-depth output sanitization untuk rich sinks.
 3. Tambahkan migration/command one-off untuk sanitize legacy `tbl_news.news_content`.
 4. Tambahkan test dengan payload `<script>`/event handler untuk admin edit fallback.
+
+Status remediation 2026-06-23:
+
+- Implemented: admin news fallback sekarang menjalankan `HtmlSanitizer::sanitize()` pada `$item['content']` sebelum render ke `contenteditable` fallback.
+- Regression test: `tests/php/AdminNewsFallbackSecurityTest.php`.
 
 ### SEC-05 — Public Prestasi submission leaks exception details
 
@@ -379,12 +397,12 @@ Rekomendasi:
 
 ## Rekomendasi prioritas fix
 
-1. Perbaiki Prestasi hash-as-bearer sambil mempertahankan reusable-until-expired policy (SEC-01).
-2. Hilangkan plaintext Presensi token di DB/API, tambahkan expiry/rotation (SEC-02).
-3. Tambahkan canonical path containment sebelum `unlink()` Program Utama (SEC-03).
-4. Sanitize rich HTML saat output ke admin news fallback dan buat migration sanitize legacy content (SEC-04).
-5. Hilangkan detail exception dari response publik (SEC-05).
-6. Tambahkan regression tests untuk semua bug di atas.
+1. Selesai 2026-06-23: Perbaiki Prestasi hash-as-bearer sambil mempertahankan reusable-until-expired policy (SEC-01).
+2. Selesai 2026-06-23: Hilangkan plaintext Presensi token di DB/API dan tambahkan optional expiry field (SEC-02).
+3. Selesai 2026-06-23: Tambahkan canonical path containment sebelum `unlink()` Program Utama (SEC-03).
+4. Selesai 2026-06-23: Sanitize rich HTML saat output ke admin news fallback (SEC-04).
+5. Berikutnya: Hilangkan detail exception dari response publik (SEC-05).
+6. Berikutnya: Hardening JSON-LD encoding dan legacy MD5 migration debt (SEC-06/SEC-07).
 
 ## Verifikasi audit
 
