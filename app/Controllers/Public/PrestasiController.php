@@ -146,7 +146,7 @@ class PrestasiController
         if ($request->acceptsJson()) {
             $valid = $this->tokenModel?->validateToken($token);
             if (!$valid) {
-                $response->json(['error' => 'Token tidak valid atau sudah digunakan'], 403);
+                $response->json(['error' => 'Token tidak valid, kedaluwarsa, atau sudah dicabut'], 403);
                 return;
             }
             $response->json(['data' => ['valid' => true, 'label' => $valid['label']]]);

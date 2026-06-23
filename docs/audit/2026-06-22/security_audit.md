@@ -12,7 +12,7 @@ Namun ada beberapa celah nyata yang perlu diprioritaskan:
 
 | ID | Severity | Status | Temuan |
 | --- | --- | --- | --- |
-| SEC-01 | High | Confirmed | Token submit Prestasi tidak benar-benar one-time dan route publik menerima hash token sebagai bearer token. |
+| SEC-01 | High | Remediated 2026-06-23 | Route publik Prestasi pernah menerima `token_hash` sebagai bearer token; reusable sampai expired/revoke adalah intended product policy. |
 | SEC-02 | Medium | Confirmed | Token Presensi publik disimpan dan dikembalikan dalam plaintext, tanpa expiry field. |
 | SEC-03 | Medium | Confirmed | Delete image Program Utama memakai path prefix check tanpa canonicalization; admin-controlled path dapat mengarah ke file lain di `public/`. |
 | SEC-04 | Medium | Confirmed with precondition | Admin news fallback merender rich HTML dari DB secara raw; aman untuk konten baru yang lewat sanitizer, tapi berisiko untuk legacy/imported content. |
@@ -41,7 +41,7 @@ Boundary yang diaudit:
 Asumsi audit:
 
 - Tidak ada DB production lokal untuk dynamic exploit replay; validasi dilakukan dengan static source-to-sink trace, route reachability, dan counterevidence dari middleware/model/service.
-- `AGENTS.md` dipakai sebagai kebijakan keamanan repo: semua backend input hostile, semua mutating request wajib CSRF, upload harus divalidasi server-side, token Prestasi seharusnya one-time.
+- `AGENTS.md` dipakai sebagai kebijakan keamanan repo: semua backend input hostile, semua mutating request wajib CSRF, upload harus divalidasi server-side. Untuk Prestasi token, product policy terbaru adalah reusable sampai expired/revoke, tetapi `token_hash` tidak boleh pernah valid sebagai bearer token.
 
 ## Coverage route POST dan validasi server
 
@@ -59,7 +59,7 @@ Asumsi audit:
 
 | Route | Controller | Server-side validation | Status |
 | --- | --- | --- | --- |
-| `POST /prestasi/submit/{token}` | `Public\PrestasiController::submitWithToken` | Body divalidasi `validateSubmission()`, upload dibatasi 6 image, MIME server-side, `getimagesize()`, random filename, `.htaccess`; token divalidasi via `validateTokenForUpdate()`. | Finding SEC-01 dan SEC-05. Input/form cukup divalidasi, tapi token policy dan error response bermasalah. |
+| `POST /prestasi/submit/{token}` | `Public\PrestasiController::submitWithToken` | Body divalidasi `validateSubmission()`, upload dibatasi 6 image, MIME server-side, `getimagesize()`, random filename, `.htaccess`; token divalidasi via `validateTokenForUpdate()`. | Finding SEC-01 dan SEC-05. Input/form cukup divalidasi, tapi hash-as-bearer dan error response bermasalah. |
 | `POST /presensi/{token}` | `Public\PresensiController::submit` | Token event dicari by hash, event harus `open`, team/role dicek terhadap event, upload photo wajib dan divalidasi MIME + `getimagesize()`. | Form validation OK; token storage policy dilaporkan di SEC-02. |
 | `POST /news/{slug}/comment` | `Public\CommentController::store` | News lookup by slug, policy comment, throttle, name/email/comment min/max, `strip_tags`, parent validation. | OK. |
 | `POST /news/{slug}/comment/{id}/vote` | `Public\CommentController::vote` | News/comment lookup, vote value enum, throttle, voter key. | OK, dengan catatan salt default sebaiknya wajib env production. |
@@ -78,7 +78,7 @@ Semua route di tabel ini berada di admin protected group kecuali login/logout, s
 | Prestasi CMS | `/admin/prestasi`, `/admin/prestasi/{id}/update`, `/delete`, `/upload` | Store validate required fields, sanitize payload/status/slug; update partial sanitize; upload validates MIME/`getimagesize()`/random filename/`.htaccess`. | OK. |
 | Presensi CMS | `/admin/presensi`, `/admin/presensi/{id}/update`, `/delete`, `/submissions/{id}/approve`, `/cancel`, `/presensi/{eventId}/members/{teamId}/approve` | `validatedPayload()` validates event fields/roles/member IDs; action IDs cast integer. | OK; see SEC-02 for token storage design. |
 | GenBI Poin | `/admin/genbi-poin/activities`, `/admin/genbi-poin/activities/{id}/update` | `validatedActivity()` validates team/member/activity payload and scores. | OK. |
-| Prestasi tokens | `/admin/prestasi-tokens`, `/admin/prestasi-tokens/{id}/revoke` | Generate validates label and expiry string; revoke ID cast. | Finding SEC-01: returned URL uses token hash and token lifecycle is reusable. |
+| Prestasi tokens | `/admin/prestasi-tokens`, `/admin/prestasi-tokens/{id}/revoke` | Generate validates label and expiry string; revoke ID cast. | Finding SEC-01: returned URL pernah memakai token hash. Reusable lifecycle sekarang dianggap intended. |
 | Team members | `/admin/team-members`, `/bulk`, `/upload`, `/{id}/update`, `/{id}/delete`, `/{id}/home`, `/{id}/alumni` | Store/update validate required fields; bulk IDs cast; upload checks MIME/`getimagesize()`/random filename/`.htaccess`. | OK. |
 | Features / Program Utama | `/admin/features`, `/upload`, `/{id}/update`, `/{id}/delete`, `/{id}/images/reorder`, `/{id}/images/{imageId}/delete` | Store/update validate title/image presence and sanitize image payload; upload validated server-side. | Finding SEC-03 on image delete path containment. |
 | Photo gallery | `/admin/photos`, `/upload`, `/{id}/update`, `/{id}/delete` | Store/update sanitize fixed fields; upload validates MIME/`getimagesize()`/random filename/`.htaccess`. | OK; update is partial sanitize, not strict required-field validation. |
@@ -88,7 +88,7 @@ Semua route di tabel ini berada di admin protected group kecuali login/logout, s
 
 ## Temuan detail
 
-### SEC-01 — Prestasi submission token accepts hash bearer and is reusable
+### SEC-01 — Prestasi submission token accepts token_hash as bearer
 
 Severity: High  
 Confidence: High  
@@ -98,11 +98,9 @@ Affected files:
 
 - `app/Models/PrestasiToken.php:36-40`
 - `app/Models/PrestasiToken.php:80-94`
-- `app/Models/PrestasiToken.php:102-106`
 - `app/Models/PrestasiToken.php:163-166`
 - `app/Controllers/Admin/PrestasiTokenController.php:40-44`
 - `app/Controllers/Public/PrestasiController.php:188-225`
-- `database/migrations/2026_05_20_000001_alter_prestasi_tokens_unlimited_until_expiry.php:14-32`
 
 Root cause:
 
@@ -111,7 +109,7 @@ Root cause:
 - Admin response membangun `submit_url` dari `hash('sha256', $generated['token'])`.
 - `mapRow()` juga mengekspos `submit_url` dari `token_hash`.
 - Validator publik menerima nilai yang sama via `validateTokenForUpdate()`.
-- `markUsed()` adalah no-op dan migration sengaja mengubah token menjadi reusable sampai expired/revoked.
+- `markUsed()` adalah no-op karena token Prestasi memang reusable sampai expired/revoked.
 
 Attack path:
 
@@ -119,29 +117,35 @@ Attack path:
 2. Sistem mengembalikan plain token dan URL yang memakai hash token.
 3. Route publik `/prestasi/submit/{token}` menerima token route tersebut.
 4. `tokenHash()` menerima hash 64 hex sebagai nilai final dan query DB mencari `token_hash = :hash`.
-5. Setelah submit sukses, token tidak ditandai used; submit bisa diulang hingga expiry/revoke.
+5. Karena route token yang dipakai adalah hash, siapa pun yang mendapatkan `token_hash` dapat submit sampai token expired/revoked.
 
 Impact:
 
 - Jika admin token list, DB, log, screenshot, atau URL hash bocor, nilai `token_hash` sendiri bisa dipakai sebagai bearer token.
-- Token Prestasi tidak memenuhi requirement “one-time prestasi submission tokens”; attacker yang punya URL dapat submit draft Prestasi berulang sampai token dicabut/kedaluwarsa.
+- Reusable-until-expired bukan masalah keamanan tersendiri setelah klarifikasi produk, tetapi bearer token berbasis hash membuat secret turunan DB/API/list menjadi URL publik valid.
 
 Counterevidence:
 
 - Token random kuat (`random_bytes(32)`).
 - Query mengecek `revoked_at` dan `expires_at`.
 - Submit disimpan sebagai `draft`, bukan langsung published.
+- Product owner mengonfirmasi reusable sampai expired/revoke adalah perilaku yang diinginkan.
 
 Rekomendasi:
 
 1. Ubah format plain token supaya tidak ambigu dengan hash, misalnya prefix `pst_` + random base64url.
 2. `tokenHash()` harus selalu `hash('sha256', $plainToken)`; jangan pernah menerima stored hash sebagai bearer.
 3. `submit_url` harus memakai plain token hanya saat generate response pertama; jangan tampilkan plain token lagi setelah itu.
-4. Implementasikan one-time semantics: `used_at`, `used_count`, atau `max_uses = 1`, dan panggil `markUsed()` di transaction yang sama setelah create sukses.
+4. Pertahankan reusable-until-expired semantics, tetapi pastikan reuse hanya mungkin dengan plain token asli.
 5. Tambahkan regression test:
    - plain token valid.
    - `hash('sha256', plain)` tidak valid sebagai route token.
-   - submit kedua dengan token sama ditolak.
+   - `markUsed()` tetap idempotent/no-op untuk reusable semantics.
+
+Status remediation 2026-06-23:
+
+- Implemented: plain token sekarang `pst_` + base64url random, lookup selalu `hash('sha256', trim($token))`, admin generate response memakai plain token URL, dan token list tidak lagi merekonstruksi `submit_url` dari `token_hash`.
+- Regression test: `tests/php/PrestasiTokenSecurityTest.php`.
 
 ### SEC-02 — Presensi public tokens are stored and returned in plaintext
 
@@ -375,7 +379,7 @@ Rekomendasi:
 
 ## Rekomendasi prioritas fix
 
-1. Perbaiki token Prestasi one-time dan hash handling (SEC-01).
+1. Perbaiki Prestasi hash-as-bearer sambil mempertahankan reusable-until-expired policy (SEC-01).
 2. Hilangkan plaintext Presensi token di DB/API, tambahkan expiry/rotation (SEC-02).
 3. Tambahkan canonical path containment sebelum `unlink()` Program Utama (SEC-03).
 4. Sanitize rich HTML saat output ke admin news fallback dan buat migration sanitize legacy content (SEC-04).
@@ -392,4 +396,3 @@ Commands/evidence yang digunakan:
 - `rg -n "function submitWithToken|validateTokenForUpdate|markUsed|tokenHash|submit_url|public_token|public_url" app database`
 - `rg -n "deleteImage|removeUploadedFile|normalizeImagePath|unlink" app/Controllers app/Models`
 - `rg -n "MAX_UPLOAD_SIZE|ALLOWED_IMAGE_TYPES|finfo|getimagesize|move_uploaded_file|.htaccess" app/Controllers app/Services`
-

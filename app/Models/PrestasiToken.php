@@ -16,7 +16,7 @@ class PrestasiToken
             'id' => (int) ($row['token_id'] ?? $row['id'] ?? 0),
             'token_id' => (int) ($row['token_id'] ?? $row['id'] ?? 0),
             'token_hash' => $row['token_hash'] ?? '',
-            'submit_url' => '/prestasi/submit/' . (string) ($row['token_hash'] ?? ''),
+            'submit_url' => '',
             'label' => $row['label'] ?? $row['keterangan'] ?? '',
             'status' => $status,
             'created_by' => (int) ($row['created_by'] ?? 0),
@@ -33,7 +33,7 @@ class PrestasiToken
             return null;
         }
 
-        $plainToken = bin2hex(random_bytes(32));
+        $plainToken = self::newPlainToken();
         $hash = self::tokenHash($plainToken);
 
         $stmt = $this->db->prepare(
@@ -162,7 +162,11 @@ class PrestasiToken
 
     private static function tokenHash(string $token): string
     {
-        $token = trim($token);
-        return preg_match('/^[a-f0-9]{64}$/i', $token) ? strtolower($token) : hash('sha256', $token);
+        return hash('sha256', trim($token));
+    }
+
+    private static function newPlainToken(): string
+    {
+        return 'pst_' . rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     }
 }

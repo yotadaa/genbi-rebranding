@@ -40,7 +40,7 @@ class PrestasiTokenController
             $response->json(['data' => [
                 'id' => $generated['id'],
                 'token' => $generated['token'],
-                'submit_url' => '/prestasi/submit/' . hash('sha256', $generated['token']),
+                'submit_url' => '/prestasi/submit/' . rawurlencode($generated['token']),
                 'label' => $label,
             ]], 201);
         } else {
