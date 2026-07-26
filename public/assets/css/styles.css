@@ -3971,6 +3971,14 @@ html[data-theme^="dark-"] ::placeholder {
 .medium-editor-host .image-tool__image-picture {
   border-radius: 1.25rem;
   overflow: hidden;
+  
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 1.5rem;
+  margin: 15px 0 15px 0px;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.14);
 }
 
 .medium-editor-host .image-tool--loading .image-tool__image,
