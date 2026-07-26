@@ -644,7 +644,7 @@
           Admin.showToast(result.error || 'Gagal menyimpan berita.');
         }
       } catch (e) {
-        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+        Admin.showToast(e.toString() + 'test Gagal menyimpan berita. Periksa koneksi.');
       }
     });
   }
@@ -708,7 +708,7 @@
           Admin.showToast(result.error || 'Gagal menyimpan berita.');
         }
       } catch (e) {
-        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+        Admin.showToast(e.toString() + 'test Gagal menyimpan berita. Periksa koneksi.');
       }
     });
   }

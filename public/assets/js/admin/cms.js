@@ -644,7 +644,8 @@
           Admin.showToast(result.error || 'Gagal menyimpan berita.');
         }
       } catch (e) {
-        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+        console.error('Fetch error details:', e);
+        Admin.showToast('Gagal menyimpan berita. Error: ' + (e.message || 'Koneksi'));
       }
     });
   }
@@ -708,7 +709,8 @@
           Admin.showToast(result.error || 'Gagal menyimpan berita.');
         }
       } catch (e) {
-        Admin.showToast('Gagal menyimpan berita. Periksa koneksi.');
+        console.error('Fetch error details:', e);
+        Admin.showToast('Gagal menyimpan berita. Error: ' + (e.message || 'Koneksi'));
       }
     });
   }
@@ -820,7 +822,16 @@
       }
       if (block.type === 'list') {
         const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
-        return `<${tag}>${(block.data.items || []).map((item) => `<li>${item}</li>`).join('')}</${tag}>`;
+        const renderListItems = (items) => items.map((item) => {
+          if (typeof item === 'string') return `<li>${item}</li>`;
+          if (typeof item === 'object' && item !== null) {
+            const content = item.content || '';
+            const sublist = item.items && item.items.length > 0 ? `<${tag}>${renderListItems(item.items)}</${tag}>` : '';
+            return `<li>${content}${sublist}</li>`;
+          }
+          return `<li>${item}</li>`;
+        }).join('');
+        return `<${tag}>${renderListItems(block.data.items || [])}</${tag}>`;
       }
       if (block.type === 'quote') return block.data.text ? `<blockquote><p>${block.data.text}</p>${block.data.caption ? `<cite>${block.data.caption}</cite>` : ''}</blockquote>` : '';
       if (block.type === 'image') {
@@ -1198,7 +1209,7 @@
     return blocks.map((block) => {
       if (block.type === 'paragraph') return block.data.text ? `<p>${block.data.text}</p>` : '';
       if (block.type === 'header') { const level = Math.min(Math.max(Number(block.data.level) || 2, 1), 6); return block.data.text ? `<h${level}>${block.data.text}</h${level}>` : ''; }
-      if (block.type === 'list') { const tag = block.data.style === 'ordered' ? 'ol' : 'ul'; return `<${tag}>${(block.data.items || []).map((entry) => `<li>${entry}</li>`).join('')}</${tag}>`; }
+      if (block.type === 'list') { const tag = block.data.style === 'ordered' ? 'ol' : 'ul'; const renderListItems = (items) => items.map((item) => { if (typeof item === 'string') return `<li>${item}</li>`; if (typeof item === 'object' && item !== null) { const content = item.content || ''; const sublist = item.items && item.items.length > 0 ? `<${tag}>${renderListItems(item.items)}</${tag}>` : ''; return `<li>${content}${sublist}</li>`; } return `<li>${item}</li>`; }).join(''); return `<${tag}>${renderListItems(block.data.items || [])}</${tag}>`; }
       if (block.type === 'quote') return block.data.text ? `<blockquote><p>${block.data.text}</p>${block.data.caption ? `<cite>${block.data.caption}</cite>` : ''}</blockquote>` : '';
       if (block.type === 'image') { const src = block.data.file?.url || block.data.url || ''; if (!src) return ''; return `<figure><img src="${escape(src)}" alt="${escape(block.data.caption || '')}" />${block.data.caption ? `<figcaption>${escape(block.data.caption)}</figcaption>` : ''}</figure>`; }
       if (block.type === 'map' || block.type === 'embedMap') { const url = extractMapEmbedUrl(block.data.url || ''); if (!url) return ''; const caption = String(block.data.caption || '').trim(); return `<div class="event-map-block" data-block-type="map" data-map-url="${escape(url)}" data-caption="${escape(caption)}"><iframe src="${escape(url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>${caption ? `<p>${escape(caption)}</p>` : ''}</div>`; }

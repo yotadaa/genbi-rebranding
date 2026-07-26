@@ -10,10 +10,7 @@ docs/screenshot
 # Dependencies and generated artifacts
 node_modules/
 vendor/
-public/assets/js/dist/
-public/assets/css/styles.min.css
-public/assets/css/tailwind.css
-assets/css/tailwind.css
+
 public/assets.zip
 public/assets-build.zip
 public/assets-build/

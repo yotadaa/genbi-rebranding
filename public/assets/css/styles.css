@@ -415,6 +415,37 @@ body.page-leaving {
   font-size: 1.03rem;
 }
 
+.prose-soft ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 1.15rem;
+  margin-bottom: 1.15rem;
+  color: #404040;
+}
+
+.prose-soft ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 1.15rem;
+  margin-bottom: 1.15rem;
+  color: #404040;
+}
+
+.prose-soft li {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.85;
+  font-size: 1.03rem;
+}
+
+.prose-soft ul ul,
+.prose-soft ol ol,
+.prose-soft ul ol,
+.prose-soft ol ul {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .soft-card {
   border: 1px solid rgb(23 23 23 / 0.10);
   background: rgb(255 255 255 / 0.78);
