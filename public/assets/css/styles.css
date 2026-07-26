@@ -54,7 +54,7 @@ body.page-leaving {
   aspect-ratio: 4/3;
   object-fit: cover;
   border-radius: 1.5rem;
-  margin: 0 0 15px;
+  margin: 15px 0 15px 0px;
   box-shadow: 0 24px 60px rgb(15 23 42 / 0.14);
 }
 .top-strip {
