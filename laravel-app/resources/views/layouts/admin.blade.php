@@ -19,7 +19,7 @@ $settingsJson = json_encode($sitePayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
   <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260616g">
   <link rel="stylesheet" href="/assets/css/theme.css?v=20260517a">
   <link rel="stylesheet" href="/assets/css/styles.min.css?v=20260617a">
-  @if (!empty($sitePayload['favicon']))<link rel="icon" href="{{ (string) $sitePayload['favicon'] }}">@endif
+  @if (!empty($sitePayload['favicon']))<link rel="icon" href="{{ (string) $sitePayload['favicon'] }}">@else<link rel="icon" href="/uploads/logo.png">@endif
 </head>
 <body class="admin-body" data-cms-page="{{ $cmsPage ?? '' }}" data-cms-mode="{{ $cmsMode ?? '' }}">
   <div class="admin-shell">

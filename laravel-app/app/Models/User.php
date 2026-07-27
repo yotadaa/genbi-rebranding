@@ -10,7 +10,7 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $table = 'tbl_user';
-    protected $primaryKey = 'user_id';
+    protected $primaryKey = 'id';
     protected $guarded = [];
 
     public function getAuthIdentifierName()

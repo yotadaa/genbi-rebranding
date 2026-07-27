@@ -8,6 +8,7 @@ const Core = window.GenBIAPICore;
 renderShell('news');
 observeFadeUp();
 
+// Check if SSR markup exists - if so, only bind progressive behavior
 const root = document.querySelector('#news-detail-root');
 if (root?.dataset.ssr === 'true') {
   bindProgressiveBehavior();
@@ -15,7 +16,9 @@ if (root?.dataset.ssr === 'true') {
   return;
 }
 
+// Otherwise, render the full page client-side
 renderDetail();
+
 window.addEventListener('error', showDetailError);
 window.addEventListener('unhandledrejection', showDetailError);
 
@@ -37,7 +40,7 @@ async function renderDetail() {
     item = await API.getNewsDetail(identifier);
     related = await API.getRelatedNews(item.id, item.category);
     commentsPayload = await API.getNewsComments(item);
-  } catch {
+  } catch (err) {
     root.innerHTML = `<section class="bg-stone py-16"><div class="article-container text-sm text-neutral-600">Gagal memuat berita. Silakan coba lagi.</div></section>`;
     return;
   }
@@ -103,21 +106,12 @@ function renderMainCommentForm(policy = {}) {
   if (policy.comments_enabled === false) {
     return '<div class="comment-disabled-note mt-6">Komentar dinonaktifkan untuk artikel ini.</div>';
   }
-
-  return `<form class="comment-form mt-6" id="comment-form">
-    <input class="input-soft" name="name" placeholder="Nama" required />
-    <input class="input-soft" name="email" type="email" placeholder="Email" required />
-    <textarea class="input-soft" name="comment" rows="4" placeholder="Tulis komentar singkat..." required></textarea>
-    <button type="submit" class="btn btn-primary w-fit">Kirim komentar</button>
-    <p class="text-sm leading-6 text-neutral-500">Komentar akan tampil setelah disetujui admin.</p>
-  </form>`;
+  return `<form class="comment-form mt-6" id="comment-form"><input class="input-soft" name="name" placeholder="Nama" required /><input class="input-soft" name="email" type="email" placeholder="Email" required /><textarea class="input-soft" name="comment" rows="4" placeholder="Tulis komentar singkat..." required></textarea><button type="submit" class="btn btn-primary w-fit">Kirim komentar</button><p class="text-sm leading-6 text-neutral-500">Komentar akan tampil setelah disetujui admin.</p></form>`;
 }
 
 function renderCommentList(payload = {}) {
   const comments = Array.isArray(payload.data) ? payload.data : [];
-  if (!comments.length) {
-    return '<div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>';
-  }
+  if (!comments.length) return '<div class="rounded-2xl border border-neutral-900/10 bg-white p-5 text-sm text-neutral-600">Belum ada komentar.</div>';
   return comments.map((comment) => renderCommentNode(comment, payload.policy || {})).join('');
 }
 
@@ -126,34 +120,7 @@ function renderCommentNode(comment, policy = {}) {
   const maxDepth = Number(policy.max_reply_depth || 3);
   const canVote = policy.voting_enabled !== false;
   const canReply = policy.replies_enabled !== false && depth < maxDepth;
-  return `
-    <article class="comment-item comment-node comment-depth-${Math.min(depth, 6)}" data-comment-id="${comment.id}">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3>${escapeHtml(comment.name || 'Pembaca')}</h3>
-          <p>${depth > 0 ? 'Balasan pembaca' : 'Pembaca'}</p>
-        </div>
-        <span class="comment-status">Disetujui</span>
-      </div>
-      <p class="comment-text">${escapeHtml(comment.text || '')}</p>
-      <div class="comment-meta-row">
-        ${canVote ? `<div class="comment-vote-group">
-          <button type="button" class="comment-vote-btn" data-vote-up="${comment.id}">↑ <span data-vote-up-count>${Number(comment.upVotes || 0)}</span></button>
-          <button type="button" class="comment-vote-btn" data-vote-down="${comment.id}">↓ <span data-vote-down-count>${Number(comment.downVotes || 0)}</span></button>
-          <span class="comment-score" data-vote-score>${Number(comment.score || 0)}</span>
-        </div>` : ''}
-        ${canReply ? `<button type="button" class="comment-reply-toggle" data-reply-toggle="${comment.id}">Balas</button>` : ''}
-      </div>
-      ${canReply ? `<form class="comment-form comment-reply-form hidden" data-reply-form="${comment.id}">
-        <input type="hidden" name="parent_id" value="${comment.id}" />
-        <input class="input-soft" name="name" placeholder="Nama" required />
-        <input class="input-soft" name="email" type="email" placeholder="Email" required />
-        <textarea class="input-soft" name="comment" rows="3" placeholder="Tulis balasan..." required></textarea>
-        <button type="submit" class="btn btn-primary w-fit">Kirim balasan</button>
-      </form>` : ''}
-      ${Array.isArray(comment.children) && comment.children.length ? `<div class="comment-children">${comment.children.map((child) => renderCommentNode(child, policy)).join('')}</div>` : ''}
-    </article>
-  `;
+  return `<article class="comment-item comment-node comment-depth-${Math.min(depth, 6)}" data-comment-id="${comment.id}"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(comment.name || 'Pembaca')}</h3><p>${depth > 0 ? 'Balasan pembaca' : 'Pembaca'}</p></div><span class="comment-status">Disetujui</span></div><p class="comment-text">${escapeHtml(comment.text || '')}</p><div class="comment-meta-row">${canVote ? `<div class="comment-vote-group"><button type="button" class="comment-vote-btn" data-vote-up="${comment.id}">↑ <span data-vote-up-count>${Number(comment.upVotes || 0)}</span></button><button type="button" class="comment-vote-btn" data-vote-down="${comment.id}">↓ <span data-vote-down-count>${Number(comment.downVotes || 0)}</span></button><span class="comment-score" data-vote-score>${Number(comment.score || 0)}</span></div>` : ''}${canReply ? `<button type="button" class="comment-reply-toggle" data-reply-toggle="${comment.id}">Balas</button>` : ''}</div>${canReply ? `<form class="comment-form comment-reply-form hidden" data-reply-form="${comment.id}"><input type="hidden" name="parent_id" value="${comment.id}" /><input class="input-soft" name="name" placeholder="Nama" required /><input class="input-soft" name="email" type="email" placeholder="Email" required /><textarea class="input-soft" name="comment" rows="3" placeholder="Tulis balasan..." required></textarea><button type="submit" class="btn btn-primary w-fit">Kirim balasan</button></form>` : ''}${Array.isArray(comment.children) && comment.children.length ? `<div class="comment-children">${comment.children.map((child) => renderCommentNode(child, policy)).join('')}</div>` : ''}</article>`;
 }
 
 function bindShareButtons(scope) {
@@ -167,17 +134,13 @@ function bindShareButtons(scope) {
   });
 }
 
-function bindCommentInteractions(scope, item, payload = { policy: {} }) {
+function bindCommentInteractions(scope, item) {
   scope.querySelector('#comment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
     try {
-      await API.submitNewsComment(item, {
-        name: formData.get('name'),
-        email: formData.get('email'),
-        comment: formData.get('comment'),
-      });
+      await API.submitNewsComment(item, { name: formData.get('name'), email: formData.get('email'), comment: formData.get('comment') });
       form.reset();
       showMiniToast('Komentar masuk antrean moderasi');
     } catch {
@@ -192,17 +155,14 @@ function bindCommentInteractions(scope, item, payload = { policy: {} }) {
       if (form) form.classList.toggle('hidden');
       return;
     }
-
     const upButton = event.target.closest('[data-vote-up]');
     const downButton = event.target.closest('[data-vote-down]');
     const button = upButton || downButton;
     if (!button) return;
-
     const commentId = button.dataset.voteUp || button.dataset.voteDown;
     const value = button.dataset.voteUp ? 1 : -1;
-    const article = item?.slug ? item : { slug: String(item?.slug || item?.id || '') };
     try {
-      const response = await API.voteComment(article, commentId, value);
+      const response = await API.voteComment(item, commentId, value);
       const container = button.closest('.comment-node');
       if (container) {
         const data = response?.data || {};
@@ -224,12 +184,7 @@ function bindCommentInteractions(scope, item, payload = { policy: {} }) {
       const replyForm = event.currentTarget;
       const formData = new FormData(replyForm);
       try {
-        await API.submitNewsComment(item, {
-          parentId: formData.get('parent_id'),
-          name: formData.get('name'),
-          email: formData.get('email'),
-          comment: formData.get('comment'),
-        });
+        await API.submitNewsComment(item, { parentId: formData.get('parent_id'), name: formData.get('name'), email: formData.get('email'), comment: formData.get('comment') });
         replyForm.reset();
         replyForm.classList.add('hidden');
         showMiniToast('Balasan masuk antrean moderasi');
@@ -238,6 +193,10 @@ function bindCommentInteractions(scope, item, payload = { policy: {} }) {
       }
     });
   });
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
 function hasPreservedRelated(item) {
@@ -279,17 +238,15 @@ function cleanNewsContent(content) {
 function renderContributorBox(item) {
   const pewarta = String(item.raw?.contributor_pewarta || item.author || '').trim();
   const editor = String(item.raw?.contributor_editor || item.editor || '').trim();
+
   if (!pewarta && !editor) return '';
+
   return `
     <div class="news-detail-contributors mt-10 rounded-[1.5rem] border border-neutral-900/10 bg-white/80 p-5 text-sm leading-7 text-neutral-700">
       ${pewarta ? `<p><strong>Pewarta:</strong> ${pewarta}</p>` : ''}
       ${editor ? `<p><strong>Editor:</strong> ${editor}</p>` : ''}
     </div>
   `;
-}
-
-function escapeHtml(value) {
-  return String(value || '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
 function showDetailError() {

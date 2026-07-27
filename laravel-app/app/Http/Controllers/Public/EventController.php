@@ -10,24 +10,22 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 9;
+        $perPage = $request->input('per_page', $request->input('limit', 9));
         $page = $request->input('page', 1);
-        $activeQ = $request->input('q', '');
+        $activeQ = $request->input('q');
 
         $resolveImageUrl = function($path) {
-            if (empty($path)) return '';
-            if (str_starts_with($path, 'http')) return $path;
-            if (str_starts_with($path, '/uploads/')) return url($path);
-            if (str_starts_with($path, 'uploads/')) return url('/' . $path);
-            return url('/uploads/' . ltrim($path, '/'));
+            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
         };
 
         $query = Event::published();
         
-        if ($activeQ !== '') {
-            $query->where('event_title', 'like', '%' . $activeQ . '%')
+        if ($activeQ !== null && $activeQ !== '' && $activeQ !== 'Semua' && $activeQ !== 'All') {
+            $query->where(function($q) use ($activeQ) {
+                $q->where('event_title', 'like', '%' . $activeQ . '%')
                   ->orWhere('event_content', 'like', '%' . $activeQ . '%')
                   ->orWhere('event_location', 'like', '%' . $activeQ . '%');
+            });
         }
 
         $paginator = $query->latestEvent()->paginate($perPage);
@@ -44,11 +42,22 @@ class EventController extends Controller
                 'status' => $event->status,
                 'image' => $resolveImageUrl($event->photo ?: $event->banner),
             ];
-        })->toArray();
+        })->values()->toArray();
+
+        if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+            return response()->json([
+                'items' => $items,
+                'meta' => [
+                    'page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                ]
+            ]);
+        }
 
         return view('public.event.index', [
             'items' => $items,
-            'filters' => ['q' => $activeQ],
+            'filters' => ['q' => $activeQ ?? ''],
             'page' => $paginator->currentPage(),
             'perPage' => $paginator->perPage(),
             'total' => $paginator->total(),
@@ -57,19 +66,18 @@ class EventController extends Controller
         ]);
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
         $resolveImageUrl = function($path) {
-            if (empty($path)) return '';
-            if (str_starts_with($path, 'http')) return $path;
-            if (str_starts_with($path, '/uploads/')) return url($path);
-            if (str_starts_with($path, 'uploads/')) return url('/' . $path);
-            return url('/uploads/' . ltrim($path, '/'));
+            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
         };
 
         $eventModel = Event::published()->where('slug', $slug)->first();
         
         if (!$eventModel) {
+            if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+                return response()->json(['error' => 'Not found'], 404);
+            }
             abort(404);
         }
 
@@ -86,6 +94,10 @@ class EventController extends Controller
             'image' => $resolveImageUrl($eventModel->photo ?: $eventModel->banner),
             'banner' => $resolveImageUrl($eventModel->banner ?: $eventModel->photo),
         ];
+
+        if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+            return response()->json(['data' => $event]);
+        }
 
         return view('public.event.show', [
             'event' => $event,

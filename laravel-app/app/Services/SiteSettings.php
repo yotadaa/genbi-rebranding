@@ -30,6 +30,17 @@ final class SiteSettings
         }
     }
 
+    private function normalizeUrl(string $url): string
+    {
+        if (str_starts_with($url, 'https://genbijambi.com/public/')) {
+            return str_replace('https://genbijambi.com/public/', '/', $url);
+        }
+        if (str_starts_with($url, 'https://genbijambi.com/')) {
+            return str_replace('https://genbijambi.com/', '/', $url);
+        }
+        return $url;
+    }
+
     /** @return array<string, mixed> */
     public function all(): array
     {
@@ -43,37 +54,47 @@ final class SiteSettings
             return $this->cache;
         }
 
-        $stored = $this->settings?->all() ?? [];
+        $stored = Setting::all();
         $data = self::defaults();
 
-        foreach ($stored as $key => $value) {
-            $data[$key] = $value;
+        foreach ($stored as $item) {
+            $key = (string)($item->setting_key ?? $item['setting_key'] ?? '');
+            $val = (string)($item->setting_value ?? $item['setting_value'] ?? '');
+            if ($key !== '') {
+                $data[$key] = $this->normalizeUrl($val);
+            }
         }
 
         $publicTheme = $this->normalizeThemeKey((string) ($data['theme.public_key'] ?? 'genbi'));
         $adminTheme = $this->normalizeThemeKey((string) ($data['theme.admin_key'] ?? 'genbi'));
 
-        $logoUrl = (string) ($data['site.logo_url'] ?? '');
-        $faviconUrl = (string) ($data['site.favicon_url'] ?? '');
-        $defaultFaviconUrl = (string) (self::defaults()['site.favicon_url'] ?? '');
+        $logoUrl = $this->normalizeUrl((string) ($data['site.logo_url'] ?? '/uploads/logo.png'));
+        $faviconUrl = $this->normalizeUrl((string) ($data['site.favicon_url'] ?? '/uploads/logo.png'));
+        $defaultFaviconUrl = (string) (self::defaults()['site.favicon_url'] ?? '/uploads/logo.png');
 
         if ($faviconUrl === '' || $faviconUrl === $defaultFaviconUrl) {
             $faviconUrl = $logoUrl;
         }
+        if ($faviconUrl === '') {
+            $faviconUrl = '/uploads/logo.png';
+        }
+        if ($logoUrl === '') {
+            $logoUrl = '/uploads/logo.png';
+        }
 
-        $bannerImage1 = (string) ($data['site.banner_image_1'] ?? '');
-        $bannerImage2 = (string) ($data['site.banner_image_2'] ?? '');
+        $bannerImage1 = $this->normalizeUrl((string) ($data['site.banner_image_1'] ?? '/uploads/slider-1.png'));
+        $bannerImage2 = $this->normalizeUrl((string) ($data['site.banner_image_2'] ?? '/uploads/slider-4.png'));
         if ($bannerImage2 === '') {
             $bannerImage2 = $bannerImage1;
         }
 
         $site = [
-            'name' => (string) ($data['site.name'] ?? ''),
-            'tagline' => (string) ($data['site.tagline'] ?? ''),
+            'name' => (string) ($data['site.name'] ?? 'GenBI Provinsi Jambi'),
+            'tagline' => (string) ($data['site.tagline'] ?? 'Bersama GenBI, Energi untuk Negeri'),
             'logo' => $logoUrl,
             'favicon' => $faviconUrl,
-            'email' => (string) ($data['site.topbar_email'] ?? ''),
-            'phone' => (string) ($data['site.topbar_phone'] ?? ''),
+            'email' => (string) ($data['site.topbar_email'] ?? 'genbijambibi@gmail.com'),
+            'phone' => (string) ($data['site.topbar_phone'] ?? '089627896750'),
             'address' => (string) ($data['site.footer_address'] ?? ''),
             'footerEmail' => (string) ($data['site.footer_email'] ?? ''),
             'footerPhone' => (string) ($data['site.footer_phone'] ?? ''),
@@ -148,8 +169,7 @@ final class SiteSettings
 
     public function themeKey(string $scope): string
     {
-        $key = (string) (($this->all()['theme.' . $scope . '_key'] ?? 'genbi'));
-        return $this->normalizeThemeKey($key);
+        return (string) ($this->all()['themes'][$scope] ?? 'genbi');
     }
 
     /** @return array<string, mixed> */
@@ -175,8 +195,8 @@ final class SiteSettings
         return [
             'site.name' => 'GenBI Provinsi Jambi',
             'site.tagline' => 'Bersama GenBI, Energi untuk Negeri',
-            'site.logo_url' => 'https://genbijambi.com/public/uploads/logo.png',
-            'site.favicon_url' => 'https://genbijambi.com/public/uploads/logo.png',
+            'site.logo_url' => '/uploads/logo.png',
+            'site.favicon_url' => '/uploads/logo.png',
             'site.topbar_email' => 'genbijambibi@gmail.com',
             'site.topbar_phone' => '089627896750',
             'site.email_from' => 'genbijambibi@gmail.com',
@@ -191,45 +211,38 @@ final class SiteSettings
             'site.banner_subtitle' => 'Kami adalah komunitas penerima beasiswa Bank Indonesia di Jambi yang bergerak lewat edukasi, pengabdian, kepemimpinan, dan kolaborasi anak muda.',
             'site.banner_subtitle_alt' => 'Dari kampus ke masyarakat, GenBI Jambi hadir membawa semangat literasi kebanksentralan, kepedulian sosial, dan kontribusi nyata untuk daerah.',
             'site.banner_badge' => 'Energi untuk Negeri',
-            'site.banner_image_1' => 'https://genbijambi.com/public/uploads/slider-1.png',
-            'site.banner_image_2' => 'https://genbijambi.com/public/uploads/slider-4.png',
+            'site.banner_image_1' => '/uploads/slider-1.png',
+            'site.banner_image_2' => '/uploads/slider-4.png',
             'site.sidebar_heading_news' => 'Categories',
             'site.sidebar_heading_recent' => 'Recent Posts',
             'site.sidebar_heading_upcoming' => 'Upcoming Events',
             'site.sidebar_heading_past' => 'Past Events',
             'site.sidebar_heading_contact' => 'Quick Contact',
-            'site.color_primary' => '#114b9a',
-            'site.color_primary_hover' => '#0c3572',
-            'site.color_primary_soft' => '#eef6ff',
-            'site.video_resource_url' => 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq',
-            'site.base_url' => 'https://genbijambi.com',
-            'home.announcement_eyebrow' => 'Pengumuman',
-            'home.announcement_title' => 'Info penting untuk anggota dan publik.',
-            'home.announcement_description' => 'Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.',
-            'home.program_eyebrow' => 'Program utama',
-            'home.program_title' => 'Program yang dekat dengan anggota dan masyarakat.',
-            'home.program_description' => 'Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.',
-            'home.team_eyebrow' => 'GenBI Provinsi Jambi',
-            'home.team_title' => 'Wajah pengurus yang menjaga arah gerak organisasi.',
-            'home.team_description' => 'Badan Pengurus Inti menghubungkan ide, anggota, dan agenda kerja agar GenBI Jambi tetap solid, aktif, dan relevan bagi lingkungan sekitar.',
-            'home.event_eyebrow' => 'Agenda utama',
-            'home.event_title' => 'Kegiatan yang lahir dari kebutuhan sekitar.',
-            'home.event_description' => 'Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.',
-            'home.news_eyebrow' => 'Latest news',
-            'home.news_title' => 'Berita terbaru',
             'theme.public_key' => 'genbi',
             'theme.admin_key' => 'genbi',
             'theme.custom_override_enabled' => false,
         ];
     }
 
+    private function normalizeThemeKey(string $key): string
+    {
+        $key = trim(strtolower($key));
+        return $key === '' ? 'genbi' : $key;
+    }
+
     /** @return array<string, mixed>|null */
     private function loadFileCache(): ?array
     {
         $file = self::getCacheFile();
-        if (!is_file($file) || (time() - filemtime($file)) > self::CACHE_TTL) {
+        if (!is_file($file)) {
             return null;
         }
+
+        $mtime = filemtime($file);
+        if ($mtime === false || (time() - $mtime) > self::CACHE_TTL) {
+            return null;
+        }
+
         $data = @include $file;
         return is_array($data) ? $data : null;
     }
@@ -240,14 +253,10 @@ final class SiteSettings
         $file = self::getCacheFile();
         $dir = dirname($file);
         if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
+            @mkdir($dir, 0777, true);
         }
-        $content = '<?php return ' . var_export($data, true) . ';' . "\n";
-        @file_put_contents($file, $content, LOCK_EX);
-    }
 
-    private function normalizeThemeKey(string $key): string
-    {
-        return in_array($key, ThemeRegistry::keys(), true) ? $key : 'genbi';
+        $export = var_export($data, true);
+        @file_put_contents($file, "<?php\n\nreturn " . $export . ";\n");
     }
 }

@@ -179,7 +179,36 @@
     });
   }
 
+  async function getTeamMemberOptions(query = '', limit = 12) {
+    const params = typeof query === 'object' && query !== null
+      ? { ...query }
+      : { q: query, limit };
+    params.type = params.type || 'member';
+    params.limit = params.limit || limit || 12;
+    return requestJson(Core.buildEndpoint(Core.routeUrl('admin.teamMemberOptions'), params));
+  }
+
+  async function getPresensiEvent(id) {
+    return requestJson(Core.routeUrl('admin.presensiShow', { id }));
+  }
+
+  async function getPresensiSubmissions(id) {
+    return requestJson(Core.routeUrl('admin.presensiSubmissions', { id }));
+  }
+
+  async function approvePresensiSubmission(id) {
+    return requestJson(Core.routeUrl('admin.presensiApprove', { id }), { method: 'POST' });
+  }
+
+  async function submitPresensi(token, formData) {
+    return requestJson(Core.routeUrl('public.presensiShow', { token }), {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
   window.GenBIAPI = {
+    approvePresensiSubmission,
     getCsrfToken,
     getAdminComments,
     getCommentSettings,
@@ -189,9 +218,14 @@
     getNewsDetail,
     getNewsList,
     getPrestasiList,
+    getPresensiEvent,
+    getPresensiSubmissions,
     getRelatedNews,
     getTeamList,
+    getTeamMemberOptions,
     moderateComment,
+    requestJson,
+    submitPresensi,
     submitNewsComment,
     updateCommentSettings,
     voteComment,

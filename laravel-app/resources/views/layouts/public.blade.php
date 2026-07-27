@@ -20,7 +20,7 @@ $settingsJson = json_encode($sitePayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
   <link rel="stylesheet" href="/assets/css/theme.css?v=20260510a">
   <link rel="stylesheet" href="/assets/css/styles.css?v=20260617a">
   {!! $jsonld ?? '' !!}
-  @if (!empty($sitePayload['favicon']))<link rel="icon" href="{{ (string) $sitePayload['favicon'] }}">@endif
+  @if (!empty($sitePayload['favicon']))<link rel="icon" href="{{ (string) $sitePayload['favicon'] }}">@else<link rel="icon" href="/uploads/logo.png">@endif
 </head>
 <body class="{{ $bodyClass ?? '' }}">
   <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg">Langsung ke konten</a>

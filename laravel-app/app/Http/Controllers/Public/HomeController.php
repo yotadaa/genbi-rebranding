@@ -23,7 +23,7 @@ class HomeController extends Controller
                 'role' => current(array_filter([$member->jabatan_komsat, $member->jabatan_wilayah, 'Anggota'])),
                 'komsat' => $member->komsat,
                 'commission' => $member->divisi_wilayah ?? $member->divisi_komsat,
-                'photo' => $member->photo ? url('/uploads/' . ltrim($member->photo, '/')) : '',
+                'photo' => \App\Services\ImageResolver::resolve($member->photo, ''),
             ];
         });
         if ($bpiMembers->isEmpty()) {
@@ -32,7 +32,7 @@ class HomeController extends Controller
 
         $publicEvents = Event::published()->latestEvent()->take(4)->get()->map(function($event) {
             $images = [];
-            if ($event->event_banner) $images[] = url('/uploads/' . ltrim($event->event_banner, '/'));
+            if ($event->event_banner) $images[] = \App\Services\ImageResolver::resolve($event->event_banner, '');
             return [
                 'id' => $event->event_id,
                 'title' => $event->event_title,
@@ -60,7 +60,7 @@ class HomeController extends Controller
 
         $programs = Feature::with('images')->homeVisible(12)->map(function($feature) {
             $images = $feature->images->map(function($img) {
-                return ['url' => url('/uploads/' . ltrim($img->image_path, '/'))];
+                return ['url' => \App\Services\ImageResolver::resolve($img->image_path, '')];
             })->toArray();
             return [
                 'id' => $feature->id,
@@ -69,7 +69,7 @@ class HomeController extends Controller
                 'description' => $feature->description ?: $feature->content,
                 'focus' => $feature->focus,
                 'icon_key' => $feature->icon_key ?: $feature->icon,
-                'icon_image' => $feature->icon_image ? url('/uploads/' . ltrim($feature->icon_image, '/')) : '',
+                'icon_image' => \App\Services\ImageResolver::resolve($feature->icon_image, ''),
                 'images' => $images,
             ];
         });
@@ -96,7 +96,7 @@ class HomeController extends Controller
             'title' => $title,
             'excerpt' => $news->news_content_short ?: substr(strip_tags($news->news_content), 0, 150),
             'date' => $news->published_at ?: ($news->news_date ?: $news->created_at),
-            'image' => $news->photo ? url('/uploads/' . ltrim($news->photo, '/')) : ($news->banner ? url('/uploads/' . ltrim($news->banner, '/')) : ''),
+            'image' => \App\Services\ImageResolver::resolve($news->photo ?: $news->banner, '/uploads/slider-1.png'),
             'category' => $news->category ? $news->category->category_name : 'Berita GenBI',
         ];
     }
@@ -110,13 +110,13 @@ class HomeController extends Controller
             'videoResourceUrl' => 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq',
             'heroSlides' => [
                 [
-                    'image' => 'https://genbijambi.com/public/uploads/slider-1.png',
+                    'image' => '/uploads/slider-1.png',
                     'eyebrow' => 'GenBI Provinsi Jambi',
                     'title' => 'Bersama GenBI, tumbuh dan berdampak untuk Jambi.',
                     'caption' => 'Kami adalah komunitas penerima beasiswa Bank Indonesia di Jambi yang bergerak lewat edukasi, pengabdian, kepemimpinan, dan kolaborasi anak muda.',
                 ],
                 [
-                    'image' => 'https://genbijambi.com/public/uploads/slider-4.png',
+                    'image' => '/uploads/slider-4.png',
                     'eyebrow' => 'Energi untuk Negeri',
                     'title' => 'Ruang belajar, berkarya, dan mengabdi bersama.',
                     'caption' => 'Dari kampus ke masyarakat, GenBI Jambi hadir membawa semangat literasi kebanksentralan, kepedulian sosial, dan kontribusi nyata untuk daerah.',
@@ -138,10 +138,10 @@ class HomeController extends Controller
     private function fallbackBpiMembers()
     {
         return collect([
-            (object)['id' => 1, 'name' => 'Ilham Jaya Kusuma', 'role' => 'Ketua Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => 'https://genbijambi.com/public/uploads/team-member-37.jpg'],
-            (object)['id' => 2, 'name' => 'Ananda Marisa Pertiwi', 'role' => 'Sekretaris Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => 'https://genbijambi.com/public/uploads/team-member-38.jpg'],
-            (object)['id' => 3, 'name' => 'Depi Susanti', 'role' => 'Bendahara Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => 'https://genbijambi.com/public/uploads/team-member-39.jpg'],
-            (object)['id' => 4, 'name' => 'Raihan Aulia Aridestama', 'role' => 'Koordinator Tim Media GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => 'https://genbijambi.com/public/uploads/team-member-40.jpg'],
+            (object)['id' => 1, 'name' => 'Ilham Jaya Kusuma', 'role' => 'Ketua Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => '/uploads/team-member-37.jpg'],
+            (object)['id' => 2, 'name' => 'Ananda Marisa Pertiwi', 'role' => 'Sekretaris Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => '/uploads/team-member-38.jpg'],
+            (object)['id' => 3, 'name' => 'Depi Susanti', 'role' => 'Bendahara Umum GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => '/uploads/team-member-39.jpg'],
+            (object)['id' => 4, 'name' => 'Raihan Aulia Aridestama', 'role' => 'Koordinator Tim Media GenBI Jambi', 'commission' => 'BPI GenBI Provinsi Jambi', 'photo' => '/uploads/team-member-40.jpg'],
         ]);
     }
 

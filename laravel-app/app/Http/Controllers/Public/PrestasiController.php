@@ -10,29 +10,26 @@ class PrestasiController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 12;
+        $perPage = $request->input('per_page', $request->input('limit', 12));
+        $page = $request->input('page', 1);
         $activeQ = $request->input('q');
         $activeCategory = $request->input('category');
         $activeYear = $request->input('year');
         $layout = $request->input('layout', 'grid');
 
         $resolveImageUrl = function($path) {
-            if (empty($path)) return '';
-            if (str_starts_with($path, 'http')) return $path;
-            if (str_starts_with($path, '/uploads/')) return url($path);
-            if (str_starts_with($path, 'uploads/')) return url('/' . $path);
-            return url('/uploads/' . ltrim($path, '/'));
+            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-4.png');
         };
 
         $query = Prestasi::published()->latestPrestasi();
 
-        if ($activeQ) {
+        if ($activeQ !== null && $activeQ !== '' && $activeQ !== 'Semua' && $activeQ !== 'All') {
             $query->where('title', 'like', '%' . $activeQ . '%');
         }
-        if ($activeCategory) {
+        if ($activeCategory !== null && $activeCategory !== '' && $activeCategory !== 'Semua' && $activeCategory !== 'All') {
             $query->where('category', $activeCategory);
         }
-        if ($activeYear) {
+        if ($activeYear !== null && $activeYear !== '' && $activeYear !== 'Semua' && $activeYear !== 'All') {
             $query->where('year', $activeYear);
         }
 
@@ -50,18 +47,30 @@ class PrestasiController extends Controller
                 'institution' => current(array_filter([$p->institution, $p->campus_name, ''])),
                 'image' => $resolveImageUrl($p->photo),
             ];
-        })->toArray();
+        })->values()->toArray();
 
         $categories = Prestasi::select('category')->distinct()->pluck('category')->filter()->toArray();
+        sort($categories);
         $years = Prestasi::select('year')->distinct()->pluck('year')->filter()->toArray();
         rsort($years);
+
+        if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+            return response()->json([
+                'items' => $items,
+                'meta' => [
+                    'page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                ]
+            ]);
+        }
 
         return view('public.prestasi.index', [
             'items' => $items,
             'filters' => [
-                'q' => $activeQ,
-                'category' => $activeCategory,
-                'year' => $activeYear,
+                'q' => $activeQ ?? '',
+                'category' => $activeCategory ?? '',
+                'year' => $activeYear ?? '',
                 'layout' => $layout
             ],
             'filterOptions' => [
@@ -76,19 +85,18 @@ class PrestasiController extends Controller
         ]);
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
         $resolveImageUrl = function($path) {
-            if (empty($path)) return '';
-            if (str_starts_with($path, 'http')) return $path;
-            if (str_starts_with($path, '/uploads/')) return url($path);
-            if (str_starts_with($path, 'uploads/')) return url('/' . $path);
-            return url('/uploads/' . ltrim($path, '/'));
+            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-4.png');
         };
 
         $prestasiItem = Prestasi::published()->where('slug', $slug)->first();
         
         if (!$prestasiItem) {
+            if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+                return response()->json(['error' => 'Not found'], 404);
+            }
             abort(404);
         }
 
@@ -105,8 +113,12 @@ class PrestasiController extends Controller
             'image' => $resolveImageUrl($prestasiItem->photo),
         ];
 
+        if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+            return response()->json(['data' => $item]);
+        }
+
         return view('public.prestasi.show', [
-            'item' => $mappedItem,
+            'item' => $item,
             'seo' => [
                 'canonical' => url()->current()
             ],

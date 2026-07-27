@@ -2,8 +2,17 @@
 'use strict';
 const { newsDetailUrl, pageUrl, renderShell } = window.GenBIApp;
 const { observeFadeUp } = window.GenBIUI;
-const { site, stats, programs, news, bpiMembers, publicEvents } = window.GenBIData;
+const { site: fallbackSite, stats, programs, news, bpiMembers, publicEvents } = window.GenBIData;
 const API = window.GenBIAPI;
+const site = {
+  ...fallbackSite,
+  ...(window.GenBISiteSettings || {}),
+  heroSlides: Array.isArray(window.GenBISiteSettings?.heroSlides) && window.GenBISiteSettings.heroSlides.length
+    ? window.GenBISiteSettings.heroSlides
+    : fallbackSite.heroSlides,
+  sidebar: { ...(fallbackSite.sidebar || {}), ...(window.GenBISiteSettings?.sidebar || {}) },
+  colors: { ...(fallbackSite.colors || {}), ...(window.GenBISiteSettings?.colors || {}) },
+};
 
 renderShell('home');
 renderHero();
@@ -114,28 +123,70 @@ function programIcon(title = '') {
 
 function renderPrograms() {
   const root = document.querySelector('#program-list');
-  root.innerHTML = programs.map((program, index) => `
-    <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program ${index + 1} dari ${programs.length}">
-      <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
-      <span class="program-icon mx-auto">${programIcon(program.title)}</span>
-      <p class="slide-kicker">${program.title}</p>
-      <h3>${program.name}</h3>
-      <p>${program.description}</p>
-      <span class="blue-badge mx-auto mt-5">${program.focus}</span>
-    </article>
-  `).join('');
+  if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) {
+    hydrateProgramCards(root);
+    return;
+  }
+
+  root.innerHTML = programs.map((program, index) => {
+    const images = Array.isArray(program.images) && program.images.length ? program.images : [site.heroSlides[0]?.image || 'https://genbijambi.com/public/uploads/slider-1.png'];
+    const focusBadge = program.focus ? `<span class="blue-badge mx-auto mt-5">${program.focus}</span>` : '';
+    return `
+      <article class="editorial-slide-card program-slide-card" role="group" aria-roledescription="slide" aria-label="Program ${index + 1} dari ${programs.length}" data-program-slides='${JSON.stringify(images)}' style="--program-bg-image: url('${images[0]}');">
+        <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
+        <span class="program-icon mx-auto">${window.GenBIApp.icon(program.icon_key || 'sparkles', 'program-icon-svg')}</span>
+        <p class="slide-kicker">${program.title}</p>
+        <h3>${program.name}</h3>
+        <p>${program.description}</p>
+        ${focusBadge}
+      </article>
+    `;
+  }).join('');
+  hydrateProgramCards(root);
+}
+
+function hydrateProgramCards(root) {
+  root.querySelectorAll('.program-slide-card').forEach((card) => {
+    const iconTarget = card.querySelector('[data-program-icon]');
+    if (iconTarget) {
+        const iconKey = iconTarget.dataset.programIcon || 'sparkles';
+        iconTarget.innerHTML = window.GenBIApp.icon(iconKey, 'program-icon-svg');
+    } else {
+      const existingIcon = card.querySelector('.program-icon');
+      if (existingIcon && !existingIcon.innerHTML.trim()) {
+        existingIcon.innerHTML = window.GenBIApp.icon('sparkles', 'program-icon-svg');
+      }
+    }
+
+    const slides = JSON.parse(card.dataset.programSlides || '[]').filter(Boolean);
+    if (!slides.length) return;
+    card.style.setProperty('--program-bg-image', `url('${slides[0]}')`);
+    if (slides.length <= 1) return;
+
+    let active = 0;
+    window.setInterval(() => {
+      active = (active + 1) % slides.length;
+      card.style.setProperty('--program-bg-image', `url('${slides[active]}')`);
+    }, 4200);
+  });
 }
 
 
-function renderBPIList() {
+async function renderBPIList() {
   const root = document.querySelector('#bpi-list');
   if (!root) return;
   if (root.dataset.ssr === 'true' && root.children.length) return;
-  root.innerHTML = bpiMembers.map((member, index) => `
-    <article class="editorial-slide-card bpi-slide-card" role="group" aria-roledescription="slide" aria-label="Anggota BPI ${index + 1} dari ${bpiMembers.length}">
+  let members = bpiMembers;
+  try {
+    const payload = await API.getTeamList({ per_page: 200 });
+    members = Array.isArray(payload?.bpi) && payload.bpi.length ? payload.bpi : members;
+  } catch (e) { /* fallback */ }
+  root.innerHTML = members.map((member, index) => `
+    <article class="editorial-slide-card bpi-slide-card" role="group" aria-roledescription="slide" aria-label="Anggota BPI ${index + 1} dari ${members.length}">
       <figure class="bpi-slide-photo">
         <span class="member-photo-skeleton" aria-hidden="true"></span>
-        <img src="${member.image}" alt="Foto ${member.name}" loading="lazy" onload="this.previousElementSibling.classList.add('is-hidden')" onerror="this.classList.add('is-hidden'); this.previousElementSibling.classList.remove('is-hidden')" />
+        <img src="${member.photo || member.image}" alt="Foto ${member.name}" loading="lazy" onload="this.previousElementSibling.classList.add('is-hidden')" onerror="this.classList.add('is-hidden'); this.previousElementSibling.classList.remove('is-hidden')" />
       </figure>
       <div class="bpi-slide-content">
         <span class="bpi-number mx-auto">${String(index + 1).padStart(2, '0')}</span>
@@ -163,7 +214,10 @@ function eventIcon(type) {
 async function renderHomeEvents() {
   const root = document.querySelector('#home-events');
   if (!root) return;
-  if (root.dataset.ssr === 'true' && root.children.length) return;
+  if (root.dataset.ssr === 'true' && root.children.length) {
+    hydrateProgramCards(root);
+    return;
+  }
   let agendaItems = publicEvents;
   try {
     const payload = await API.getEventList();
@@ -178,16 +232,17 @@ async function renderHomeEvents() {
     const date = event.date || event.start_date || event.start || '-';
     const description = event.description || event.excerpt || '';
     return `
-      <article class="editorial-slide-card program-slide-card agenda-slide-card" role="group" aria-roledescription="slide" aria-label="Agenda ${index + 1} dari ${agendaItems.length}" data-program-slides='${JSON.stringify(slides)}' style="--program-bg-image: url('${slides[0]}');">
-        <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
-        <span class="program-icon mx-auto">${eventIcon(event.icon || 'calendar')}</span>
-        <p class="slide-kicker">${type}</p>
-        <h3>${event.title}</h3>
-        <p>${description}</p>
-        <span class="blue-badge mx-auto mt-5">${date}</span>
-      </article>
-    `;
+    <article class="editorial-slide-card program-slide-card agenda-slide-card" role="group" aria-roledescription="slide" aria-label="Agenda ${index + 1} dari ${agendaItems.length}" data-program-slides='${JSON.stringify(slides)}' style="--program-bg-image: url('${slides[0]}');">
+      <span class="slide-index">${String(index + 1).padStart(2, '0')}</span>
+      <span class="program-icon mx-auto">${eventIcon(event.icon || 'calendar')}</span>
+      <p class="slide-kicker">${type}</p>
+      <h3>${event.title}</h3>
+      <p>${description}</p>
+      <span class="blue-badge mx-auto mt-5">${date}</span>
+    </article>
+  `;
   }).join('');
+  hydrateProgramCards(root);
 }
 
 function renderHomeContact() {
@@ -213,7 +268,8 @@ function renderHomeContact() {
 
 function renderHomeNews() {
   const root = document.querySelector('#home-news');
-  if (!root || (root.dataset.ssr === 'true' && root.children.length)) return;
+  if (!root) return;
+  if (root.dataset.ssr === 'true' && root.children.length) return;
   root.innerHTML = news.slice(0, 3).map((item) => `
     <a data-transition href="${newsDetailUrl(item)}" class="home-news-card">
       <figure class="home-news-media"><img src="${item.image}" alt="${item.title}" loading="lazy" onerror="this.src='https://genbijambi.com/public/uploads/slider-1.png'" /></figure>

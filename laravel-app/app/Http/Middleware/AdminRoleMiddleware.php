@@ -15,7 +15,8 @@ class AdminRoleMiddleware
         }
 
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'editor', 'moderator'])) {
+        $role = strtolower(trim($user->role ?? ''));
+        if (!in_array($role, ['superadmin', 'admin', 'editor', 'moderator'])) {
             abort(403, 'Unauthorized access');
         }
 

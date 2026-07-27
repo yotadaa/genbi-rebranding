@@ -8,7 +8,7 @@ use App\Models\ContactSetting;
 
 class ContactController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $contactModel = ContactSetting::first();
         
@@ -26,6 +26,10 @@ class ContactController extends Controller
                 'maps_url' => 'https://maps.app.goo.gl/9Zc1qVZVw4TzY7X67',
                 'map_embed_url' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.2241586520556!2d103.58029997496666!3d-1.597994998387063!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e2589000b0e5ad5%3A0x897f9cbb7a67f6a7!2sBank%20Indonesia%20Representative%20Office%20Jambi!5e0!3m2!1sen!2sid!4v1709210000000!5m2!1sen!2sid',
             ];
+        }
+
+        if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
+            return response()->json($contact);
         }
 
         return view('public.contact.index', [
