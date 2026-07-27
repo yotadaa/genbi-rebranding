@@ -34,7 +34,7 @@ $buildQuery = function ($p, $params) {
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Daftar berita dari <code>tbl_news</code>. Aksi hapus tetap memakai custom confirmation modal.</p>
     </div>
     <div class="cms-actions">
-      <a href="{{ route('admin.news.create') ?? url('/admin/news/create') }}" class="btn btn-primary">Add News</a>
+      <a href="{{ url('/admin/news/add') }}" class="btn btn-primary">Add News</a>
     </div>
   </header>
 

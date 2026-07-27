@@ -73,9 +73,12 @@ Route::post('/admin/logout', [AuthController::class, 'logout'])->name('admin.log
 // Admin Routes
 Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminPageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [AdminPageController::class, 'dashboard'])->name('dashboard.alt');
     Route::get('/news', [AdminPageController::class, 'newsIndex'])->name('news');
     Route::get('/news/add', [AdminPageController::class, 'newsAdd'])->name('news.add');
     Route::get('/news/edit', [AdminPageController::class, 'newsEdit'])->name('news.edit');
+    Route::get('/news-add', [AdminPageController::class, 'newsAdd'])->name('newsAdd');
+    Route::get('/news-edit', [AdminPageController::class, 'newsEdit'])->name('newsEdit');
     
     // News API & actions
     Route::get('/news/list', [AdminNewsController::class, 'index'])->name('news.list');
@@ -187,4 +190,5 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     
     // Catch-all static pages
     Route::get('/{page}', [AdminPageController::class, 'show']);
+    Route::get('/{page}/{sub}', [AdminPageController::class, 'show']);
 });

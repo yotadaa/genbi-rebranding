@@ -27,6 +27,14 @@ public/uploads.zip
 !public/uploads/.htaccess
 !public/uploads/**/.htaccess
 
+laravel-app/.env
+laravel-app/storage/logs/*
+laravel-app/storage/cache/*
+laravel-app/public/uploads/*
+laravel-app/public/uploads.zip
+
+
+
 # Local OS/editor noise
 .DS_Store
 Thumbs.db

@@ -47,7 +47,7 @@
         <div class="mt-10">
           <p class="eyebrow">Secure access</p>
           <h2 class="serif mt-3 text-4xl font-semibold tracking-[-0.045em] text-neutral-950">Masuk admin</h2>
-          <p class="mt-3 text-sm leading-7 text-neutral-600">Gunakan akun admin yang sudah terdaftar. Pada prototype ini tombol masuk diarahkan ke dashboard preview.</p>
+          <p class="mt-3 text-sm leading-7 text-neutral-600">Gunakan akun admin GenBI Jambi yang sudah terdaftar untuk mengakses panel manajemen konten.</p>
         </div>
 
         @if ($errors->any())
@@ -61,11 +61,11 @@
           </div>
         @endif
 
-        <form class="mt-8 grid gap-5" action="/admin/login" method="post">
+        <form class="mt-8 grid gap-5" action="{{ route('admin.login.submit') }}" method="post">
           @csrf
           <label class="admin-login-field">
             <span>Email admin</span>
-            <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" placeholder="admin@genbijambi.com" required autofocus />
+            <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" placeholder="Masukkan email admin" required autofocus />
           </label>
           <label class="admin-login-field">
             <span>Password</span>
@@ -76,17 +76,13 @@
               <input type="checkbox" name="remember" value="1" class="admin-login-check" />
               Ingat perangkat ini
             </label>
-            <a href="#" class="font-bold text-blue-800 hover:text-blue-950">Lupa password?</a>
           </div>
           <button type="submit" class="btn btn-primary min-h-[3rem] w-full">Masuk ke Dashboard</button>
         </form>
 
-        <div class="admin-login-note mt-8">
-          <strong>Catatan implementasi</strong>
-          <p>Backend final wajib memakai POST, CSRF token, rate limit, session regenerate, dan password hash sesuai `BLUEPRINTS.md`.</p>
-        </div>
       </div>
     </section>
+
   </main>
 </body>
 </html>

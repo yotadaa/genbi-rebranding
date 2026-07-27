@@ -20,7 +20,7 @@ class RedirectIfAdminAuthenticated
 
         if ($user) {
             $allowedRoles = ['superadmin', 'admin', 'editor', 'moderator'];
-            if (in_array($user->role ?? '', $allowedRoles)) {
+            if (in_array(strtolower(trim($user->role ?? '')), $allowedRoles)) {
                 return redirect()->route('admin.dashboard');
             }
         }

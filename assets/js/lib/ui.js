@@ -286,6 +286,9 @@
     const updateButtonLabel = () => {
       const text = select.options[select.selectedIndex]?.text || 'Pilih';
       button.querySelector('span').textContent = text;
+      const val = select.value || '';
+      button.classList.toggle('is-active', val !== '');
+      button.classList.toggle('has-value', val !== '');
     };
 
     const controller = createDropdownController({

@@ -13,8 +13,37 @@ class User extends Authenticatable
     protected $primaryKey = 'id';
     protected $guarded = [];
 
-    public function getAuthIdentifierName()
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'remember_token_hash',
+        'token',
+    ];
+
+    /**
+     * The column used as the "remember me" token.
+     * We override it since the table uses remember_token_hash instead of remember_token.
+     * Return null to disable remember-me token storage in this column.
+     */
+    public function getRememberTokenName(): ?string
+    {
+        // The table doesn't have a standard remember_token column; disable it.
+        return null;
+    }
+
+    /**
+     * Laravel auth uses this to identify users by email.
+     */
+    public function getAuthIdentifierName(): string
     {
         return 'email';
+    }
+
+    /**
+     * Get the password for authentication.
+     */
+    public function getAuthPassword(): string
+    {
+        return $this->password ?? '';
     }
 }
