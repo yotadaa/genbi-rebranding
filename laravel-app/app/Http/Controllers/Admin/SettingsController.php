@@ -5,122 +5,152 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
+use App\Services\SiteSettings;
 
 class SettingsController extends Controller
 {
-    public function edit()
+    public function edit(Request $request)
     {
-        return view('admin.settings.edit');
+        return app(\App\Http\Controllers\Admin\AdminPageController::class)->show($request, 'settings');
+    }
+
+    public function showTheme(Request $request)
+    {
+        return app(\App\Http\Controllers\Admin\AdminPageController::class)->show($request, 'settings');
+    }
+
+    public function showHomePage(Request $request)
+    {
+        return app(\App\Http\Controllers\Admin\AdminPageController::class)->show($request, 'settings');
     }
 
     public function data()
     {
-        $settings = DB::table('tbl_settings')->first();
-        return response()->json(['success' => true, 'data' => $settings]);
+        $settings = app(SiteSettings::class)->all();
+        return response()->json(['ok' => true, 'success' => true, 'data' => $settings]);
     }
 
-    private function updateSetting($key, $value)
+    private function updateMany(array $data)
     {
-        DB::table('tbl_settings')->update([$key => $value]);
+        foreach ($data as $key => $value) {
+            if (in_array($key, ['_token', '_method', 'logo', 'favicon', 'banner', 'upload', 'file', 'image'])) {
+                continue;
+            }
+            Setting::put((string)$key, is_scalar($value) ? (string)$value : json_encode($value));
+        }
+        SiteSettings::clearCache();
     }
 
     public function updateLogo(Request $request)
     {
-        $request->validate(['logo' => 'required|image']);
-        $path = $request->file('logo')->store('settings', 'public');
-        $this->updateSetting('logo', $path);
-        return response()->json(['success' => true, 'message' => 'Logo updated']);
+        if ($request->hasFile('logo') || $request->hasFile('upload') || $request->hasFile('file')) {
+            $file = $request->file('logo') ?? $request->file('upload') ?? $request->file('file');
+            $path = $file->store('settings', 'public');
+            Setting::put('site.logo_url', Storage::url($path));
+            SiteSettings::clearCache();
+        }
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Logo updated', 'data' => $request->all()]);
     }
 
     public function updateFavicon(Request $request)
     {
-        $request->validate(['favicon' => 'required|image']);
-        $path = $request->file('favicon')->store('settings', 'public');
-        $this->updateSetting('favicon', $path);
-        return response()->json(['success' => true, 'message' => 'Favicon updated']);
+        if ($request->hasFile('favicon') || $request->hasFile('upload') || $request->hasFile('file')) {
+            $file = $request->file('favicon') ?? $request->file('upload') ?? $request->file('file');
+            $path = $file->store('settings', 'public');
+            Setting::put('site.favicon_url', Storage::url($path));
+            SiteSettings::clearCache();
+        }
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Favicon updated', 'data' => $request->all()]);
     }
 
     public function updateTopbar(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'phone' => 'required|string',
-            'instagram' => 'nullable|string',
-            'youtube' => 'nullable|string',
-            'tiktok' => 'nullable|string',
-        ]);
-        
-        DB::table('tbl_settings')->update($request->only(['email', 'phone', 'instagram', 'youtube', 'tiktok']));
-        return response()->json(['success' => true, 'message' => 'Topbar updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Topbar updated', 'data' => $request->all()]);
     }
 
     public function updateFooter(Request $request)
     {
-        $request->validate([
-            'footer_text' => 'required|string',
-            'address' => 'required|string',
-        ]);
-        DB::table('tbl_settings')->update($request->only(['footer_text', 'address']));
-        return response()->json(['success' => true, 'message' => 'Footer updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Footer updated', 'data' => $request->all()]);
     }
 
     public function updateEmail(Request $request)
     {
-        // Email settings
-        $request->validate([
-            'smtp_host' => 'required|string',
-            'smtp_port' => 'required|integer',
-            'smtp_user' => 'required|string',
-            'smtp_pass' => 'required|string',
-        ]);
-        DB::table('tbl_settings')->update($request->only(['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass']));
-        return response()->json(['success' => true, 'message' => 'Email updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Email updated', 'data' => $request->all()]);
     }
 
     public function updateBanner(Request $request)
     {
-        $request->validate(['banner' => 'required|image']);
-        $path = $request->file('banner')->store('settings', 'public');
-        $this->updateSetting('banner', $path);
-        return response()->json(['success' => true, 'message' => 'Banner updated']);
+        if ($request->hasFile('banner') || $request->hasFile('upload') || $request->hasFile('file')) {
+            $file = $request->file('banner') ?? $request->file('upload') ?? $request->file('file');
+            $path = $file->store('settings', 'public');
+            Setting::put('site.banner_image_1', Storage::url($path));
+            SiteSettings::clearCache();
+        }
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Banner updated', 'data' => $request->all()]);
     }
 
     public function updateSidebar(Request $request)
     {
-        $request->validate(['sidebar_text' => 'required|string']);
-        $this->updateSetting('sidebar_text', $request->sidebar_text);
-        return response()->json(['success' => true, 'message' => 'Sidebar updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Sidebar updated', 'data' => $request->all()]);
     }
 
     public function updateColor(Request $request)
     {
-        $request->validate(['primary_color' => 'required|string', 'secondary_color' => 'required|string']);
-        DB::table('tbl_settings')->update($request->only(['primary_color', 'secondary_color']));
-        return response()->json(['success' => true, 'message' => 'Colors updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Colors updated', 'data' => $request->all()]);
     }
 
     public function updateTheme(Request $request)
     {
-        $request->validate(['theme' => 'required|string']);
-        $this->updateSetting('theme', $request->theme);
-        return response()->json(['success' => true, 'message' => 'Theme updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Theme updated', 'data' => $request->all()]);
     }
 
     public function updateHomePage(Request $request)
     {
-        $request->validate([
-            'hero_title' => 'required|string',
-            'hero_subtitle' => 'required|string',
-        ]);
-        DB::table('tbl_settings')->update($request->only(['hero_title', 'hero_subtitle']));
-        return response()->json(['success' => true, 'message' => 'Home page updated']);
+        $this->updateMany($request->all());
+        return response()->json(['ok' => true, 'success' => true, 'message' => 'Home page updated', 'data' => $request->all()]);
+    }
+
+    public function pageContent(string $page)
+    {
+        $page = $this->pageKey($page);
+        $value = Setting::get('page.' . $page . '.content', '[]');
+        $decoded = json_decode((string) $value, true);
+        return response()->json(['ok' => true, 'data' => is_array($decoded) ? $decoded : []]);
+    }
+
+    public function updatePageContent(Request $request, string $page)
+    {
+        $page = $this->pageKey($page);
+        $data = $request->validate(['content' => 'required|array']);
+        Setting::put('page.' . $page . '.content', json_encode($data['content'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        SiteSettings::clearCache();
+        return response()->json(['ok' => true, 'success' => true, 'data' => $data['content']]);
+    }
+
+    private function pageKey(string $page): string
+    {
+        abort_unless(in_array($page, ['about', 'faq', 'service', 'testimonial', 'news', 'event', 'search', 'terms', 'privacy', 'team', 'portfolio'], true), 404);
+        return $page;
     }
 
     public function upload(Request $request)
     {
-        $request->validate(['upload' => 'required|image']);
-        $path = $request->file('upload')->store('uploads', 'public');
-        return response()->json(['url' => Storage::url($path)]);
+        $file = $request->file('upload') ?? $request->file('file') ?? $request->file('image') ?? $request->file('logo') ?? $request->file('favicon') ?? $request->file('banner');
+        if (!$file) {
+            return response()->json(['error' => 'No file uploaded'], 400);
+        }
+        $path = $file->store('uploads', 'public');
+        $url = Storage::url($path);
+        return response()->json(['ok' => true, 'success' => true, 'url' => $url, 'data' => ['url' => $url]]);
     }
 }

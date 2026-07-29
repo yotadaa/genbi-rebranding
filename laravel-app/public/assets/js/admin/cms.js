@@ -633,7 +633,7 @@
           credentials: 'same-origin',
           body: JSON.stringify({ ...payload, _csrf_token: token })
         });
-        const result = await res.json();
+        const result = await res.json().catch(() => ({}));
         if (res.ok) {
           Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
           if (!isEdit && result.data?.id) {
@@ -641,7 +641,7 @@
             setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
           }
         } else {
-          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+          Admin.showToast(result.error || result.message || 'Gagal menyimpan berita. Periksa data yang diisi lalu coba lagi.');
         }
       } catch (e) {
         console.error('Fetch error details:', e);
@@ -699,14 +699,14 @@
           credentials: 'same-origin',
           body: JSON.stringify({ ...payload, _csrf_token: token })
         });
-        const result = await res.json();
+        const result = await res.json().catch(() => ({}));
         if (res.ok) {
           Admin.showToast(isEdit ? 'Berita berhasil diperbarui.' : 'Berita berhasil ditambahkan.');
           if (!isEdit && result.data?.id) {
             setTimeout(() => { window.location.href = `${adminUrl('news-edit')}?id=${result.data.id}`; }, 1200);
           }
         } else {
-          Admin.showToast(result.error || 'Gagal menyimpan berita.');
+          Admin.showToast(result.error || result.message || 'Gagal menyimpan berita. Periksa data yang diisi lalu coba lagi.');
         }
       } catch (e) {
         console.error('Fetch error details:', e);
@@ -951,7 +951,7 @@
       credentials: 'same-origin',
       body: formData,
     });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
     const url = json.data?.url || '';
     if (!res.ok || !url) throw new Error(json.error || 'Upload gagal. Pastikan file berupa gambar (max 5MB).');
     return url;
@@ -2723,8 +2723,8 @@
 
   async function loadPrestasiMemberOptions(currentName = '') {
     try {
-      const payload = await API.getTeamList({ per_page: 200 });
-      const members = Array.isArray(payload?.members) ? payload.members : [];
+      const payload = await API.getTeamMemberOptions(currentName, 50);
+      const members = Array.isArray(payload?.data) ? payload.data : [];
       const uniqueMembers = [];
       const seen = new Set();
       members.forEach((member) => {
@@ -2741,6 +2741,21 @@
     } catch (error) {
       return currentName ? [{ name: currentName, role: 'Data tersimpan' }] : [];
     }
+  }
+
+  function bindPrestasiMemberAutocomplete() {
+    const input = document.querySelector('#prestasi-member-search');
+    const datalist = document.querySelector('#prestasi-member-list');
+    if (!input || !datalist) return;
+    let timer = 0;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const query = input.value.trim();
+      timer = setTimeout(async () => {
+        const members = await loadPrestasiMemberOptions(query);
+        datalist.innerHTML = members.map((member) => `<option value="${escape(member.name)}">${escape(member.role || member.division || '')}</option>`).join('');
+      }, 180);
+    });
   }
 
   function buildPrestasiTitle() {
@@ -2962,6 +2977,7 @@
       });
       bindPrestasiImageUpload();
       bindPrestasiSeoAutofill();
+      bindPrestasiMemberAutocomplete();
 
       // Enhance custom selects
       enhanceAdminSelects(document.querySelector('#cms-body') || document);
@@ -3078,6 +3094,7 @@
     `;
 
     enhanceAdminSelects(body);
+    bindPrestasiMemberAutocomplete();
     bindPrestasiImageUpload();
     bindPrestasiSeoAutofill();
 
@@ -3268,6 +3285,13 @@
   }
 
   async function renderPrestasiTokenList(generated = null) {
+    const ssrList = document.querySelector('#admin-prestasi-token-list[data-ssr="true"]');
+    if (ssrList && !generated) {
+      bindTokenRevokeButtons();
+      bindTokenCopyButtons();
+      document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
+      return;
+    }
     const body = renderShell(
       'Prestasi Token',
       'Generate dan kelola token form prestasi sekali pakai untuk dibagikan ke anggota yang mengisi dari luar admin.',

@@ -4,14 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\ContactSetting;
 
 class ContactSettingController extends Controller
 {
     public function show()
     {
-        $settings = DB::table('tbl_settings')->first();
-        return response()->json(['success' => true, 'data' => $settings]);
+        return response()->json(['success' => true, 'data' => ContactSetting::find(1)]);
     }
 
     public function update(Request $request)
@@ -20,13 +19,17 @@ class ContactSettingController extends Controller
             'email' => 'required|email',
             'phone' => 'required|string',
             'address' => 'required|string',
-            'instagram' => 'nullable|string',
-            'youtube' => 'nullable|string',
-            'tiktok' => 'nullable|string',
+            'place_name' => 'required|string|max:120',
+            'coordinates_label' => 'required|string|max:160',
+            'maps_url' => 'required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'meta_title' => 'nullable|string|max:255',
+            'meta_keyword' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string',
         ]);
 
-        DB::table('tbl_settings')->update($request->only(['email', 'phone', 'address', 'instagram', 'youtube', 'tiktok']));
-        
-        return response()->json(['success' => true, 'message' => 'Contact settings updated.']);
+        $settings = ContactSetting::updateOrCreate(['id' => 1], $request->only(['place_name', 'address', 'email', 'phone', 'coordinates_label', 'maps_url', 'latitude', 'longitude', 'meta_title', 'meta_keyword', 'meta_description']));
+        return response()->json(['success' => true, 'data' => $settings, 'message' => 'Contact settings updated.']);
     }
 }

@@ -73,7 +73,7 @@
       submitContactSettings();
       return;
     }
-    showToast('Halaman disimpan pada mode simulasi.');
+    saveGenericPage();
   });
 
   function simpleMeta(label, value, metaTitle = 'GenBI Provinsi Jambi') {
@@ -119,7 +119,7 @@
     });
   }
 
-  function renderPage() {
+  async function renderPage() {
     const canvas = document.querySelector('#page-editor-canvas');
     const overview = document.querySelector('#page-editor-overview');
     const tab = pageTabs.find((item) => item.key === active) || pageTabs[0];
@@ -135,7 +135,14 @@
       return;
     }
 
-    const groups = content[active] || content.home;
+    let groups = content[active] || content.home;
+    try {
+      const response = await fetch(route('pageContent', { page: active }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const payload = await response.json();
+      if (response.ok && Array.isArray(payload.data) && payload.data.length) groups = payload.data;
+    } catch (_) {
+      // Defaults remain usable when the saved page is not available yet.
+    }
     canvas.innerHTML = `
       <section class="block-page-hero slide-in">
         <p class="eyebrow">Admin Page</p>
@@ -164,6 +171,27 @@
       });
     }
     attachEditorEvents(canvas);
+  }
+
+  async function saveGenericPage() {
+    const canvas = document.querySelector('#page-editor-canvas');
+    if (!canvas) return;
+    const groups = Array.from(canvas.querySelectorAll('.block-editor-group')).map((group) => ({
+      type: 'group',
+      title: group.querySelector('.block-group-header h3')?.textContent?.trim() || 'Content',
+      blocks: Array.from(group.querySelectorAll('.block-editor-item')).map((block) => [
+        block.querySelector('.block-editor-label')?.textContent?.trim() || 'Content',
+        block.querySelector('.block-editor-input')?.innerHTML || '',
+        { rich: true, long: block.classList.contains('is-long') },
+      ]),
+    }));
+    const response = await fetch(route('pageContent', { page: active }), {
+      method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, credentials: 'same-origin', body: JSON.stringify({ content: groups }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) return showToast(payload.error || 'Gagal menyimpan halaman.');
+    content[active] = groups;
+    showToast('Halaman berhasil disimpan.');
   }
 
   function homeValue(key, fallback = '') {

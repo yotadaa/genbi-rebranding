@@ -79,6 +79,13 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::get('/news/edit', [AdminPageController::class, 'newsEdit'])->name('news.edit');
     Route::get('/news-add', [AdminPageController::class, 'newsAdd'])->name('newsAdd');
     Route::get('/news-edit', [AdminPageController::class, 'newsEdit'])->name('newsEdit');
+
+    // Legacy-layout CMS screens rendered server-side, then hydrated by cms.js.
+    Route::get('/prestasi', [AdminPageController::class, 'prestasiIndex'])->name('prestasi');
+    Route::get('/prestasi-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->prestasiForm($request))->name('prestasi.add');
+    Route::get('/prestasi-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->prestasiForm($request, true))->name('prestasi.edit');
+    Route::get('/prestasi-token', [AdminPageController::class, 'prestasiTokenIndex'])->name('prestasi.token');
+    Route::get('/team-member', [AdminPageController::class, 'teamIndex'])->name('team');
     
     // News API & actions
     Route::get('/news/list', [AdminNewsController::class, 'index'])->name('news.list');
@@ -144,6 +151,8 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::post('/settings/theme', [SettingsController::class, 'updateTheme']);
     Route::get('/settings/page-home', [SettingsController::class, 'showHomePage']);
     Route::post('/settings/page-home', [SettingsController::class, 'updateHomePage']);
+    Route::get('/settings/pages/{page}', [SettingsController::class, 'pageContent']);
+    Route::post('/settings/pages/{page}', [SettingsController::class, 'updatePageContent']);
     
     // Contact Setting
     Route::get('/contact-setting', [ContactSettingController::class, 'show']);
@@ -170,13 +179,25 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::post('/features/{id}/delete', [FeatureController::class, 'destroy']);
     
     // Presensi
+    Route::get('/presensi', [AdminPageController::class, 'presensiIndex'])->name('presensi');
+    Route::get('/presensi-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->presensiForm($request))->name('presensi.add');
+    Route::get('/presensi-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->presensiForm($request, true))->name('presensi.edit');
+    Route::get('/presensi-detail', [AdminPageController::class, 'presensiDetail'])->name('presensi.show');
     Route::get('/presensi/list', [AdminPresensiController::class, 'index']);
     Route::get('/presensi/{id}', [AdminPresensiController::class, 'show']);
+    Route::get('/presensi/{id}/submissions', [AdminPresensiController::class, 'submissions']);
     Route::post('/presensi', [AdminPresensiController::class, 'store']);
     Route::post('/presensi/{id}/update', [AdminPresensiController::class, 'update']);
     Route::post('/presensi/{id}/delete', [AdminPresensiController::class, 'destroy']);
+    Route::post('/presensi/submissions/{id}/approve', [AdminPresensiController::class, 'approve']);
+    Route::post('/presensi/submissions/{id}/cancel', [AdminPresensiController::class, 'cancel']);
+    Route::post('/presensi/{eventId}/members/{teamId}/approve', [AdminPresensiController::class, 'approveMember']);
     
     // GenBI Poin
+    Route::get('/genbi-poin', [AdminPageController::class, 'genbiPoinIndex'])->name('genbiPoin');
+    Route::get('/genbi-poin-detail', [AdminPageController::class, 'genbiPoinDetail'])->name('genbiPoin.show');
+    Route::get('/genbi-poin-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->genbiPoinForm($request))->name('genbiPoin.add');
+    Route::get('/genbi-poin-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->genbiPoinForm($request, true))->name('genbiPoin.edit');
     Route::get('/genbi-poin/members', [GenBIPointController::class, 'members']);
     Route::get('/genbi-poin/activities', [GenBIPointController::class, 'activities']);
     Route::get('/genbi-poin/activities/{id}', [GenBIPointController::class, 'showActivity']);

@@ -5,6 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Models\GenBIPoint;
+use App\Models\PresensiEvent;
+use App\Models\PresensiSubmission;
+use App\Models\Prestasi;
+use App\Models\PrestasiToken;
+use App\Models\TeamMember;
+use Illuminate\Support\Facades\DB;
 
 class AdminPageController extends Controller
 {
@@ -64,7 +71,9 @@ class AdminPageController extends Controller
         $categories = \App\Models\Category::all()->map(function ($c) {
             return [
                 'id' => $c->category_id ?? $c->id,
+                'category_id' => $c->category_id ?? $c->id,
                 'name' => $c->category_name ?? $c->name,
+                'category_name' => $c->category_name ?? $c->name,
             ];
         })->toArray();
 
@@ -95,7 +104,7 @@ class AdminPageController extends Controller
     public function newsAdd()
     {
         $categories = \App\Models\Category::all()->map(function ($c) {
-            return ['id' => $c->category_id ?? $c->id, 'name' => $c->category_name ?? $c->name];
+            return ['id' => $c->category_id ?? $c->id, 'category_id' => $c->category_id ?? $c->id, 'name' => $c->category_name ?? $c->name, 'category_name' => $c->category_name ?? $c->name];
         })->toArray();
 
         $editorScripts = <<<'HTML'
@@ -139,7 +148,7 @@ HTML;
         ];
 
         $categories = \App\Models\Category::all()->map(function ($c) {
-            return ['id' => $c->category_id ?? $c->id, 'name' => $c->category_name ?? $c->name];
+            return ['id' => $c->category_id ?? $c->id, 'category_id' => $c->category_id ?? $c->id, 'name' => $c->category_name ?? $c->name, 'category_name' => $c->category_name ?? $c->name];
         })->toArray();
 
         $editorScripts = <<<'HTML'
@@ -160,6 +169,261 @@ HTML;
             'categories' => $categories,
             'scripts' => $editorScripts,
         ]);
+    }
+
+    /** Render the legacy Prestasi list layout with Laravel-backed data. */
+    public function prestasiIndex(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 25)));
+        $filters = [
+            'q' => trim((string) $request->query('q', '')),
+            'category' => trim((string) $request->query('category', '')),
+            'status' => trim((string) $request->query('status', '')),
+            'year' => trim((string) $request->query('year', '')),
+        ];
+        $query = Prestasi::query();
+        if ($filters['q'] !== '') {
+            $query->where(fn ($builder) => $builder->where('title', 'like', "%{$filters['q']}%")
+                ->orWhere('member_name', 'like', "%{$filters['q']}%")
+                ->orWhere('institution', 'like', "%{$filters['q']}%"));
+        }
+        foreach (['category', 'status', 'year'] as $field) {
+            if ($filters[$field] !== '') $query->where($field, $filters[$field]);
+        }
+        $total = (clone $query)->count();
+        $items = $query->orderByDesc('created_at')->orderByDesc('prestasi_id')
+            ->offset(($page - 1) * $perPage)->limit($perPage)->get()
+            ->map(fn (Prestasi $prestasi) => $this->mapPrestasi($prestasi))->toArray();
+
+        return view('admin.prestasi.index', [
+            'title' => 'View Prestasi | Admin GenBI', 'cmsPage' => 'prestasi', 'cmsMode' => 'list',
+            'items' => $items, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage,
+            'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)),
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260729a"></script>',
+        ]);
+    }
+
+    /** Render the legacy Prestasi create/edit form and hydrate it with cms.js. */
+    public function prestasiForm(Request $request, bool $isEdit = false)
+    {
+        $prestasi = $isEdit ? Prestasi::findOrFail((int) $request->query('id')) : null;
+        return view('admin.prestasi.form', [
+            'title' => ($isEdit ? 'Edit' : 'Add') . ' Prestasi | Admin GenBI',
+            'cmsPage' => $isEdit ? 'prestasi-edit' : 'prestasi-add', 'cmsMode' => 'editor',
+            'isEdit' => $isEdit, 'item' => $prestasi ? $this->mapPrestasi($prestasi, true) : null,
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260729a"></script>',
+        ]);
+    }
+
+    /** Keep the token screen in the same old admin table/card layout. */
+    public function prestasiTokenIndex()
+    {
+        $items = PrestasiToken::latest('created_at')->get()->map(function (PrestasiToken $token) {
+            $status = $token->revoked_at ? 'revoked' : (($token->expires_at && $token->expires_at->isPast()) ? 'expired' : (($token->max_uses > 0 && $token->used_count >= $token->max_uses) ? 'used' : 'active'));
+            return [
+                'id' => $token->token_id, 'label' => $token->label ?: 'Token #' . $token->token_id,
+                'intended_for' => $token->intended_for ?? '', 'status' => $status,
+                'created_at' => $token->created_at, 'expires_at' => $token->expires_at,
+                'used_at' => $token->used_at, 'max_uses' => $token->max_uses, 'used_count' => $token->used_count,
+            ];
+        })->toArray();
+        return view('admin.prestasi.token', [
+            'title' => 'Prestasi Token | Admin GenBI', 'cmsPage' => 'prestasi-token', 'cmsMode' => 'list',
+            'items' => $items, 'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260729a"></script>',
+        ]);
+    }
+
+    /** Render the legacy Team Member layout, including its custom select inputs. */
+    public function teamIndex(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 24)));
+        $filters = ['q' => trim((string) $request->query('q', '')), 'division' => trim((string) $request->query('division', '')), 'campus' => trim((string) $request->query('campus', '')), 'year' => trim((string) $request->query('year', ''))];
+        $query = TeamMember::with(['divisiRelation', 'komsatRelation']);
+        if ($filters['q'] !== '') $query->where('name', 'like', "%{$filters['q']}%");
+        if ($filters['division'] !== '') $query->where(fn ($builder) => $builder->where('divisi_wilayah', $filters['division'])->orWhere('divisi_komsat', $filters['division'])->orWhereHas('divisiRelation', fn ($related) => $related->where('nama', $filters['division'])));
+        if ($filters['campus'] !== '') $query->where(fn ($builder) => $builder->where('komsat', $filters['campus'])->orWhereHas('komsatRelation', fn ($related) => $related->where('nama', $filters['campus'])));
+        if ($filters['year'] !== '') $query->where('tahun', $filters['year']);
+        $total = (clone $query)->count();
+        $items = $query->orderBy('name')->offset(($page - 1) * $perPage)->limit($perPage)->get()->map(fn (TeamMember $member) => $this->mapTeamMember($member))->toArray();
+        // Old data can store division/campus as text even when the lookup table
+        // has no corresponding row. Merge both sources so the old Team dropdown
+        // never becomes empty after the Laravel port.
+        $teamFilterMembers = TeamMember::with(['divisiRelation', 'komsatRelation'])->get();
+        $divisionOptions = collect(\App\Models\Divisi::pluck('nama'))
+            ->merge($teamFilterMembers->map(fn (TeamMember $member) => $member->divisiRelation?->nama ?? $member->divisi_wilayah ?? $member->divisi_komsat ?? ''))
+            ->filter()->unique()->sort()->values()->all();
+        $campusOptions = collect(\App\Models\Komsat::pluck('nama'))
+            ->merge($teamFilterMembers->map(fn (TeamMember $member) => $member->komsatRelation?->nama ?? $member->komsat ?? ''))
+            ->filter()->unique()->sort()->values()->all();
+        $yearOptions = $teamFilterMembers->pluck('tahun')->filter()->unique()->sortDesc()->values()->all();
+
+        return view('admin.team.index', [
+            'title' => 'View Team Members | Admin GenBI', 'cmsPage' => 'team', 'cmsMode' => 'list',
+            'items' => $items, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage,
+            'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)),
+            'filterOptions' => ['divisions' => $divisionOptions, 'campuses' => $campusOptions, 'years' => $yearOptions],
+            'layout' => $request->query('layout', 'grid') === 'list' ? 'list' : 'grid',
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260729a"></script>',
+        ]);
+    }
+
+    public function presensiIndex(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 25)));
+        $filters = [
+            'q' => trim((string) $request->query('q', '')),
+            'status' => trim((string) $request->query('status', '')),
+        ];
+
+        $query = PresensiEvent::withCount(['members', 'submissions', 'submissions as pending_count' => fn ($q) => $q->where('status', 'pending'), 'submissions as approved_count' => fn ($q) => $q->where('status', 'approved')]);
+        if ($filters['q'] !== '') {
+            $query->where(fn ($builder) => $builder->where('event_name', 'like', "%{$filters['q']}%")->orWhere('location', 'like', "%{$filters['q']}%"));
+        }
+        if ($filters['status'] !== '') {
+            $query->where('status', $filters['status']);
+        }
+
+        $total = (clone $query)->count();
+        $items = $query->latest('created_at')->offset(($page - 1) * $perPage)->limit($perPage)->get()->map(fn (PresensiEvent $event) => $this->mapPresensiEvent($event))->toArray();
+
+        return view('admin.presensi.index', ['title' => 'Presensi | Admin GenBI', 'cmsPage' => 'presensi', 'cmsMode' => 'list', 'items' => $items, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+    }
+
+    public function presensiForm(Request $request, bool $isEdit = false)
+    {
+        $event = $isEdit ? PresensiEvent::with('members')->withCount('members')->findOrFail((int) $request->query('id')) : null;
+        return view('admin.presensi.form', ['title' => ($isEdit ? 'Edit' : 'Add') . ' Presensi | Admin GenBI', 'cmsPage' => $isEdit ? 'presensi-edit' : 'presensi-add', 'cmsMode' => 'editor', 'isEdit' => $isEdit, 'item' => $event ? $this->mapPresensiEvent($event, true) : null, 'scripts' => '<script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+    }
+
+    public function presensiDetail(Request $request)
+    {
+        $event = PresensiEvent::with(['members', 'submissions.member'])->withCount('members')->findOrFail((int) $request->query('id'));
+        return view('admin.presensi.show', ['title' => 'Detail Presensi | Admin GenBI', 'cmsPage' => 'presensi-detail', 'cmsMode' => 'detail', 'item' => $this->mapPresensiEvent($event, true), 'submissions' => $event->submissions->map(fn (PresensiSubmission $submission) => $this->mapPresensiSubmission($submission))->toArray(), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+    }
+
+    public function genbiPoinIndex(Request $request)
+    {
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 25)));
+        $filters = ['q' => trim((string) $request->query('q', ''))];
+        $query = TeamMember::query();
+        if ($filters['q'] !== '') {
+            $query->where('name', 'like', "%{$filters['q']}%");
+        }
+        $total = (clone $query)->count();
+        $items = $query->orderBy('name')->offset(($page - 1) * $perPage)->limit($perPage)->get()->map(fn (TeamMember $member) => $this->mapGenBIMember($member))->toArray();
+        $activities = GenBIPoint::with('member')->latest('activity_date')->latest('activity_id')->limit(10)->get()->map(fn (GenBIPoint $activity) => $this->mapGenBIActivity($activity))->toArray();
+
+        return view('admin.genbi-poin.index', ['title' => 'GenBI Poin | Admin GenBI', 'cmsPage' => 'genbi-poin', 'cmsMode' => 'list', 'items' => $items, 'activities' => $activities, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)), 'scripts' => '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260617a"></script>']);
+    }
+
+    public function genbiPoinForm(Request $request, bool $isEdit = false)
+    {
+        $activity = $isEdit ? GenBIPoint::with('member')->findOrFail((int) $request->query('id')) : null;
+        $member = !$isEdit && $request->query('team_id') ? TeamMember::find((int) $request->query('team_id')) : null;
+        return view('admin.genbi-poin.form', ['title' => ($isEdit ? 'Edit' : 'Add') . ' GenBI Poin | Admin GenBI', 'cmsPage' => $isEdit ? 'genbi-poin-edit' : 'genbi-poin-add', 'cmsMode' => 'editor', 'isEdit' => $isEdit, 'item' => $activity ? $this->mapGenBIActivity($activity) : null, 'prefillMember' => $member ? $this->mapGenBIMember($member) : null, 'scripts' => '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260617a"></script>']);
+    }
+
+    public function genbiPoinDetail(Request $request)
+    {
+        $member = TeamMember::find((int) $request->query('id'));
+        $mappedMember = $member ? $this->mapGenBIMember($member) : null;
+        $manualActivities = $member ? GenBIPoint::with('member')->where('team_id', $member->id)->latest('activity_date')->latest('activity_id')->get()->map(fn (GenBIPoint $activity) => $this->mapGenBIActivity($activity))->toArray() : [];
+        $presensiActivities = $member ? $this->genBIPresensiActivities((int) $member->id) : [];
+
+        return view('admin.genbi-poin.show', ['title' => 'Detail GenBI Poin | Admin GenBI', 'cmsPage' => 'genbi-poin', 'cmsMode' => 'detail', 'member' => $mappedMember, 'teamId' => (int) ($member->id ?? 0), 'manualActivities' => $manualActivities, 'presensiActivities' => $presensiActivities, 'scripts' => '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260617a"></script>']);
+    }
+
+    private function mapPresensiEvent(PresensiEvent $event, bool $detail = false): array
+    {
+        $roles = is_array($event->roles_json) ? $event->roles_json : (json_decode((string) $event->roles_json, true) ?: []);
+        $roleOptions = array_values(array_filter(array_map(function ($role) {
+            if (is_array($role)) {
+                return ['name' => trim((string) ($role['name'] ?? '')), 'score' => max(0, (int) ($role['score'] ?? 0))];
+            }
+            return ['name' => trim((string) $role), 'score' => 0];
+        }, $roles), fn ($role) => $role['name'] !== ''));
+        $data = ['id' => $event->presensi_event_id, 'event_name' => $event->event_name, 'location' => $event->location, 'status' => $event->status, 'roles' => array_column($roleOptions, 'name'), 'role_options' => $roleOptions, 'public_url' => '', 'member_count' => $event->members_count ?? $event->members()->count(), 'submission_count' => $event->submissions_count ?? $event->submissions()->count(), 'pending_count' => $event->pending_count ?? 0, 'approved_count' => $event->approved_count ?? 0, 'created_at' => $event->created_at];
+        if ($detail) {
+            $data['members'] = $event->members->map(fn (TeamMember $member) => ['id' => $member->id, 'name' => $member->name, 'role' => $member->designation ?? $member->jabatan_wilayah ?? $member->jabatan_komsat ?? '', 'division' => $member->divisi_wilayah ?? $member->divisi_komsat ?? '', 'campus' => $member->komsat ?? ''])->values()->toArray();
+        }
+        return $data;
+    }
+
+    private function mapPresensiSubmission(PresensiSubmission $submission): array
+    {
+        return ['id' => $submission->submission_id, 'team_id' => $submission->team_id, 'member_name' => $submission->member?->name ?? '', 'role' => $submission->role, 'photo_url' => $submission->photo_path === 'manual-approval' ? '' : url('/uploads/' . ltrim((string) $submission->photo_path, '/')), 'status' => $submission->status, 'created_at' => $submission->created_at];
+    }
+
+    private function mapGenBIActivity(GenBIPoint $activity): array
+    {
+        return ['id' => $activity->activity_id, 'team_id' => $activity->team_id, 'member_name' => $activity->member?->name ?? '', 'activity_name' => $activity->activity_name, 'points' => (int) $activity->points, 'activity_date' => $activity->activity_date, 'created_at' => $activity->created_at];
+    }
+
+    private function mapPrestasi(Prestasi $prestasi, bool $detail = false): array
+    {
+        $photo = trim((string) ($prestasi->photo ?? ''));
+        $data = [
+            'id' => $prestasi->prestasi_id, 'title' => $prestasi->title ?? '',
+            'name' => $prestasi->member_name ?? '', 'member_name' => $prestasi->member_name ?? '',
+            'category' => $prestasi->category ?? '', 'year' => $prestasi->year ?? '',
+            'institution' => $prestasi->institution ?? '', 'description' => $prestasi->description ?? '',
+            'status' => $prestasi->status ?? 'draft',
+            'image' => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+            'photo' => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+            'meta_title' => $prestasi->meta_title ?? '', 'meta_keyword' => $prestasi->meta_keyword ?? '',
+            'meta_description' => $prestasi->meta_description ?? '',
+        ];
+        if ($detail) {
+            $data['content'] = $prestasi->detail ?? '';
+            $data['detail'] = $prestasi->detail ?? '';
+            $data['images'] = $photo ? [$data['image']] : [];
+        }
+        return $data;
+    }
+
+    private function mapTeamMember(TeamMember $member): array
+    {
+        $photo = trim((string) ($member->photo ?? ''));
+        return [
+            'id' => $member->id, 'name' => $member->name ?? '',
+            'role' => $member->designation ?? $member->jabatan_wilayah ?? $member->jabatan_komsat ?? '',
+            'division' => $member->divisiRelation?->nama ?? $member->divisi_wilayah ?? $member->divisi_komsat ?? '',
+            'campus' => $member->komsatRelation?->nama ?? $member->komsat ?? '', 'year' => $member->tahun ?? '',
+            'photo' => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+            'show_on_home' => (bool) ($member->show_on_home ?? false),
+        ];
+    }
+
+    private function mapGenBIMember(TeamMember $member): array
+    {
+        $manual = (int) GenBIPoint::where('team_id', $member->id)->sum('points');
+        $presensi = $this->genBIPresensiPoints((int) $member->id);
+        return ['id' => $member->id, 'name' => $member->name, 'role' => $member->designation ?? $member->jabatan_wilayah ?? $member->jabatan_komsat ?? '', 'division' => $member->divisi_wilayah ?? $member->divisi_komsat ?? '', 'campus' => $member->komsat ?? '', 'presensi_points' => $presensi, 'manual_points' => $manual, 'total_points' => $presensi + $manual];
+    }
+
+    private function genBIPresensiPoints(int $teamId): int
+    {
+        return array_sum(array_column($this->genBIPresensiActivities($teamId), 'points'));
+    }
+
+    private function genBIPresensiActivities(int $teamId): array
+    {
+        $rows = DB::table('tbl_presensi_submission as submission')->join('tbl_presensi_event as event', 'event.presensi_event_id', '=', 'submission.presensi_event_id')->where('submission.team_id', $teamId)->where('submission.status', 'approved')->whereNull('event.deleted_at')->latest('submission.created_at')->get(['submission.role', 'submission.status', 'submission.created_at', 'event.event_name', 'event.location', 'event.roles_json']);
+        return $rows->map(function ($row) {
+            $roles = json_decode((string) $row->roles_json, true) ?: [];
+            $points = 0;
+            foreach ($roles as $role) {
+                if (($role['name'] ?? '') === $row->role) {
+                    $points = max(0, (int) ($role['score'] ?? 0));
+                    break;
+                }
+            }
+            return ['event_name' => $row->event_name, 'location' => $row->location, 'role' => $row->role, 'points' => $points, 'status' => $row->status, 'created_at' => $row->created_at];
+        })->toArray();
     }
 
     public function show(Request $request, $page, $sub = null)

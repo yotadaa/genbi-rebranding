@@ -39,6 +39,10 @@ class News extends Model
 
     public function resolveImageUrl(string $path)
     {
+        $path = trim($path);
+        if ($path === '') return '';
+        if (preg_match('#^https?://#i', $path)) return $path;
+        $path = preg_replace('#^/?uploads/#i', '', $path) ?? $path;
         return url('/uploads/' . ltrim($path, '/'));
     }
 

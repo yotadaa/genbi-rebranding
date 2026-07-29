@@ -119,6 +119,7 @@
       contactSetting: { clean: '/admin/contact-setting' },
       contactSettingUpdate: { clean: '/admin/contact-setting' },
       pageHomeUpdate: { clean: '/admin/settings/page-home' },
+      pageContent: { clean: '/admin/settings/pages/{page}' },
     },
   };
 

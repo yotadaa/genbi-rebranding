@@ -55,7 +55,7 @@ class NewsController extends Controller
                 'excerpt'     => $n->news_content_short ?? Str::limit(strip_tags($n->news_content ?? ''), 120),
                 'news_content_short' => $n->news_content_short ?? '',
                 'date'        => $n->published_at ?? $n->news_date ?? '',
-                'photo'       => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+                'photo'       => $n->resolveImageUrl($photo),
                 'category'    => $n->category?->category_name ?? 'Uncategorized',
                 'category_id' => $n->category_id,
                 'status'      => $n->status ?? 'published',
@@ -83,7 +83,9 @@ class NewsController extends Controller
         $categories = Category::all()->map(function ($c) {
             return [
                 'id'     => $c->category_id,
+                'category_id' => $c->category_id,
                 'name'   => $c->category_name ?? '',
+                'category_name' => $c->category_name ?? '',
                 'banner' => $c->category_banner ?? '',
             ];
         })->values();
@@ -111,8 +113,8 @@ class NewsController extends Controller
             'news_content_short'  => $n->news_content_short ?? '',
             'date'                => $n->published_at ?? $n->news_date ?? '',
             'news_date'           => $n->news_date ?? '',
-            'photo'               => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
-            'banner'              => $n->banner ? url('/uploads/' . ltrim($n->banner, '/')) : '',
+            'photo'               => $n->resolveImageUrl($photo),
+            'banner'              => $n->resolveImageUrl((string) ($n->banner ?? '')),
             'category_id'         => $n->category_id,
             'category'            => $n->category?->category_name ?? '',
             'slug'                => $n->slug ?? Str::slug($n->news_title ?? '') . '-' . $n->news_id,
@@ -130,11 +132,12 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge($this->databasePayload($request));
         $validated = $request->validate([
             'news_title'         => 'required|string|max:500',
             'news_content'       => 'nullable|string',
             'news_content_short' => 'nullable|string|max:1000',
-            'category_id'        => 'nullable|integer',
+            'category_id'        => 'nullable|integer|exists:tbl_category,category_id',
             'news_date'          => 'nullable|date',
             'status'             => 'nullable|string|in:draft,published,archived',
             'photo'              => 'nullable|string',
@@ -142,6 +145,7 @@ class NewsController extends Controller
             'meta_title'         => 'nullable|string|max:500',
             'meta_keyword'       => 'nullable|string|max:500',
             'meta_description'   => 'nullable|string|max:1000',
+            'content_json'       => 'nullable',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['news_title']) . '-' . time();
@@ -161,12 +165,13 @@ class NewsController extends Controller
     public function update(Request $request, $id)
     {
         $news = News::findOrFail($id);
+        $request->merge($this->databasePayload($request));
 
         $validated = $request->validate([
             'news_title'         => 'sometimes|string|max:500',
             'news_content'       => 'nullable|string',
             'news_content_short' => 'nullable|string|max:1000',
-            'category_id'        => 'nullable|integer',
+            'category_id'        => 'nullable|integer|exists:tbl_category,category_id',
             'news_date'          => 'nullable|date',
             'status'             => 'nullable|string|in:draft,published,archived',
             'photo'              => 'nullable|string',
@@ -174,6 +179,7 @@ class NewsController extends Controller
             'meta_title'         => 'nullable|string|max:500',
             'meta_keyword'       => 'nullable|string|max:500',
             'meta_description'   => 'nullable|string|max:1000',
+            'content_json'       => 'nullable',
         ]);
 
         if (isset($validated['news_title']) && empty($validated['slug'])) {
@@ -205,11 +211,50 @@ class NewsController extends Controller
     {
         $request->validate(['image' => 'required|file|image|max:5120']);
         $file     = $request->file('image');
-        $filename = uniqid('news_', true) . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('uploads/news'), $filename);
+        $filename = uniqid('news_', true) . '.' . $file->extension();
+        $directory = public_path('uploads/news');
+        if (!is_dir($directory)) mkdir($directory, 0755, true);
+        $file->move($directory, $filename);
+        $url = url('/uploads/news/' . $filename);
         return response()->json([
             'success' => 1,
-            'file'    => ['url' => url('/uploads/news/' . $filename)],
+            'data'    => ['url' => $url],
+            'file'    => ['url' => $url],
         ]);
+    }
+
+    /** Map the shared editor's readable field names to legacy tbl_news columns. */
+    private function databasePayload(Request $request): array
+    {
+        $input = $request->all();
+        $aliases = [
+            'title' => 'news_title', 'content' => 'news_content',
+            'excerpt' => 'news_content_short', 'date' => 'news_date',
+        ];
+        foreach ($aliases as $from => $to) {
+            if (!array_key_exists($to, $input) && array_key_exists($from, $input)) {
+                $input[$to] = $input[$from];
+            }
+        }
+        if (array_key_exists('photo', $input)) {
+            $input['photo'] = $this->storagePath($input['photo']);
+        }
+        if (array_key_exists('category_id', $input) && (int) $input['category_id'] <= 0) {
+            $input['category_id'] = null;
+        }
+        return $input;
+    }
+
+    /** tbl_news.photo stores a short uploads-relative path, not a full application URL. */
+    private function storagePath(mixed $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') return '';
+        $path = parse_url($value, PHP_URL_PATH);
+        if (is_string($path) && preg_match('#^/?uploads/#i', $path)) {
+            $value = $path;
+        }
+        $value = preg_replace('#^/?uploads/#i', '', $value) ?? $value;
+        return ltrim($value, '/');
     }
 }

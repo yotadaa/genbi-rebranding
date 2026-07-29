@@ -115,10 +115,21 @@ class TeamMemberController extends Controller
     /**
      * GET /admin/team-members/options  (for select dropdowns in other forms)
      */
-    public function options()
+    public function options(Request $request)
     {
-        $members = TeamMember::select('id', 'name')->orderBy('name')->get()
-                             ->map(fn($m) => ['id' => $m->id, 'name' => $m->name ?? ''])
+        $limit = min(50, max(1, (int) $request->query('limit', 12)));
+        $query = TeamMember::with(['divisiRelation', 'komsatRelation'])->orderBy('name');
+        if ($search = trim((string) $request->query('q', ''))) {
+            $query->where('name', 'like', '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search) . '%');
+        }
+        $members = $query->limit($limit)->get()
+                             ->map(fn(TeamMember $m) => [
+                                 'id' => $m->id, 'name' => $m->name ?? '',
+                                 'role' => $m->designation ?? $m->jabatan_wilayah ?? $m->jabatan_komsat ?? '',
+                                 'division' => $m->divisiRelation?->nama ?? $m->divisi_wilayah ?? $m->divisi_komsat ?? '',
+                                 'campus' => $m->komsatRelation?->nama ?? $m->komsat ?? '',
+                                 'year' => $m->tahun ?? '',
+                             ])
                              ->values();
         return response()->json(['success' => true, 'data' => $members]);
     }

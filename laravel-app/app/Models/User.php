@@ -11,6 +11,7 @@ class User extends Authenticatable
 
     protected $table = 'tbl_user';
     protected $primaryKey = 'id';
+    public $timestamps = false;
     protected $guarded = [];
 
     protected $hidden = [
@@ -31,13 +32,6 @@ class User extends Authenticatable
         return null;
     }
 
-    /**
-     * Laravel auth uses this to identify users by email.
-     */
-    public function getAuthIdentifierName(): string
-    {
-        return 'email';
-    }
 
     /**
      * Get the password for authentication.

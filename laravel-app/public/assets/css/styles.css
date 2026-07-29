@@ -2137,6 +2137,20 @@ body.page-leaving {
   color: rgb(var(--brand-primary));
 }
 
+/* The Page editor keeps its legacy horizontal tab rail inside the card. */
+#page-tabs {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#page-tabs .admin-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .admin-field {
   display: grid;
   gap: 0.55rem;
@@ -2437,6 +2451,10 @@ body.page-leaving {
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 1.25rem;
   align-items: start;
+}
+
+.admin-page-editor-layout > * {
+  min-width: 0;
 }
 
 .admin-page-editor-canvas {

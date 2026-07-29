@@ -9,6 +9,7 @@ class PrestasiToken extends Model
     protected $table = 'tbl_prestasi_submission_token';
     protected $primaryKey = 'token_id';
     protected $guarded = [];
+    public $timestamps = false;
 
     protected $casts = [
         'expires_at' => 'datetime',

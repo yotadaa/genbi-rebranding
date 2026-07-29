@@ -12,6 +12,7 @@ class Prestasi extends Model
     protected $table = 'tbl_prestasi';
     protected $primaryKey = 'prestasi_id';
     protected $guarded = [];
+    public $timestamps = false;
 
     public function getNameAttribute()
     {

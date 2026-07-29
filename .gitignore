@@ -33,6 +33,8 @@ laravel-app/storage/cache/*
 laravel-app/public/uploads/*
 laravel-app/public/uploads.zip
 
+/public/uploads/*
+!/public/uploads/.gitkeep
 
 
 # Local OS/editor noise

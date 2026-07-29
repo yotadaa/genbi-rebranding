@@ -88,13 +88,16 @@ class PrestasiController extends Controller
             'prestasi_id' => $p->prestasi_id,
             'title'       => $p->title ?? '',
             'member_name' => $p->member_name ?? '',
+            'name'        => $p->member_name ?? '',
             'institution' => $p->institution ?? '',
             'year'        => $p->year ?? '',
             'category'    => $p->category ?? '',
             'rank'        => $p->rank ?? '',
             'detail'      => $p->detail ?? '',
+            'content'     => $p->detail ?? '',
             'description' => $p->description ?? '',
             'photo'       => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+            'image'       => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
             'slug'        => $p->slug ?? Str::slug($p->title ?? 'prestasi') . '-' . $p->prestasi_id,
             'status'      => $p->status ?? 'published',
             'is_featured' => (bool) ($p->is_featured ?? false),
@@ -109,6 +112,7 @@ class PrestasiController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge($this->databasePayload($request));
         $validated = $request->validate([
             'title'       => 'required|string|max:500',
             'member_name' => 'nullable|string|max:500',
@@ -139,6 +143,7 @@ class PrestasiController extends Controller
     public function update(Request $request, $id)
     {
         $prestasi = Prestasi::findOrFail($id);
+        $request->merge($this->databasePayload($request));
 
         $validated = $request->validate([
             'title'       => 'sometimes|string|max:500',
@@ -191,5 +196,20 @@ class PrestasiController extends Controller
             'url'     => url('/uploads/prestasi/' . $filename),
             'file'    => ['url' => url('/uploads/prestasi/' . $filename)],
         ]);
+    }
+
+    private function databasePayload(Request $request): array
+    {
+        $input = $request->all();
+        if (!array_key_exists('member_name', $input) && array_key_exists('name', $input)) {
+            $input['member_name'] = $input['name'];
+        }
+        if (!array_key_exists('detail', $input) && array_key_exists('content', $input)) {
+            $input['detail'] = $input['content'];
+        }
+        if (!array_key_exists('photo', $input) && array_key_exists('image', $input)) {
+            $input['photo'] = $input['image'];
+        }
+        return $input;
     }
 }

@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class NewsComment extends Model
 {
     protected $table = 'tbl_news_comment';
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'comment_id';
     protected $guarded = [];
+    public $timestamps = false;
 
     public function news()
     {
@@ -17,7 +18,7 @@ class NewsComment extends Model
 
     public function children()
     {
-        return $this->hasMany(NewsComment::class, 'parent_id', 'id');
+        return $this->hasMany(NewsComment::class, 'parent_id', 'comment_id');
     }
 
     public function scopeApproved($query)

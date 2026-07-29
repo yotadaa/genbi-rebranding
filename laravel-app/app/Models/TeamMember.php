@@ -12,6 +12,7 @@ class TeamMember extends Model
     protected $table = 'teams';
     protected $primaryKey = 'id';
     protected $guarded = [];
+    public $timestamps = false;
 
     public function scopeBpiCore($query)
     {

@@ -20,6 +20,18 @@ class SitemapController extends Controller
         return htmlspecialchars($value, ENT_XML1, 'UTF-8');
     }
 
+    private function xmlResponse(string $xml)
+    {
+        return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+    }
+
+    private function lastmod(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) return $value->format('Y-m-d');
+        $value = trim((string) $value);
+        return $value !== '' ? substr($value, 0, 10) : now()->toDateString();
+    }
+
     public function index()
     {
         $base = $this->baseUrl();
@@ -42,7 +54,7 @@ class SitemapController extends Controller
         }
 
         $xml .= '</sitemapindex>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 
     public function pages()
@@ -70,7 +82,7 @@ class SitemapController extends Controller
         }
 
         $xml .= '</urlset>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 
     public function news()
@@ -86,8 +98,8 @@ class SitemapController extends Controller
             if (empty($item->slug)) continue;
 
             $xml .= '  <url>' . PHP_EOL;
-            $xml .= '    <loc>' . $this->e($base . '/news/' . $item->slug) . '</loc>' . PHP_EOL;
-            $xml .= '    <lastmod>' . $this->e(substr($item->news_date, 0, 10)) . '</lastmod>' . PHP_EOL;
+            $xml .= '    <loc>' . $this->e($base . '/news/' . rawurlencode($item->slug)) . '</loc>' . PHP_EOL;
+            $xml .= '    <lastmod>' . $this->e($this->lastmod($item->updated_at ?? $item->published_at ?? $item->news_date)) . '</lastmod>' . PHP_EOL;
             $xml .= '    <changefreq>monthly</changefreq>' . PHP_EOL;
             $xml .= '    <priority>0.8</priority>' . PHP_EOL;
 
@@ -104,7 +116,7 @@ class SitemapController extends Controller
         }
 
         $xml .= '</urlset>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 
     public function events()
@@ -119,15 +131,15 @@ class SitemapController extends Controller
             if (empty($item->slug)) continue;
 
             $xml .= '  <url>' . PHP_EOL;
-            $xml .= '    <loc>' . $this->e($base . '/event/' . $item->slug) . '</loc>' . PHP_EOL;
-            $xml .= '    <lastmod>' . $this->e(substr($item->event_start_date ?? date('Y-m-d'), 0, 10)) . '</lastmod>' . PHP_EOL;
+            $xml .= '    <loc>' . $this->e($base . '/event/' . rawurlencode($item->slug)) . '</loc>' . PHP_EOL;
+            $xml .= '    <lastmod>' . $this->e($this->lastmod($item->updated_at ?? $item->event_start_date)) . '</lastmod>' . PHP_EOL;
             $xml .= '    <changefreq>monthly</changefreq>' . PHP_EOL;
             $xml .= '    <priority>0.7</priority>' . PHP_EOL;
             $xml .= '  </url>' . PHP_EOL;
         }
 
         $xml .= '</urlset>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 
     public function prestasi()
@@ -142,15 +154,15 @@ class SitemapController extends Controller
             if (empty($item->slug)) continue;
 
             $xml .= '  <url>' . PHP_EOL;
-            $xml .= '    <loc>' . $this->e($base . '/prestasi/' . $item->slug) . '</loc>' . PHP_EOL;
-            $xml .= '    <lastmod>' . $this->e(substr($item->updated_at ?? date('Y-m-d'), 0, 10)) . '</lastmod>' . PHP_EOL;
+            $xml .= '    <loc>' . $this->e($base . '/prestasi/' . rawurlencode($item->slug)) . '</loc>' . PHP_EOL;
+            $xml .= '    <lastmod>' . $this->e($this->lastmod($item->updated_at ?? $item->created_at ?? $item->year . '-01-01')) . '</lastmod>' . PHP_EOL;
             $xml .= '    <changefreq>monthly</changefreq>' . PHP_EOL;
             $xml .= '    <priority>0.6</priority>' . PHP_EOL;
             $xml .= '  </url>' . PHP_EOL;
         }
 
         $xml .= '</urlset>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 
     public function images()
@@ -160,6 +172,6 @@ class SitemapController extends Controller
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' . PHP_EOL;
         $xml .= '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . PHP_EOL;
         $xml .= '</urlset>';
-        return response($xml)->header('Content-Type', 'text/xml');
+        return $this->xmlResponse($xml);
     }
 }
