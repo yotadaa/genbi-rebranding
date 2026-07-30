@@ -105,12 +105,30 @@ function escapeShellValue(value = '') {
   }[character]));
 }
 
+function socialIcon(name = '', url = '') {
+  const channel = `${name} ${url}`.toLowerCase();
+
+  if (channel.includes('youtube') || channel.includes('youtu.be')) {
+    return '<svg class="social-mini-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M21 8.25a3 3 0 0 0-2.1-2.13C17.06 5.62 12 5.62 12 5.62s-5.06 0-6.9.5A3 3 0 0 0 3 8.25a31.9 31.9 0 0 0-.38 3.75A31.9 31.9 0 0 0 3 15.75a3 3 0 0 0 2.1 2.13c1.84.5 6.9.5 6.9.5s5.06 0 6.9-.5a3 3 0 0 0 2.1-2.13 31.9 31.9 0 0 0 .38-3.75A31.9 31.9 0 0 0 21 8.25Z" stroke="currentColor" stroke-width="1.65"/><path d="m10.25 15.15 4.5-3.15-4.5-3.15v6.3Z" fill="currentColor"/></svg>';
+  }
+
+  if (channel.includes('instagram')) {
+    return '<svg class="social-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="3.25" y="3.25" width="17.5" height="17.5" rx="5"/><circle cx="12" cy="12" r="4.1"/><circle cx="17.4" cy="6.7" r=".8" fill="currentColor" stroke="none"/></svg>';
+  }
+
+  if (channel.includes('whatsapp') || channel.includes('wa.me')) {
+    return '<svg class="social-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.4 11.75a8.4 8.4 0 0 1-12.45 7.38L3.6 20.4l1.27-4.22A8.4 8.4 0 1 1 20.4 11.75Z"/><path d="M8.15 7.8c.2-.45.42-.46.73-.47h.62c.2 0 .4.03.53.36l.78 1.89c.1.28.03.49-.1.68l-.59.75c-.15.18-.12.36 0 .54.67 1.14 1.57 2.03 2.72 2.69.18.1.36.14.54-.02l.84-.98c.17-.2.38-.24.62-.14l1.85.87c.26.12.43.3.39.57-.16 1.08-.69 1.78-1.55 2.12-.7.28-1.58.2-2.49-.18a12.6 12.6 0 0 1-5.82-5.08c-.52-.84-.74-1.66-.64-2.35.07-.48.32-.9.57-1.25Z"/></svg>';
+  }
+
+  return '<svg class="social-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M13.5 4.5h6v6"/><path d="m19.5 4.5-9 9"/><path d="M10.5 6.75H6A1.5 1.5 0 0 0 4.5 8.25V18A1.5 1.5 0 0 0 6 19.5h9.75a1.5 1.5 0 0 0 1.5-1.5v-4.5"/></svg>';
+}
+
 function renderSocialLinks() {
   const links = Array.isArray(site.socials) ? site.socials : [];
   return links
     .filter((social) => String(social?.url || '').trim())
     .map((social) => `
-      <a href="${escapeShellValue(social.url)}" class="social-mini" aria-label="${escapeShellValue(social.name || 'Social media')}" target="_blank" rel="noopener noreferrer">${escapeShellValue(social.label || social.name || '')}</a>
+      <a href="${escapeShellValue(social.url)}" class="social-mini" aria-label="Buka ${escapeShellValue(social.name || 'social media')} GenBI di tab baru" title="${escapeShellValue(social.name || 'Social media')}" target="_blank" rel="noopener noreferrer">${socialIcon(social.name, social.url)}</a>
     `)
     .join('');
 }
