@@ -4928,6 +4928,30 @@ input[type="file"].config-input::file-selector-button:hover {
   .bpi-slide-card { flex-basis: 345px; }
 }
 
+.feature-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+
+.feature-page-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 360px;
+  flex-basis: auto;
+}
+
+.feature-page-card h2 {
+  max-width: 17rem;
+  margin-inline: auto;
+  color: #ffffff;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
 /* v11 public news engagement, fixed modals, comment moderation, and icon carousel refinements */
 .modal-lock {
   overflow: hidden;

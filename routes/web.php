@@ -8,6 +8,7 @@ use App\Controllers\Public\AboutController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\EventController;
 use App\Controllers\Public\FeedController;
+use App\Controllers\Public\FeatureController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
@@ -20,6 +21,7 @@ use App\Middleware\CsrfMiddleware;
 
 /** @var AboutController $aboutController */
 /** @var PageController $pageController */
+/** @var FeatureController $featureController */
 /** @var ContactController $contactController */
 /** @var HomeController $homeController */
 /** @var TeamController $teamController */
@@ -36,6 +38,7 @@ $router->get('/', static fn(Request $request, Response $response) => $homeContro
 $router->get('/about', static fn(Request $request, Response $response) => $aboutController->index($request, $response));
 $router->get('/team', static fn(Request $request, Response $response) => $teamController->index($request, $response));
 $router->get('/teams', static fn(Request $request, Response $response) => $teamController->index($request, $response));
+$router->get('/feature', static fn(Request $request, Response $response) => $featureController->index($request, $response));
 $router->get('/prestasi', static fn(Request $request, Response $response) => $prestasiController->index($request, $response));
 $router->get('/prestasi/submit/{token}', static fn(Request $request, Response $response, array $params) => $prestasiController->submissionForm($request, $response, $params));
 $router->get('/prestasi/{slug}', static fn(Request $request, Response $response, array $params) => $prestasiController->show($request, $response, $params));

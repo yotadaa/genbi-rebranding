@@ -9,6 +9,24 @@
   const root = document.querySelector('#prestasi-submit-root');
   const token = getTokenFromUrl();
 
+  // PHP renders a valid token form before JavaScript runs. Keep the form in
+  // place and add only the upload/select/submit behaviour.
+  const ssrForm = root?.querySelector('#prestasi-submit-form[data-ssr="true"]');
+  if (ssrForm) {
+    bindPhotoUploadField();
+    if (window.GenBIUI?.enhanceProjectSelects) {
+      window.GenBIUI.enhanceProjectSelects(root);
+    } else {
+      window.GenBIUI?.enhanceNativeSelects?.(root, 'select.js-custom-select', {
+        iconHtml: '<span aria-hidden="true">⌄</span>',
+        portal: false,
+        wrapperClass: 'custom-select custom-select-root',
+      });
+    }
+    bindSsrFormSubmission(ssrForm, token);
+    return;
+  }
+
   if (!token) {
     renderInvalid('Token tidak ditemukan di URL.');
   } else {
@@ -282,6 +300,49 @@
         </div>
       </section>
     `;
+  }
+
+  function bindSsrFormSubmission(form, token) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const submitBtn = form.querySelector('[type="submit"]');
+      const photoFiles = Array.from(formData.getAll('photos[]')).filter((file) => file instanceof File && file.name);
+      const required = ['title', 'category', 'year', 'campus', 'name'];
+
+      if (required.some((name) => !String(formData.get(name) || '').trim())) {
+        showToast('Mohon lengkapi semua field yang wajib diisi.', 'error');
+        return;
+      }
+      if (photoFiles.length > 6 || photoFiles.some((file) => file.size > 5 * 1024 * 1024)) {
+        showToast('Maksimal 6 foto dapat diunggah, masing-masing maksimal 5MB.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Mengirim...';
+      try {
+        const csrfToken = API.getCsrfToken ? API.getCsrfToken() : '';
+        if (csrfToken) formData.set('_csrf_token', csrfToken);
+        const res = await fetch(Core.routeUrl('public.prestasiSubmit', { token }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+          credentials: 'same-origin',
+          body: formData,
+        });
+        const result = await res.json().catch(() => ({}));
+        if (res.ok && result.data) {
+          renderSuccess();
+          return;
+        }
+        const details = Array.isArray(result.details) ? ` ${result.details.join(', ')}` : '';
+        showToast((result.error || 'Gagal mengirim prestasi.') + details, 'error');
+      } catch {
+        showToast('Gagal mengirim. Periksa koneksi internet.', 'error');
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Prestasi';
+    });
   }
 
   function bindPhotoUploadField() {

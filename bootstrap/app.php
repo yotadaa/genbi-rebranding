@@ -19,6 +19,7 @@ use App\Controllers\Public\AboutController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
+use App\Controllers\Public\FeatureController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
 use App\Controllers\Public\ContactController;
@@ -148,6 +149,7 @@ $viewRenderer->share([
 ]);
 
 $pageController = new PageController($renderer);
+$featureController = new FeatureController($renderer, $featureModel, $viewRenderer);
 $aboutController = new AboutController($viewRenderer);
 $contactController = new ContactController($viewRenderer, $contactSettingModel, $siteSettings);
 $homeController = new HomeController($renderer, $featureModel, $newsModel, $eventModel, $teamModel, $viewRenderer, $siteSettings);

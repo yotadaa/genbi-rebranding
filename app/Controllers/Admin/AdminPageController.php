@@ -53,7 +53,7 @@ final class AdminPageController
                 'csrfToken' => CsrfService::token(),
                 'cmsPage' => 'dashboard',
                 'cmsMode' => 'list',
-                'scripts' => '',
+                'scripts' => '<script defer src="/assets/js/admin/dashboard.js"></script>',
             ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
             return;
         }
