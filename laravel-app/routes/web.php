@@ -79,6 +79,8 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::get('/news/edit', [AdminPageController::class, 'newsEdit'])->name('news.edit');
     Route::get('/news-add', [AdminPageController::class, 'newsAdd'])->name('newsAdd');
     Route::get('/news-edit', [AdminPageController::class, 'newsEdit'])->name('newsEdit');
+    // The legacy feature editor reuses feature-add.html; the CMS links to this edit alias after create.
+    Route::get('/feature-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'feature-add'))->name('feature.edit');
 
     // Legacy-layout CMS screens rendered server-side, then hydrated by cms.js.
     Route::get('/prestasi', [AdminPageController::class, 'prestasiIndex'])->name('prestasi');
@@ -179,6 +181,8 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::post('/features/upload', [FeatureController::class, 'upload']);
     Route::post('/features/{id}/update', [FeatureController::class, 'update']);
     Route::post('/features/{id}/delete', [FeatureController::class, 'destroy']);
+    Route::post('/features/{id}/images/reorder', [FeatureController::class, 'reorderImages']);
+    Route::post('/features/{id}/images/{imageId}/delete', [FeatureController::class, 'deleteImage']);
     
     // Presensi
     Route::get('/presensi', [AdminPageController::class, 'presensiIndex'])->name('presensi');

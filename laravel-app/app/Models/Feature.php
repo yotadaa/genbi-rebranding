@@ -3,12 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Feature extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'tbl_feature';
     protected $primaryKey = 'id';
     protected $guarded = [];
+
+    protected $casts = [
+        'show_on_home' => 'boolean',
+        'sort_order' => 'integer',
+    ];
 
     public function images()
     {
