@@ -269,6 +269,22 @@ HTML;
         ]);
     }
 
+    /** Render the existing JavaScript Team editor through an explicit Laravel route. */
+    public function teamForm(Request $request, bool $isEdit = false)
+    {
+        if ($isEdit) {
+            TeamMember::findOrFail((int) $request->query('id'));
+        }
+
+        return view('admin.static-shell', [
+            'title' => ($isEdit ? 'Edit' : 'Add') . ' Team Member | Admin GenBI',
+            'cmsPage' => 'team',
+            'cmsMode' => 'editor',
+            'staticContent' => '',
+            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260730a"></script>',
+        ]);
+    }
+
     public function presensiIndex(Request $request)
     {
         $page = max(1, (int) $request->query('page', 1));

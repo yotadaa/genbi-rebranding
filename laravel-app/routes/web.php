@@ -86,6 +86,8 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::get('/prestasi-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->prestasiForm($request, true))->name('prestasi.edit');
     Route::get('/prestasi-token', [AdminPageController::class, 'prestasiTokenIndex'])->name('prestasi.token');
     Route::get('/team-member', [AdminPageController::class, 'teamIndex'])->name('team');
+    Route::get('/team-member-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->teamForm($request))->name('team.add');
+    Route::get('/team-member-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->teamForm($request, true))->name('team.edit');
     
     // News API & actions
     Route::get('/news/list', [AdminNewsController::class, 'index'])->name('news.list');

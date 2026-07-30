@@ -21,9 +21,11 @@ class TeamMemberController extends Controller
             'jabatan_wilayah' => $m->jabatan_wilayah ?? '',
             'jabatan_komsat'  => $m->jabatan_komsat ?? '',
             'division'        => $m->divisiRelation?->nama ?? $m->divisi_wilayah ?? $m->divisi_komsat ?? '',
+            'divisi_id'       => $m->divisi_id ?? null,
             'divisi_wilayah'  => $m->divisi_wilayah ?? '',
             'divisi_komsat'   => $m->divisi_komsat ?? '',
             'campus'          => $m->komsatRelation?->nama ?? $m->komsat ?? '',
+            'komsat_id'       => $m->komsat_id ?? null,
             'komsat'          => $m->komsat ?? '',
             'year'            => $m->tahun ?? '',
             'photo'           => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
@@ -131,7 +133,24 @@ class TeamMemberController extends Controller
                                  'year' => $m->tahun ?? '',
                              ])
                              ->values();
-        return response()->json(['success' => true, 'data' => $members]);
+        // `data` remains the member autocomplete payload used by Prestasi.  The
+        // Team editor also needs its legacy lookup lists, so expose those under
+        // explicit sibling keys instead of changing the autocomplete contract.
+        $divisions = Divisi::orderBy('nama')->get(['id', 'nama'])
+            ->map(fn (Divisi $division) => ['id' => $division->id, 'nama' => $division->nama ?? ''])
+            ->filter(fn (array $division) => $division['nama'] !== '')
+            ->values();
+        $commissions = Komsat::orderBy('nama')->get(['id', 'nama'])
+            ->map(fn (Komsat $komsat) => ['id' => $komsat->id, 'nama' => $komsat->nama ?? ''])
+            ->filter(fn (array $komsat) => $komsat['nama'] !== '')
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $members,
+            'divisions' => $divisions,
+            'commissions' => $commissions,
+        ]);
     }
 
     /**
@@ -258,8 +277,8 @@ class TeamMemberController extends Controller
      */
     public function upload(Request $request)
     {
-        $request->validate(['photo' => 'required|file|image|max:5120']);
-        $file     = $request->file('photo');
+        $request->validate(['image' => 'required_without:photo|file|image|max:5120', 'photo' => 'required_without:image|file|image|max:5120']);
+        $file     = $request->file('image') ?? $request->file('photo');
         $filename = uniqid('team_', true) . '.' . $file->getClientOriginalExtension();
         $dest     = public_path('uploads/team');
         if (!is_dir($dest)) mkdir($dest, 0755, true);
@@ -267,6 +286,7 @@ class TeamMemberController extends Controller
         return response()->json([
             'success' => true,
             'url'     => url('/uploads/team/' . $filename),
+            'data'    => ['url' => url('/uploads/team/' . $filename)],
             'file'    => ['url' => url('/uploads/team/' . $filename)],
         ]);
     }

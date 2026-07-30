@@ -2346,7 +2346,10 @@
       const res = await fetch(route('admin.teamMemberOptions'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
       if (res.ok) {
         const json = await res.json();
-        return json.data || { divisions: [], commissions: [] };
+        return {
+          divisions: Array.isArray(json.divisions) ? json.divisions : [],
+          commissions: Array.isArray(json.commissions) ? json.commissions : [],
+        };
       }
     } catch (e) { /* fallback */ }
     return { divisions: [], commissions: [] };
