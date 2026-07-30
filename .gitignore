@@ -44,5 +44,6 @@ Thumbs.db
 .vscode/
 
 # Temporary outputs
+output/playwright/
 *.log
 *.tmp
