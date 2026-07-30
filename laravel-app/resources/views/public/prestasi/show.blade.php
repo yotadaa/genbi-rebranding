@@ -25,7 +25,7 @@
         <div class="lg:col-span-2">
           @if(!empty($images))
             <div class="soft-card overflow-hidden p-0 prestasi-gallery" data-prestasi-gallery>
-              <div class="prestasi-gallery-strip" role="list" aria-label="Galeri foto prestasi">
+              <div class="prestasi-gallery-strip{!! count($images) === 1 ? ' is-single' : '' !!}" role="list" aria-label="Galeri foto prestasi">
                 @foreach($images as $index => $image)
                   <button
                     type="button"

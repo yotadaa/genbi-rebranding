@@ -68,6 +68,7 @@ class SitemapController extends Controller
             '/about' => 'monthly',
             '/news' => 'daily',
             '/event' => 'weekly',
+            '/feature' => 'monthly',
             '/prestasi' => 'weekly',
             '/team' => 'monthly',
             '/contact' => 'monthly',

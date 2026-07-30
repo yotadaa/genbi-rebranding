@@ -11,6 +11,7 @@ use App\Http\Controllers\Public\NewsController as PublicNewsController;
 use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\PresensiController as PublicPresensiController;
+use App\Http\Controllers\Public\FeatureController as PublicFeatureController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\FeedController;
 
@@ -39,6 +40,7 @@ Route::get('/', [HomeController::class, 'index']);
 Route::get('/about', [AboutController::class, 'index']);
 Route::get('/team', [TeamController::class, 'index']);
 Route::get('/teams', [TeamController::class, 'index']);
+Route::get('/feature', [PublicFeatureController::class, 'index'])->name('feature');
 Route::get('/prestasi', [PublicPrestasiController::class, 'index']);
 Route::get('/prestasi/submit/{token}', [PublicPrestasiController::class, 'submissionForm']);
 Route::post('/prestasi/submit/{token}', [PublicPrestasiController::class, 'submitWithToken']);

@@ -15,7 +15,11 @@ class EventController extends Controller
         $activeQ = $request->input('q');
 
         $resolveImageUrl = function($path) {
-            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
+            $resolved = \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
+            if (str_starts_with($resolved, '/uploads/') && !is_file(public_path(ltrim($resolved, '/')))) {
+                return '/uploads/slider-1.png';
+            }
+            return $resolved;
         };
 
         $query = Event::published();
@@ -62,14 +66,18 @@ class EventController extends Controller
             'perPage' => $paginator->perPage(),
             'total' => $paginator->total(),
             'totalPages' => $paginator->lastPage(),
-            'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/pages/event.js?v=20260730a"></script>',
         ]);
     }
 
     public function show(Request $request, $slug)
     {
         $resolveImageUrl = function($path) {
-            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
+            $resolved = \App\Services\ImageResolver::resolve($path, '/uploads/slider-1.png');
+            if (str_starts_with($resolved, '/uploads/') && !is_file(public_path(ltrim($resolved, '/')))) {
+                return '/uploads/slider-1.png';
+            }
+            return $resolved;
         };
 
         $eventModel = Event::published()->where('slug', $slug)->first();
@@ -102,7 +110,7 @@ class EventController extends Controller
         return view('public.event.show', [
             'event' => $event,
             'item' => $event, // Fallback just in case
-            'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
+            'scripts' => '<script defer src="/assets/js/dist/pages/event.js?v=20260730a"></script>',
         ]);
     }
 }

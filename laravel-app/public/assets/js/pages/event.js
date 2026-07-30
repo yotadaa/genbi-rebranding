@@ -168,7 +168,7 @@ function renderEventModal(item, modal) {
     <div class="public-modal-panel event-detail-panel modal-panel is-open" role="dialog" aria-modal="true" aria-labelledby="event-title">
       <button class="btn-icon modal-close" aria-label="Tutup detail event">\u00d7</button>
       <div class="event-detail-image">
-        <img src="${safeImg(item.banner || item.image)}" alt="${item.title}" />
+        <img src="${safeImg(item.banner || item.image)}" alt="${item.title}" onerror="this.onerror=null;this.src='/uploads/slider-1.png'" />
       </div>
       <div class="event-detail-content">
         <div class="event-detail-heading">

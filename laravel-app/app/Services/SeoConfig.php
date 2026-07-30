@@ -29,6 +29,11 @@ final class SeoConfig
                 'description' => 'Struktur kepengurusan dan anggota GenBI Provinsi Jambi dari berbagai komisariat.',
                 'path' => '/team',
             ],
+            'feature.html' => [
+                'title' => 'Program Utama GenBI Provinsi Jambi',
+                'description' => 'Program utama GenBI Provinsi Jambi dalam edukasi, pengabdian, kepemimpinan, dan kolaborasi.',
+                'path' => '/feature',
+            ],
             'prestasi.html' => [
                 'title' => 'Prestasi GenBI Provinsi Jambi',
                 'description' => 'Daftar prestasi dan pencapaian anggota GenBI Provinsi Jambi di tingkat regional dan nasional.',
