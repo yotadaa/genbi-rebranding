@@ -36,8 +36,10 @@
   function getTokenFromUrl() {
     // Extract token from /prestasi/submit/{token} path
     const path = window.location.pathname;
-    const match = path.match(/\/prestasi\/submit\/([a-f0-9]+)/i);
-    if (match) return match[1];
+    // Tokens are generated as URL-safe alphanumeric strings; they are not
+    // limited to hexadecimal characters.
+    const match = path.match(/\/prestasi\/submit\/([A-Za-z0-9_-]+)/);
+    if (match) return decodeURIComponent(match[1]);
     // Fallback: query param
     return getParam('token') || '';
   }

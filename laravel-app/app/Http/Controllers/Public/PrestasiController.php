@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Prestasi;
 use App\Models\PrestasiToken;
+use App\Services\ImageResolver;
 use App\Services\SeoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -16,7 +17,9 @@ use Illuminate\Support\Str;
 class PrestasiController extends Controller
 {
     private const MAX_UPLOAD_FILES = 6;
+
     private const MAX_UPLOAD_SIZE_KB = 5120;
+
     private const ALLOWED_IMAGE_TYPES = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
@@ -33,14 +36,14 @@ class PrestasiController extends Controller
         $activeYear = $request->input('year');
         $layout = $request->input('layout', 'grid');
 
-        $resolveImageUrl = function($path) {
-            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-4.png');
+        $resolveImageUrl = function ($path) {
+            return ImageResolver::resolve($path, '/uploads/slider-4.png');
         };
 
         $query = Prestasi::published()->latestPrestasi();
 
         if ($activeQ !== null && $activeQ !== '' && $activeQ !== 'Semua' && $activeQ !== 'All') {
-            $query->where('title', 'like', '%' . $activeQ . '%');
+            $query->where('title', 'like', '%'.$activeQ.'%');
         }
         if ($activeCategory !== null && $activeCategory !== '' && $activeCategory !== 'Semua' && $activeCategory !== 'All') {
             $query->where('category', $activeCategory);
@@ -51,7 +54,7 @@ class PrestasiController extends Controller
 
         $paginator = $query->paginate($perPage);
 
-        $items = $paginator->map(function($p) use ($resolveImageUrl) {
+        $items = $paginator->map(function ($p) use ($resolveImageUrl) {
             return [
                 'id' => $p->id,
                 'slug' => $p->slug,
@@ -77,7 +80,7 @@ class PrestasiController extends Controller
                     'page' => $paginator->currentPage(),
                     'per_page' => $paginator->perPage(),
                     'total' => $paginator->total(),
-                ]
+                ],
             ]);
         }
 
@@ -87,11 +90,11 @@ class PrestasiController extends Controller
                 'q' => $activeQ ?? '',
                 'category' => $activeCategory ?? '',
                 'year' => $activeYear ?? '',
-                'layout' => $layout
+                'layout' => $layout,
             ],
             'filterOptions' => [
                 'categories' => $categories,
-                'years' => $years
+                'years' => $years,
             ],
             'page' => $paginator->currentPage(),
             'perPage' => $paginator->perPage(),
@@ -103,13 +106,13 @@ class PrestasiController extends Controller
 
     public function show(Request $request, $slug)
     {
-        $resolveImageUrl = function($path) {
-            return \App\Services\ImageResolver::resolve($path, '/uploads/slider-4.png');
+        $resolveImageUrl = function ($path) {
+            return ImageResolver::resolve($path, '/uploads/slider-4.png');
         };
 
         $prestasiItem = Prestasi::published()->where('slug', $slug)->first();
-        
-        if (!$prestasiItem) {
+
+        if (! $prestasiItem) {
             if ($request->wantsJson() || $request->ajax() || str_contains($request->header('Accept', ''), 'application/json')) {
                 return response()->json(['error' => 'Not found'], 404);
             }
@@ -136,7 +139,7 @@ class PrestasiController extends Controller
         return view('public.prestasi.show', [
             'item' => $item,
             'seo' => [
-                'canonical' => url()->current()
+                'canonical' => url()->current(),
             ],
             'scripts' => '<script defer src="/assets/js/dist/pages/prestasi-detail.js"></script>',
         ]);
@@ -147,7 +150,7 @@ class PrestasiController extends Controller
         if ($this->expectsJson($request)) {
             $prestasiToken = PrestasiToken::findAvailableByPlainToken($token);
 
-            if (!$prestasiToken) {
+            if (! $prestasiToken) {
                 return response()->json([
                     'error' => 'Token tidak valid, kedaluwarsa, sudah digunakan, atau sudah dicabut.',
                 ], 403);
@@ -183,7 +186,7 @@ class PrestasiController extends Controller
 
     public function submitWithToken(Request $request, string $token)
     {
-        if (!PrestasiToken::findAvailableByPlainToken($token)) {
+        if (! PrestasiToken::findAvailableByPlainToken($token)) {
             return response()->json([
                 'error' => 'Token tidak valid, kedaluwarsa, sudah digunakan, atau sudah dicabut.',
             ], 403);
@@ -199,11 +202,11 @@ class PrestasiController extends Controller
             'description' => ['nullable', 'string', 'max:5000'],
             'content' => ['nullable', 'string', 'max:50000'],
             'image_url' => ['nullable', 'url:http,https', 'max:120'],
-            'photos' => ['nullable', 'array', 'max:' . self::MAX_UPLOAD_FILES],
+            'photos' => ['nullable', 'array', 'max:'.self::MAX_UPLOAD_FILES],
             'photos.*' => [
                 'file',
                 'mimes:jpg,jpeg,png,webp,gif',
-                'max:' . self::MAX_UPLOAD_SIZE_KB,
+                'max:'.self::MAX_UPLOAD_SIZE_KB,
             ],
         ], [
             'title.required' => 'Judul prestasi wajib diisi.',
@@ -212,7 +215,7 @@ class PrestasiController extends Controller
             'year.between' => 'Tahun harus berada antara 1900 dan 2099.',
             'campus.required' => 'Komisariat wajib diisi.',
             'name.required' => 'Nama anggota wajib diisi.',
-            'photos.max' => 'Maksimal ' . self::MAX_UPLOAD_FILES . ' foto dapat diunggah.',
+            'photos.max' => 'Maksimal '.self::MAX_UPLOAD_FILES.' foto dapat diunggah.',
             'photos.*.mimes' => 'Foto harus berformat JPG, PNG, WebP, atau GIF.',
             'photos.*.max' => 'Ukuran setiap foto maksimal 5MB.',
             'image_url.max' => 'URL gambar terlalu panjang.',
@@ -254,7 +257,7 @@ class PrestasiController extends Controller
         try {
             $prestasiToken = PrestasiToken::findAvailableByPlainToken($token, true);
 
-            if (!$prestasiToken) {
+            if (! $prestasiToken) {
                 DB::rollBack();
                 $this->deleteUploadedImages($uploadedImages);
 
@@ -322,7 +325,7 @@ class PrestasiController extends Controller
             }
             $this->deleteUploadedImages($uploadedImages);
 
-            $requestId = 'prestasi_submit_' . Str::lower(Str::random(16));
+            $requestId = 'prestasi_submit_'.Str::lower(Str::random(16));
             Log::error('Prestasi token submission failed.', [
                 'request_id' => $requestId,
                 'exception' => $exception,
@@ -346,7 +349,7 @@ class PrestasiController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      * @return array<string, string>
      */
     private function sanitizeSubmission(array $validated): array
@@ -378,7 +381,7 @@ class PrestasiController extends Controller
     }
 
     /**
-     * @param array<int, UploadedFile>|UploadedFile|null $files
+     * @param  array<int, UploadedFile>|UploadedFile|null  $files
      * @return array<int, array{url: string, filename: string, mime: string, size: int}>
      */
     private function storeSubmissionImages(array|UploadedFile|null $files): array
@@ -386,49 +389,49 @@ class PrestasiController extends Controller
         if ($files instanceof UploadedFile) {
             $files = [$files];
         }
-        if (!is_array($files) || $files === []) {
+        if (! is_array($files) || $files === []) {
             return [];
         }
         if (count($files) > self::MAX_UPLOAD_FILES) {
-            throw new \InvalidArgumentException('Maksimal ' . self::MAX_UPLOAD_FILES . ' foto dapat diunggah.');
+            throw new \InvalidArgumentException('Maksimal '.self::MAX_UPLOAD_FILES.' foto dapat diunggah.');
         }
 
         $validatedFiles = [];
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
 
         foreach (array_values($files) as $index => $file) {
-            if (!$file instanceof UploadedFile || !$file->isValid()) {
-                throw new \InvalidArgumentException('Upload foto #' . ($index + 1) . ' gagal.');
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                throw new \InvalidArgumentException('Upload foto #'.($index + 1).' gagal.');
             }
 
             $path = $file->getRealPath();
             $mime = $path ? $finfo->file($path) : false;
 
-            if (!is_string($mime) || !isset(self::ALLOWED_IMAGE_TYPES[$mime])) {
+            if (! is_string($mime) || ! isset(self::ALLOWED_IMAGE_TYPES[$mime])) {
                 throw new \InvalidArgumentException(
-                    'Tipe file foto #' . ($index + 1) . ' tidak diizinkan. Gunakan JPEG, PNG, WebP, atau GIF.'
+                    'Tipe file foto #'.($index + 1).' tidak diizinkan. Gunakan JPEG, PNG, WebP, atau GIF.'
                 );
             }
-            if (!$path || @getimagesize($path) === false) {
-                throw new \InvalidArgumentException('File foto #' . ($index + 1) . ' bukan gambar yang valid.');
+            if (! $path || @getimagesize($path) === false) {
+                throw new \InvalidArgumentException('File foto #'.($index + 1).' bukan gambar yang valid.');
             }
 
             $validatedFiles[] = [$file, $mime, self::ALLOWED_IMAGE_TYPES[$mime]];
         }
 
         $destination = public_path('uploads/prestasi');
-        if (!is_dir($destination) && !mkdir($destination, 0755, true) && !is_dir($destination)) {
+        if (! is_dir($destination) && ! mkdir($destination, 0755, true) && ! is_dir($destination)) {
             throw new \RuntimeException('Direktori upload prestasi tidak dapat dibuat.');
         }
 
         $stored = [];
         try {
             foreach ($validatedFiles as [$file, $mime, $extension]) {
-                $filename = 'prestasi-submit-' . Str::lower(Str::random(24)) . '.' . $extension;
+                $filename = 'prestasi-submit-'.Str::lower(Str::random(24)).'.'.$extension;
                 $size = (int) $file->getSize();
                 $file->move($destination, $filename);
                 $stored[] = [
-                    'url' => '/uploads/prestasi/' . $filename,
+                    'url' => '/uploads/prestasi/'.$filename,
                     'filename' => $filename,
                     'mime' => $mime,
                     'size' => $size,
@@ -451,7 +454,7 @@ class PrestasiController extends Controller
                 continue;
             }
 
-            $path = public_path('uploads/prestasi/' . $filename);
+            $path = public_path('uploads/prestasi/'.$filename);
             if (is_file($path)) {
                 @unlink($path);
             }
@@ -465,11 +468,11 @@ class PrestasiController extends Controller
         $suffix = 1;
 
         while (Prestasi::withTrashed()->where('slug', $slug)->exists()) {
-            $slug = $base . '-' . $suffix;
+            $slug = $base.'-'.$suffix;
             $suffix++;
 
             if ($suffix > 100) {
-                return $base . '-' . Str::lower(Str::random(8));
+                return $base.'-'.Str::lower(Str::random(8));
             }
         }
 
@@ -482,14 +485,14 @@ class PrestasiController extends Controller
         $title = mb_substr($body['title'] ?: 'Prestasi GenBI Jambi', 0, 180);
         $summary = $body['description'] ?: trim(
             $body['category']
-            . ($body['name'] !== '' ? ' ' . $body['name'] : '')
-            . ($body['institution'] !== '' ? ' oleh ' . $body['institution'] : '')
-            . ' tahun ' . $body['year']
-            . '. Dokumentasi prestasi GenBI Jambi.'
+            .($body['name'] !== '' ? ' '.$body['name'] : '')
+            .($body['institution'] !== '' ? ' oleh '.$body['institution'] : '')
+            .' tahun '.$body['year']
+            .'. Dokumentasi prestasi GenBI Jambi.'
         );
 
         return [
-            'meta_title' => mb_substr($title . ' | GenBI Jambi', 0, 255),
+            'meta_title' => mb_substr($title.' | GenBI Jambi', 0, 255),
             'meta_keyword' => mb_substr(implode(', ', array_filter([
                 $body['category'],
                 'prestasi GenBI Jambi',
