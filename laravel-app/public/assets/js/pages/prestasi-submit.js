@@ -18,8 +18,8 @@
   function getTokenFromUrl() {
     // Extract token from /prestasi/submit/{token} path
     const path = window.location.pathname;
-    const match = path.match(/\/prestasi\/submit\/([a-f0-9]+)/i);
-    if (match) return match[1];
+    const match = path.match(/\/prestasi\/submit\/([^/?#]+)/i);
+    if (match) return decodeURIComponent(match[1]);
     // Fallback: query param
     return getParam('token') || '';
   }
@@ -240,7 +240,7 @@
 
       try {
         const csrfToken = API.getCsrfToken ? API.getCsrfToken() : '';
-        if (csrfToken) formData.set('_csrf_token', csrfToken);
+        if (csrfToken) formData.set('_token', csrfToken);
         const res = await fetch(Core.routeUrl('public.prestasiSubmit', { token }), {
           method: 'POST',
           headers: {
@@ -250,7 +250,13 @@
           credentials: 'same-origin',
           body: formData
         });
-        const result = await res.json();
+        const responseText = await res.text();
+        let result = {};
+        try {
+          result = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          throw new Error('Server tidak mengembalikan respons JSON yang valid.');
+        }
 
         if (res.ok && result.data) {
           renderSuccess();
