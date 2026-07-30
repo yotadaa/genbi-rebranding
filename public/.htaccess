@@ -1,11 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Keep editable CSS at ../assets/css authoritative. This lets the front
-  # controller serve it instead of an old mirrored file under public/assets.
-  RewriteCond %{REQUEST_URI} ^/assets/css/(tailwind|styles)\.css$
-  RewriteRule ^ index.php [L]
-
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
@@ -14,8 +9,8 @@
 </IfModule>
 
 <IfModule mod_headers.c>
-  # PHP views load editable source CSS/JS directly. Do not keep a stale asset
-  # after a File Manager upload just because its URL did not change.
+  # Do not keep a stale public asset after a File Manager upload just because
+  # its URL did not change.
   <FilesMatch "\.(css|js)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>

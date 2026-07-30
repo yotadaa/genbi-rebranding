@@ -56,16 +56,15 @@ if (in_array($basename, $staticFiles, true) && is_file(__DIR__ . '/' . $basename
 }
 
 if (str_starts_with($path, '/assets/')) {
-    // CSS source lives at the project asset root; prefer it over old mirrored
-    // public copies so File Manager updates take effect without a build/copy step.
-    $assetPath = realpath(dirname(__DIR__) . $path) ?: realpath(__DIR__ . $path);
+    // public/assets is the only deployable and editable asset directory.
+    $assetPath = realpath(__DIR__ . $path);
     $assetRoot = realpath(__DIR__ . '/assets');
-    $legacyAssetRoot = realpath(dirname(__DIR__) . '/assets');
 
     if (
         $assetPath !== false
         && is_file($assetPath)
-        && (($assetRoot !== false && str_starts_with($assetPath, $assetRoot)) || ($legacyAssetRoot !== false && str_starts_with($assetPath, $legacyAssetRoot)))
+        && $assetRoot !== false
+        && str_starts_with($assetPath, $assetRoot)
     ) {
         $types = [
             'css' => 'text/css; charset=UTF-8',

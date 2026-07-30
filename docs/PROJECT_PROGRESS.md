@@ -356,8 +356,17 @@ Last updated: 2026-07-30 after SSR delivery/buildless migration planning
 - [x] Audit and remove only files proven unused after the SSR cutover; preserve active Laravel work and unrelated local changes.
 - [x] Review the final SSR diff and commit all verified implementation changes in scope.
 
+### Task 21: Canonical Public Asset Directory
+
+- [x] Make `public/assets/` the only canonical asset directory for PHP, Apache, local preview, and File Manager updates.
+- [x] Preserve the current public SSR hydration scripts and migrate the existing Tailwind output into `public/assets/css/`.
+- [x] Remove the duplicate root `assets/` directory and root-first asset resolver.
+- [x] Update build/zip tooling paths, then validate browser delivery without running a build.
+- [x] Remove only confirmed-unused PHP runtime assets; do not modify, delete, stage, or commit anything under `laravel-app/`.
+
 ## Test Log
 
+- 2026-07-30: Canonical public-asset migration passed without `npm run build`: PHP, Apache, and the static fallback server delivered `/assets/...` from `public/assets/`; `npm test` passed (26 tests), PHP/Node syntax checks passed, and the legacy root `assets/` directory no longer existed. `laravel-app/` was not modified, deleted, staged, or committed.
 - 2026-07-30: SSR regression follow-up passed: Playwright confirmed dashboard navigation/topbar rendering with zero console errors; `/feature` rendered six published programs with zero console errors; the Prestasi browser smoke test kept the SSR form intact after loading its source script. PHP lint and `npm test` (26 tests) passed without running a build.
 - 2026-07-30: SSR/buildless cutover verification passed: `npm test` (26 tests), PHP lint for changed controllers/views/routes, JS syntax checks, PHP HTTP smoke for public `/news`, `/about`, and source assets, plus Playwright snapshots for `/news` and `/about` with zero console errors. No `npm run build` was used.
 - 2026-05-06: No test harness existed at initial audit.
