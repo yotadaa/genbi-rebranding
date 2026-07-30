@@ -292,11 +292,16 @@
         ? `
           <div class="admin-data-table-wrap presensi-role-table-wrap">
             <table class="admin-table admin-data-table presensi-role-table">
+              <colgroup>
+                <col class="presensi-role-col-name">
+                <col class="presensi-role-col-score">
+                <col class="presensi-role-col-actions">
+              </colgroup>
               <thead>
                 <tr>
                   <th>Role</th>
                   <th>Skor</th>
-                  <th class="text-right">Aksi</th>
+                  <th class="presensi-role-actions-cell">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -308,7 +313,7 @@
                     <td>
                       <input class="config-input presensi-role-score-edit-input" data-role-score="${index}" type="number" min="0" max="100000" step="1" value="${Number(role.score || 0)}" ${editingRoleIndex === index ? '' : 'disabled'}>
                     </td>
-                    <td class="text-right">
+                    <td class="presensi-role-actions-cell">
                       ${editingRoleIndex === index
                         ? `<button type="button" class="btn btn-primary btn-sm presensi-icon-btn" data-save-role="${index}" aria-label="Simpan role ${escape(role.name)}">${checkIcon}</button>`
                         : `<button type="button" class="btn btn-outline btn-sm presensi-icon-btn" data-edit-role="${index}" aria-label="Edit role ${escape(role.name)}">${pencilIcon}</button>`}

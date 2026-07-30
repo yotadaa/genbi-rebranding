@@ -19,6 +19,19 @@ class TeamMember extends Model
         return $query->where('show_on_home', 1)->orderBy('home_sort_order', 'asc');
     }
 
+    /** Active directory entries exclude members moved to the Alumni commission. */
+    public function scopeActiveDirectory($query)
+    {
+        return $query
+            ->where(function ($builder) {
+                $builder->whereNull('komsat')
+                    ->orWhereRaw('LOWER(komsat) NOT LIKE ?', ['%alumni%']);
+            })
+            ->whereDoesntHave('komsatRelation', function ($builder) {
+                $builder->whereRaw('LOWER(nama) LIKE ?', ['%alumni%']);
+            });
+    }
+
     public function komsatRelation()
     {
         return $this->belongsTo(Komsat::class, 'komsat_id', 'id');

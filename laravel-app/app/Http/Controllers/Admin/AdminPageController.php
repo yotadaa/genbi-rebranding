@@ -240,7 +240,7 @@ HTML;
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(100, max(1, (int) $request->query('per_page', 24)));
         $filters = ['q' => trim((string) $request->query('q', '')), 'division' => trim((string) $request->query('division', '')), 'campus' => trim((string) $request->query('campus', '')), 'year' => trim((string) $request->query('year', ''))];
-        $query = TeamMember::with(['divisiRelation', 'komsatRelation']);
+        $query = TeamMember::with(['divisiRelation', 'komsatRelation'])->activeDirectory();
         if ($filters['q'] !== '') $query->where('name', 'like', "%{$filters['q']}%");
         if ($filters['division'] !== '') $query->where(fn ($builder) => $builder->where('divisi_wilayah', $filters['division'])->orWhere('divisi_komsat', $filters['division'])->orWhereHas('divisiRelation', fn ($related) => $related->where('nama', $filters['division'])));
         if ($filters['campus'] !== '') $query->where(fn ($builder) => $builder->where('komsat', $filters['campus'])->orWhereHas('komsatRelation', fn ($related) => $related->where('nama', $filters['campus'])));
@@ -250,7 +250,7 @@ HTML;
         // Old data can store division/campus as text even when the lookup table
         // has no corresponding row. Merge both sources so the old Team dropdown
         // never becomes empty after the Laravel port.
-        $teamFilterMembers = TeamMember::with(['divisiRelation', 'komsatRelation'])->get();
+        $teamFilterMembers = TeamMember::with(['divisiRelation', 'komsatRelation'])->activeDirectory()->get();
         $divisionOptions = collect(\App\Models\Divisi::pluck('nama'))
             ->merge($teamFilterMembers->map(fn (TeamMember $member) => $member->divisiRelation?->nama ?? $member->divisi_wilayah ?? $member->divisi_komsat ?? ''))
             ->filter()->unique()->sort()->values()->all();
@@ -305,19 +305,19 @@ HTML;
         $total = (clone $query)->count();
         $items = $query->latest('created_at')->offset(($page - 1) * $perPage)->limit($perPage)->get()->map(fn (PresensiEvent $event) => $this->mapPresensiEvent($event))->toArray();
 
-        return view('admin.presensi.index', ['title' => 'Presensi | Admin GenBI', 'cmsPage' => 'presensi', 'cmsMode' => 'list', 'items' => $items, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+        return view('admin.presensi.index', ['title' => 'Presensi | Admin GenBI', 'cmsPage' => 'presensi', 'cmsMode' => 'list', 'items' => $items, 'filters' => $filters, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260730a"></script>']);
     }
 
     public function presensiForm(Request $request, bool $isEdit = false)
     {
         $event = $isEdit ? PresensiEvent::with('members')->withCount('members')->findOrFail((int) $request->query('id')) : null;
-        return view('admin.presensi.form', ['title' => ($isEdit ? 'Edit' : 'Add') . ' Presensi | Admin GenBI', 'cmsPage' => $isEdit ? 'presensi-edit' : 'presensi-add', 'cmsMode' => 'editor', 'isEdit' => $isEdit, 'item' => $event ? $this->mapPresensiEvent($event, true) : null, 'scripts' => '<script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+        return view('admin.presensi.form', ['title' => ($isEdit ? 'Edit' : 'Add') . ' Presensi | Admin GenBI', 'cmsPage' => $isEdit ? 'presensi-edit' : 'presensi-add', 'cmsMode' => 'editor', 'isEdit' => $isEdit, 'item' => $event ? $this->mapPresensiEvent($event, true) : null, 'scripts' => '<script defer src="/assets/js/dist/admin/presensi.js?v=20260730a"></script>']);
     }
 
     public function presensiDetail(Request $request)
     {
         $event = PresensiEvent::with(['members', 'submissions.member'])->withCount('members')->findOrFail((int) $request->query('id'));
-        return view('admin.presensi.show', ['title' => 'Detail Presensi | Admin GenBI', 'cmsPage' => 'presensi-detail', 'cmsMode' => 'detail', 'item' => $this->mapPresensiEvent($event, true), 'submissions' => $event->submissions->map(fn (PresensiSubmission $submission) => $this->mapPresensiSubmission($submission))->toArray(), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>']);
+        return view('admin.presensi.show', ['title' => 'Detail Presensi | Admin GenBI', 'cmsPage' => 'presensi-detail', 'cmsMode' => 'detail', 'item' => $this->mapPresensiEvent($event, true), 'submissions' => $event->submissions->map(fn (PresensiSubmission $submission) => $this->mapPresensiSubmission($submission))->toArray(), 'scripts' => '<script defer src="/assets/js/dist/lib/qr-creator.min.js"></script><script defer src="/assets/js/dist/admin/presensi.js?v=20260730a"></script>']);
     }
 
     public function genbiPoinIndex(Request $request)
@@ -388,8 +388,8 @@ HTML;
             'category' => $prestasi->category ?? '', 'year' => $prestasi->year ?? '',
             'institution' => $prestasi->institution ?? '', 'description' => $prestasi->description ?? '',
             'status' => $prestasi->status ?? 'draft',
-            'image' => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
-            'photo' => $photo ? url('/uploads/' . ltrim($photo, '/')) : '',
+            'image' => $prestasi->resolveImageUrl($photo),
+            'photo' => $prestasi->resolveImageUrl($photo),
             'meta_title' => $prestasi->meta_title ?? '', 'meta_keyword' => $prestasi->meta_keyword ?? '',
             'meta_description' => $prestasi->meta_description ?? '',
         ];

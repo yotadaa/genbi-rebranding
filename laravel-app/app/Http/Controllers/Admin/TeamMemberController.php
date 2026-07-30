@@ -7,6 +7,7 @@ use App\Models\TeamMember;
 use App\Models\Divisi;
 use App\Models\Komsat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TeamMemberController extends Controller
 {
@@ -50,7 +51,7 @@ class TeamMemberController extends Controller
         $campus   = $request->input('campus', '');
         $year     = $request->input('year', '');
 
-        $query = TeamMember::with(['divisiRelation', 'komsatRelation']);
+        $query = TeamMember::with(['divisiRelation', 'komsatRelation'])->activeDirectory();
 
         if ($q !== '') {
             $query->where(function ($qb) use ($q) {
@@ -245,6 +246,14 @@ class TeamMemberController extends Controller
             TeamMember::whereIn('id', $request->input('ids'))->update(['show_on_home' => 1]);
             return response()->json(['success' => true, 'message' => 'Anggota ditampilkan di beranda.']);
         }
+        if ($action === 'alumni') {
+            $affected = $this->setAlumniStatus($request->input('ids'));
+            return response()->json([
+                'success' => true,
+                'message' => $affected . ' anggota dijadikan alumni.',
+                'data' => ['affected' => $affected, 'action' => 'alumni'],
+            ]);
+        }
         return response()->json(['success' => false, 'message' => 'Aksi tidak dikenal.'], 422);
     }
 
@@ -266,10 +275,14 @@ class TeamMemberController extends Controller
      */
     public function alumni($id)
     {
-        // The teams table doesn't have is_alumni; we'll handle gracefully
         $member = TeamMember::findOrFail($id);
-        // Mark as alumni by clearing tahun or setting designation
-        return response()->json(['success' => true, 'message' => 'Status alumni diperbarui.', 'data' => ['id' => $member->id]]);
+        $affected = $this->setAlumniStatus([$member->id]);
+
+        if ($affected < 1 && !str_contains(strtolower((string) $member->komsat), 'alumni')) {
+            return response()->json(['success' => false, 'message' => 'Gagal menjadikan anggota alumni.'], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Anggota dijadikan alumni.', 'data' => ['id' => $member->id, 'alumni' => true]]);
     }
 
     /**
@@ -289,5 +302,31 @@ class TeamMemberController extends Controller
             'data'    => ['url' => url('/uploads/team/' . $filename)],
             'file'    => ['url' => url('/uploads/team/' . $filename)],
         ]);
+    }
+
+    /** Move members to the dedicated Alumni commission using the legacy schema. */
+    private function setAlumniStatus(array $ids): int
+    {
+        $ids = collect($ids)->map(fn ($id) => (int) $id)->filter(fn (int $id) => $id > 0)->unique()->values()->all();
+        if ($ids === []) return 0;
+
+        try {
+            $alumniId = DB::table('komsats')
+                ->whereRaw('LOWER(nama) = ? OR LOWER(nama) LIKE ?', ['alumni', '%alumni%'])
+                ->orderByRaw("CASE WHEN LOWER(nama) = 'alumni' THEN 0 ELSE 1 END")
+                ->orderBy('id')
+                ->value('id');
+            if (!$alumniId) {
+                $alumniId = DB::table('komsats')->insertGetId(['nama' => 'Alumni']);
+            }
+
+            return TeamMember::whereIn('id', $ids)->update([
+                'komsat_id' => $alumniId,
+                'komsat' => 'Alumni',
+                'show_on_home' => false,
+            ]);
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 }

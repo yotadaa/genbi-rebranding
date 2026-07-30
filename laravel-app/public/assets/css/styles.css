@@ -5464,6 +5464,35 @@ input[type="file"].config-input::file-selector-button:hover {
   width: 5.5rem;
 }
 
+/* Fixed role columns keep the edit fields aligned with their headers. */
+.presensi-role-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.presensi-role-table .presensi-role-col-name { width: 54%; }
+.presensi-role-table .presensi-role-col-score { width: 24%; }
+.presensi-role-table .presensi-role-col-actions { width: 22%; }
+
+.presensi-role-table th,
+.presensi-role-table td {
+  padding-right: 0.9rem;
+}
+
+.presensi-role-table .presensi-role-edit-input,
+.presensi-role-table .presensi-role-score-edit-input,
+.presensi-role-table .presensi-role-score-edit-input:disabled {
+  width: 100%;
+  min-width: 0;
+}
+
+.presensi-role-table .presensi-role-actions-cell {
+  padding-right: 1.2rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .presensi-icon-btn {
   display: inline-grid;
   place-items: center;
@@ -7388,6 +7417,49 @@ input[type="file"].config-input::file-selector-button:hover {
   border: 1px solid rgb(47 111 169 / 0.10);
   object-fit: cover;
   background: rgb(245 247 250);
+}
+
+/* Keep the legacy Prestasi table readable; scroll rather than compressing data. */
+.admin-data-table-prestasi {
+  min-width: 77rem;
+}
+
+.admin-data-table-prestasi .prestasi-col-number { width: 4.5rem; }
+.admin-data-table-prestasi .prestasi-col-title { width: 23rem; }
+.admin-data-table-prestasi .prestasi-col-member { width: 10.5rem; }
+.admin-data-table-prestasi .prestasi-col-category { width: 10rem; }
+.admin-data-table-prestasi .prestasi-col-year { width: 5.5rem; }
+.admin-data-table-prestasi .prestasi-col-institution { width: 12.5rem; }
+.admin-data-table-prestasi .prestasi-col-status { width: 8.5rem; }
+.admin-data-table-prestasi .prestasi-col-actions { width: 11.5rem; }
+
+.admin-data-table-prestasi .admin-table-media {
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+.admin-data-table-prestasi .table-thumb,
+.admin-data-table-prestasi .admin-thumb-placeholder {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  height: 4.25rem;
+}
+
+.admin-data-table-prestasi .admin-table-title strong {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.admin-data-table-prestasi .admin-table-title p {
+  display: -webkit-box;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 
 .admin-table-actions .btn.btn-secondary,
