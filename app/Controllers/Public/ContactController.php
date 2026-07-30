@@ -54,7 +54,7 @@ final class ContactController
             'jsonld' => $jsonld,
             'contact' => $contact,
             'site' => $this->siteSettings?->site() ?? [],
-            'scripts' => '<script defer src="/assets/js/dist/pages/contact.js?v=20260508f"></script>',
+            'scripts' => '<script defer src="/assets/js/pages/contact.js"></script>',
         ]));
     }
 }

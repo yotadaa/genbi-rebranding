@@ -77,7 +77,7 @@ class PrestasiController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-prestasi',
-                'scripts' => '<script defer src="/assets/js/dist/pages/prestasi.js"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/prestasi.js"></script>',
             ]);
             $response->html($html);
             return;
@@ -130,7 +130,7 @@ class PrestasiController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-prestasi-detail',
-                'scripts' => '<script defer src="/assets/js/dist/pages/prestasi-detail.js?v=20260519k"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/prestasi-detail.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;
@@ -150,6 +150,27 @@ class PrestasiController
                 return;
             }
             $response->json(['data' => ['valid' => true, 'label' => $valid['label']]]);
+            return;
+        }
+
+        $valid = $this->tokenModel?->validateToken($token);
+        if (!is_array($valid)) {
+            ErrorHandler::render($response, 403, 'Token tidak valid', 'Token pengajuan prestasi tidak valid, sudah kedaluwarsa, dicabut, atau sudah digunakan.');
+            return;
+        }
+
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $years = range((int) date('Y'), (int) date('Y') - 9);
+            $html = $this->viewRenderer->renderWithLayout('public/prestasi/submit.php', 'layouts/public.php', [
+                'token' => $token,
+                'tokenLabel' => (string) ($valid['label'] ?? ''),
+                'years' => $years,
+                'csrfToken' => CsrfService::token(),
+                'meta' => '<title>Pengajuan Prestasi | GenBI Provinsi Jambi</title><meta name="robots" content="noindex, nofollow">',
+                'bodyClass' => 'page-prestasi-submit page-ready',
+                'scripts' => '<script defer src="/assets/js/pages/prestasi-submit.js"></script>',
+            ]);
+            $response->html($html, 200, ['X-Robots-Tag' => 'noindex, nofollow']);
             return;
         }
 

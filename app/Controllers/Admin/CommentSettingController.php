@@ -6,7 +6,9 @@ namespace App\Controllers\Admin;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\ViewRenderer;
 use App\Models\Setting;
+use App\Services\CsrfService;
 
 final class CommentSettingController
 {
@@ -22,20 +24,29 @@ final class CommentSettingController
         'comments.vote_rate_limit_per_ip_per_15min' => 'int',
     ];
 
-    public function __construct(private ?Setting $settings = null)
+    public function __construct(private ?Setting $settings = null, private ?ViewRenderer $viewRenderer = null)
     {
     }
 
     public function show(Request $request, Response $response): void
     {
-        if (!$this->settings instanceof Setting) {
-            $response->json(['data' => $this->defaults()]);
-            return;
+        $data = $this->defaults();
+        if ($this->settings instanceof Setting) {
+            foreach (array_keys(self::ALLOWED_KEYS) as $key) {
+                $data[$key] = $this->settings->get($key, $data[$key]);
+            }
         }
 
-        $data = $this->defaults();
-        foreach (array_keys(self::ALLOWED_KEYS) as $key) {
-            $data[$key] = $this->settings->get($key, $data[$key]);
+        if (!$request->acceptsJson() && $this->viewRenderer instanceof ViewRenderer) {
+            $response->html($this->viewRenderer->renderWithLayout('admin/comment-setting/index.php', 'layouts/admin.php', [
+                'title' => 'Comment Settings | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'comment-setting',
+                'cmsMode' => 'list',
+                'settingsData' => $data,
+                'scripts' => '<script defer src="/assets/js/admin/cms.js"></script>',
+            ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
+            return;
         }
 
         $response->json(['data' => $data]);

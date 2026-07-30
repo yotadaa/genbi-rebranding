@@ -56,7 +56,9 @@ if (in_array($basename, $staticFiles, true) && is_file(__DIR__ . '/' . $basename
 }
 
 if (str_starts_with($path, '/assets/')) {
-    $assetPath = realpath(__DIR__ . $path) ?: realpath(dirname(__DIR__) . $path);
+    // CSS source lives at the project asset root; prefer it over old mirrored
+    // public copies so File Manager updates take effect without a build/copy step.
+    $assetPath = realpath(dirname(__DIR__) . $path) ?: realpath(__DIR__ . $path);
     $assetRoot = realpath(__DIR__ . '/assets');
     $legacyAssetRoot = realpath(dirname(__DIR__) . '/assets');
 
@@ -77,7 +79,9 @@ if (str_starts_with($path, '/assets/')) {
         ];
         $extension = strtolower(pathinfo($assetPath, PATHINFO_EXTENSION));
         header('Content-Type: ' . ($types[$extension] ?? 'application/octet-stream'));
-        header('Cache-Control: public, max-age=3600');
+        // Source assets are deployed directly. Revalidate them so a CSS/JS upload is
+        // visible without generating a new minified bundle or manually changing a hash.
+        header('Cache-Control: no-cache, must-revalidate');
         readfile($assetPath);
         return;
     }

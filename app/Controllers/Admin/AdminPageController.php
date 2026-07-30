@@ -10,11 +10,16 @@ use App\Core\Response;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Models\Category;
 use App\Models\Feature;
+use App\Models\Event;
 use App\Models\GenBIPoint;
+use App\Models\NewsComment;
+use App\Models\PhotoGallery;
 use App\Models\PresensiEvent;
 use App\Models\PresensiSubmission;
 use App\Models\Prestasi;
+use App\Models\PrestasiToken;
 use App\Models\TeamMember;
 use App\Services\CsrfService;
 use App\Services\SiteSettings;
@@ -32,28 +37,25 @@ final class AdminPageController
         private ?PresensiEvent $presensiEventModel = null,
         private ?PresensiSubmission $presensiSubmissionModel = null,
         private ?GenBIPoint $genbiPointModel = null,
+        private ?Event $eventModel = null,
+        private ?Category $categoryModel = null,
+        private ?NewsComment $commentModel = null,
+        private ?PhotoGallery $photoGalleryModel = null,
+        private ?PrestasiToken $prestasiTokenModel = null,
     ) {
     }
 
     public function dashboard(Request $request, Response $response): void
     {
-        if ($this->viewRenderer instanceof ViewRenderer && $this->siteSettings instanceof SiteSettings) {
-            $extracted = $this->renderer->extractAdminPage('admin/dashboard.html', [
-                'noindex' => true,
-                'csrf_token' => CsrfService::token(),
-            ]);
-
-            if (is_array($extracted)) {
-                $response->html($this->viewRenderer->renderWithLayout('admin/static-shell.php', 'layouts/admin.php', [
-                    'title' => $extracted['title'],
-                    'csrfToken' => CsrfService::token(),
-                    'cmsPage' => $extracted['cmsPage'] ?: 'dashboard',
-                    'cmsMode' => $extracted['cmsMode'] ?: 'list',
-                    'staticContent' => $extracted['content'],
-                    'scripts' => $extracted['scripts'],
-                ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
-                return;
-            }
+        if ($this->viewRenderer instanceof ViewRenderer) {
+            $response->html($this->viewRenderer->renderWithLayout('admin/dashboard/index.php', 'layouts/admin.php', [
+                'title' => 'Dashboard | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'dashboard',
+                'cmsMode' => 'list',
+                'scripts' => '',
+            ]), 200, ['X-Robots-Tag' => 'noindex, nofollow']);
+            return;
         }
 
         $response->html($this->renderer->render('admin/dashboard.html', [
@@ -72,9 +74,9 @@ final class AdminPageController
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>
+<script defer src="/assets/js/admin/cms.js"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
+        $cmsScript = '<script defer src="/assets/js/admin/cms.js"></script>';
 
         if ($page === 'news') {
             $pg = Paginator::resolve([
@@ -158,10 +160,26 @@ HTML;
         return null;
     }
 
-    private function renderAdminTeamSsr(Request $request): ?string
+    private function renderAdminTeamSsr(string $page, Request $request): ?string
     {
         if (!$this->teamModel) {
             return null;
+        }
+
+        if ($page === 'team-member-add' || $page === 'team-member-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $page === 'team-member-edit' && $id > 0 ? $this->teamModel->findById($id) : null;
+            $options = $this->teamModel->formOptions();
+            return $this->viewRenderer->renderWithLayout('admin/team/form.php', 'layouts/admin.php', [
+                'title' => ($page === 'team-member-edit' ? 'Edit Team Member' : 'Add Team Member') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'team',
+                'cmsMode' => 'editor',
+                'isEdit' => $page === 'team-member-edit',
+                'item' => $item,
+                'options' => $options,
+                'scripts' => '<script defer src="/assets/js/admin/cms.js"></script>',
+            ]);
         }
 
         $pg = Paginator::resolve([
@@ -193,7 +211,7 @@ HTML;
             'filters' => $filters,
             'filterOptions' => $filterOptions,
             'layout' => $layout,
-            'scripts' => '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>',
+            'scripts' => '<script defer src="/assets/js/admin/cms.js"></script>',
         ]);
     }
 
@@ -209,9 +227,9 @@ HTML;
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
-<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>
+<script defer src="/assets/js/admin/cms.js"></script>
 HTML;
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
+        $cmsScript = '<script defer src="/assets/js/admin/cms.js"></script>';
 
         if ($page === 'prestasi') {
             $pg = Paginator::resolve([
@@ -278,7 +296,7 @@ HTML;
             return null;
         }
 
-        $cmsScript = '<script defer src="/assets/js/dist/admin/cms.js?v=20260617a"></script>';
+        $cmsScript = '<script defer src="/assets/js/admin/cms.js"></script>';
 
         if ($page === 'feature') {
             $pg = Paginator::resolve([
@@ -332,8 +350,8 @@ HTML;
             return null;
         }
 
-        $script = '<script defer src="/assets/js/dist/lib/qr-creator.min.js?v=20260616g"></script>' . PHP_EOL
-            . '<script defer src="/assets/js/dist/admin/presensi.js?v=20260617a"></script>';
+        $script = '<script defer src="/assets/js/lib/qr-creator.min.js"></script>' . PHP_EOL
+            . '<script defer src="/assets/js/admin/presensi.js"></script>';
 
         if ($page === 'presensi') {
             $pg = Paginator::resolve([
@@ -403,7 +421,7 @@ HTML;
             return null;
         }
 
-        $script = '<script defer src="/assets/js/dist/admin/genbi-point.js?v=20260617a"></script>';
+        $script = '<script defer src="/assets/js/admin/genbi-point.js"></script>';
 
         if ($page === 'genbi-poin') {
             $pg = Paginator::resolve([
@@ -474,6 +492,191 @@ HTML;
         return null;
     }
 
+    private function renderAdminEventSsr(string $page, Request $request): ?string
+    {
+        if (!$this->eventModel) {
+            return null;
+        }
+
+        $editorScripts = <<<'HTML'
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
+<script defer src="/assets/js/admin/cms.js"></script>
+HTML;
+
+        if ($page === 'event') {
+            $query = trim((string) ($request->query('q') ?? ''));
+            $items = $this->eventModel->allForAdmin(100, 0);
+            if ($query !== '') {
+                $needle = mb_strtolower($query);
+                $items = array_values(array_filter($items, static function (array $item) use ($needle): bool {
+                    return str_contains(mb_strtolower(implode(' ', [
+                        (string) ($item['title'] ?? ''),
+                        (string) ($item['excerpt'] ?? ''),
+                        (string) ($item['location'] ?? ''),
+                    ])), $needle);
+                }));
+            }
+
+            return $this->viewRenderer->renderWithLayout('admin/event/index.php', 'layouts/admin.php', [
+                'title' => 'Agenda | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'event',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'query' => $query,
+                'scripts' => '<script defer src="/assets/js/admin/cms.js"></script>',
+            ]);
+        }
+
+        if ($page === 'event-add' || $page === 'event-edit') {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = $page === 'event-edit' && $id > 0 ? $this->eventModel->findById($id) : null;
+            return $this->viewRenderer->renderWithLayout('admin/event/form.php', 'layouts/admin.php', [
+                'title' => ($page === 'event-edit' ? 'Edit Agenda' : 'Add Agenda') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => $page === 'event-edit' ? 'event-edit' : 'event',
+                'cmsMode' => 'editor',
+                'isEdit' => $page === 'event-edit',
+                'item' => $item,
+                'scripts' => $editorScripts,
+            ]);
+        }
+
+        return null;
+    }
+
+    private function renderAdminContentSsr(string $page, Request $request): ?string
+    {
+        $script = '<script defer src="/assets/js/admin/cms.js"></script>';
+
+        if ($page === 'category' && $this->categoryModel) {
+            return $this->viewRenderer->renderWithLayout('admin/category/index.php', 'layouts/admin.php', [
+                'title' => 'Kategori Berita | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'category',
+                'cmsMode' => 'list',
+                'items' => $this->categoryModel->all(),
+                'scripts' => $script,
+            ]);
+        }
+
+        if ($page === 'comment' && $this->commentModel) {
+            $status = strtolower(trim((string) ($request->query('status') ?? '')));
+            $allowed = ['pending', 'approved', 'rejected', 'flagged'];
+            $status = in_array($status, $allowed, true) ? $status : '';
+            $query = trim((string) ($request->query('q') ?? ''));
+            $items = $this->commentModel->paginateForAdmin(['status' => $status], 100);
+            if ($query !== '') {
+                $needle = mb_strtolower($query);
+                $items = array_values(array_filter($items, static function (array $item) use ($needle): bool {
+                    return str_contains(mb_strtolower((string) ($item['name'] ?? '')), $needle)
+                        || str_contains(mb_strtolower((string) ($item['email'] ?? '')), $needle)
+                        || str_contains(mb_strtolower((string) ($item['content'] ?? '')), $needle)
+                        || str_contains(mb_strtolower((string) ($item['article'] ?? '')), $needle);
+                }));
+            }
+
+            $counts = ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'flagged' => 0];
+            foreach ($this->commentModel->paginateForAdmin([], 100) as $comment) {
+                $key = strtolower((string) ($comment['status'] ?? 'pending'));
+                if (array_key_exists($key, $counts)) {
+                    $counts[$key]++;
+                }
+            }
+
+            return $this->viewRenderer->renderWithLayout('admin/comment/index.php', 'layouts/admin.php', [
+                'title' => 'Moderasi Komentar | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'comment',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'counts' => $counts,
+                'filters' => ['status' => $status, 'q' => $query],
+                'scripts' => $script,
+            ]);
+        }
+
+        if (in_array($page, ['photo', 'photo-add'], true) && $this->photoGalleryModel) {
+            if ($page === 'photo-add') {
+                $id = (int) ($request->query('id') ?? 0);
+                return $this->viewRenderer->renderWithLayout('admin/photo/form.php', 'layouts/admin.php', [
+                    'title' => ($id > 0 ? 'Edit Photo' : 'Add Photo') . ' | Admin GenBI',
+                    'csrfToken' => CsrfService::token(),
+                    'cmsPage' => 'photo',
+                    'cmsMode' => 'editor',
+                    'item' => $id > 0 ? $this->photoGalleryModel->find($id) : null,
+                    'scripts' => $script,
+                ]);
+            }
+
+            return $this->viewRenderer->renderWithLayout('admin/photo/index.php', 'layouts/admin.php', [
+                'title' => 'Galeri Foto | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'photo',
+                'cmsMode' => 'list',
+                'items' => $this->photoGalleryModel->all(),
+                'scripts' => $script,
+            ]);
+        }
+
+        if ($page === 'prestasi-token' && $this->prestasiTokenModel) {
+            return $this->viewRenderer->renderWithLayout('admin/prestasi-token/index.php', 'layouts/admin.php', [
+                'title' => 'Token Prestasi | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'prestasi-token',
+                'cmsMode' => 'list',
+                'items' => $this->prestasiTokenModel->all(),
+                'scripts' => $script,
+            ]);
+        }
+
+        return null;
+    }
+
+    private function renderAdminPrototypeSsr(string $page, Request $request): ?string
+    {
+        $supported = [
+            'language', 'slider', 'slider-add', 'why', 'why-choose', 'why_choose',
+            'why-choose-add', 'why_choose-add', 'faq', 'faq-add', 'social',
+            'social-media', 'social_media', 'page',
+        ];
+        if (!in_array($page, $supported, true)) {
+            return null;
+        }
+
+        return $this->viewRenderer->renderWithLayout('admin/prototype/index.php', 'layouts/admin.php', [
+            'title' => 'Admin ' . ucwords(str_replace(['-', '_'], ' ', $page)) . ' | GenBI',
+            'csrfToken' => CsrfService::token(),
+            'cmsPage' => match (true) {
+                str_starts_with($page, 'why') => 'why',
+                str_starts_with($page, 'social') => 'social',
+                str_starts_with($page, 'slider') => 'slider',
+                str_starts_with($page, 'faq') => 'faq',
+                default => $page,
+            },
+            'cmsMode' => str_ends_with($page, '-add') ? 'editor' : 'list',
+            'prototypePage' => $page,
+            'site' => $this->siteSettings?->site() ?? [],
+            'scripts' => '<script defer src="/assets/js/admin/cms.js"></script>',
+        ]);
+    }
+
+    private function renderAdminNoDataSsr(string $page): string
+    {
+        return $this->viewRenderer->renderWithLayout('admin/no-data.php', 'layouts/admin.php', [
+            'title' => 'Admin CMS | GenBI',
+            'csrfToken' => CsrfService::token(),
+            'cmsPage' => $page,
+            'cmsMode' => 'list',
+            'pageLabel' => ucwords(str_replace(['-', '_'], ' ', $page)),
+            'scripts' => '',
+        ]);
+    }
+
     /** @param array{page?: string} $params */
     public function show(Request $request, Response $response, array $params): void
     {
@@ -482,8 +685,8 @@ HTML;
         // SSR for admin pages
         if ($this->viewRenderer instanceof ViewRenderer) {
             $ssrHtml = $this->renderAdminNewsSsr($page, $request);
-            if ($ssrHtml === null && $page === 'team-member') {
-                $ssrHtml = $this->renderAdminTeamSsr($request);
+            if ($ssrHtml === null && in_array($page, ['team-member', 'team-member-add', 'team-member-edit'], true)) {
+                $ssrHtml = $this->renderAdminTeamSsr($page, $request);
             }
             if ($ssrHtml === null && in_array($page, ['prestasi', 'prestasi-add', 'prestasi-edit'], true)) {
                 $ssrHtml = $this->renderAdminPrestasiSsr($page, $request);
@@ -494,8 +697,28 @@ HTML;
             if ($ssrHtml === null && in_array($page, ['genbi-poin', 'genbi-poin-add', 'genbi-poin-edit', 'genbi-poin-detail'], true)) {
                 $ssrHtml = $this->renderAdminGenBIPoinSsr($page, $request);
             }
+            if ($ssrHtml === null && in_array($page, ['event', 'event-add', 'event-edit'], true)) {
+                $ssrHtml = $this->renderAdminEventSsr($page, $request);
+            }
             if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
                 $ssrHtml = $this->renderAdminFeatureSsr($page, $request);
+            }
+            if ($ssrHtml === null && in_array($page, ['category', 'comment', 'photo', 'photo-add', 'prestasi-token'], true)) {
+                $ssrHtml = $this->renderAdminContentSsr($page, $request);
+            }
+            if ($ssrHtml === null) {
+                $ssrHtml = $this->renderAdminPrototypeSsr($page, $request);
+            }
+            // A temporary database outage must not silently turn a clean admin
+            // route back into an empty client-rendered fallback page.
+            if ($ssrHtml === null && in_array($page, [
+                'news', 'news-add', 'news-edit', 'team-member', 'team-member-add', 'team-member-edit',
+                'prestasi', 'prestasi-add', 'prestasi-edit', 'presensi', 'presensi-add', 'presensi-edit',
+                'presensi-detail', 'genbi-poin', 'genbi-poin-add', 'genbi-poin-edit', 'genbi-poin-detail',
+                'event', 'event-add', 'event-edit', 'feature', 'feature-add', 'feature-edit',
+                'category', 'comment', 'photo', 'photo-add', 'prestasi-token',
+            ], true)) {
+                $ssrHtml = $this->renderAdminNoDataSsr($page);
             }
             if ($ssrHtml !== null) {
                 $response->html($ssrHtml, 200, ['X-Robots-Tag' => 'noindex, nofollow']);

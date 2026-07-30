@@ -69,7 +69,7 @@ final class EventController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-event',
-                'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/event.js"></script>',
             ]);
             $response->html($html);
             return;
@@ -151,7 +151,7 @@ final class EventController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-event-detail',
-                'scripts' => '<script defer src="/assets/js/dist/pages/event.js"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/event.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;

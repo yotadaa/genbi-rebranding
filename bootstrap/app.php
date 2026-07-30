@@ -165,7 +165,7 @@ $authController = new AuthController($authService, $loginThrottle);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
 $roleMiddleware = new RoleMiddleware(['superadmin', 'admin']);
-$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel, $siteSettings, $presensiEventModel, $presensiSubmissionModel, $genbiPointModel);
+$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel, $siteSettings, $presensiEventModel, $presensiSubmissionModel, $genbiPointModel, $eventModel, $categoryModel, $commentModel, $photoGalleryModel, $tokenModel);
 $adminEventController = new AdminEventController($eventModel);
 $adminNewsController = new AdminNewsController($newsModel);
 $adminCategoryController = new AdminCategoryController($categoryModel);
@@ -177,7 +177,7 @@ $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
 $adminTeamMemberController = new AdminTeamMemberController($teamModel);
 $adminFeatureController = new \App\Controllers\Admin\FeatureController($featureModel);
 $adminContactSettingController = new \App\Controllers\Admin\ContactSettingController($contactSettingModel);
-$adminCommentSettingController = new CommentSettingController($settingModel);
+$adminCommentSettingController = new CommentSettingController($settingModel, $viewRenderer);
 $adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
 $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryModel);
 

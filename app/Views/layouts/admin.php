@@ -19,12 +19,11 @@ $content = $content ?? '';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap">
-  <link rel="stylesheet" href="/assets/css/tailwind.css?v=20260616g">
-  <link rel="stylesheet" href="/assets/css/theme.css?v=20260517a">
-  <link rel="stylesheet" href="/assets/css/styles.min.css?v=20260617a">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/assets/css/styles.css">
   <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
-<body class="admin-body" data-cms-page="<?= $e($cmsPage ?? '') ?>" data-cms-mode="<?= $e($cmsMode ?? '') ?>">
+<body class="admin-body" data-ssr="true" data-cms-page="<?= $e($cmsPage ?? '') ?>" data-cms-mode="<?= $e($cmsMode ?? '') ?>">
   <div class="admin-shell">
     <aside id="admin-sidebar" class="admin-sidebar"></aside>
     <div class="admin-main">
@@ -38,12 +37,12 @@ $content = $content ?? '';
   <div id="admin-toast" class="admin-toast rounded-2xl bg-blue-950 px-5 py-4 text-sm font-semibold text-white shadow-2xl">Perubahan disimpan.</div>
   <div id="admin-modal-root"></div>
   <script>window.GenBISiteSettings = <?= $settingsJson ?>;</script>
-  <script defer src="/assets/js/dist/data.js?v=20260616g"></script>
-  <script defer src="/assets/js/dist/api-core.js?v=20260617a"></script>
-  <script defer src="/assets/js/dist/api.js?v=20260616g"></script>
-  <script defer src="/assets/js/dist/app.js?v=20260616g"></script>
-  <script defer src="/assets/js/dist/lib/ui.js?v=20260616g"></script>
-  <script defer src="/assets/js/dist/admin/admin.js?v=20260616g"></script>
+  <script defer src="/assets/js/data.js"></script>
+  <script defer src="/assets/js/api-core.js"></script>
+  <script defer src="/assets/js/api.js"></script>
+  <script defer src="/assets/js/app.js"></script>
+  <script defer src="/assets/js/lib/ui.js"></script>
+  <script defer src="/assets/js/admin/admin.js"></script>
   <?= $scripts ?? '' ?>
 </body>
 </html>

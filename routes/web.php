@@ -45,6 +45,7 @@ $router->get('/event', static fn(Request $request, Response $response) => $event
 $router->get('/event/{slug}', static fn(Request $request, Response $response, array $params) => $eventController->show($request, $response, $params));
 $router->get('/contact', static fn(Request $request, Response $response) => $contactController->index($request, $response));
 $router->get('/news', static fn(Request $request, Response $response) => $newsController->index($request, $response));
+$router->get('/news/view/{id}', static fn(Request $request, Response $response, array $params) => $newsController->legacyShow($request, $response, $params));
 $router->get('/news/id/{id}', static fn(Request $request, Response $response, array $params) => $newsController->legacyShow($request, $response, $params));
 $router->get('/news/{slug}/comments', static fn(Request $request, Response $response, array $params) => $commentController->index($request, $response, $params));
 $router->get('/news/{slug}', static fn(Request $request, Response $response, array $params) => $newsController->show($request, $response, $params));

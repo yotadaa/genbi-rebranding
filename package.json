@@ -13,9 +13,11 @@
     "watch:css": "tailwindcss -c tailwind.config.js -i ./assets/css/input.css -o ./assets/css/tailwind.css --watch",
     "watch:js": "nodemon --watch public/assets/js --ignore public/assets/js/dist --watch public/assets/css/styles.css -e js,css --exec \"npm run build:js\"",
     "watch:themes": "nodemon --watch app/Config/ThemeRegistry.php --exec \"npm run build:themes\"",
-    "dev": "concurrently \"npm run watch:css\" \"npm run watch:js\" \"npm run watch:themes\" \"npm run serve:php\"",
+    "dev": "npm run serve:php",
+    "dev:legacy-build-watch": "concurrently \"npm run watch:css\" \"npm run watch:js\" \"npm run watch:themes\" \"npm run serve:php\"",
     "test": "node --test && node tools/check-theme-contrast.js",
-    "serve": "node tools/static-server.js",
+    "serve": "php -S 127.0.0.1:8120 -t public public/index.php",
+    "serve:static-fallback": "node tools/static-server.js",
     "serve:php": "php -S 127.0.0.1:8120 -t public public/index.php",
     "serve:php:hot": "php -S 0.0.0.0:8120 -t public public/index.php"
   },
