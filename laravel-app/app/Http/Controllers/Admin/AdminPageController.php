@@ -472,7 +472,7 @@ HTML;
             $scripts = array_map(function ($script) {
                 $script = str_replace(
                     ['../assets/js/admin/cms.js', '/assets/js/admin/cms.js'],
-                    '/assets/js/dist/admin/cms.js?v=20260617a',
+                    '/assets/js/dist/admin/cms.js?v=20260730b',
                     $script
                 );
                 $script = str_replace(

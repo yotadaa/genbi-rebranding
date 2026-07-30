@@ -58,7 +58,7 @@ class FeatureController extends Controller
     public function store(Request $request)
     {
         $payload = $this->payload($request, true);
-        $images = $payload['images'];
+        $images = $payload['images'] ?? [];
         unset($payload['images']);
 
         $feature = DB::transaction(function () use ($payload, $images) {

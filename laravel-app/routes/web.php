@@ -28,6 +28,8 @@ use App\Http\Controllers\Admin\ContactSettingController;
 use App\Http\Controllers\Admin\CommentSettingController;
 use App\Http\Controllers\Admin\PhotoGalleryController;
 use App\Http\Controllers\Admin\FeatureController;
+use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\SocialMediaController;
 use App\Http\Controllers\Admin\PresensiController as AdminPresensiController;
 use App\Http\Controllers\Admin\GenBIPointController;
 use App\Http\Controllers\Admin\PrestasiTokenController;
@@ -79,8 +81,14 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::get('/news/edit', [AdminPageController::class, 'newsEdit'])->name('news.edit');
     Route::get('/news-add', [AdminPageController::class, 'newsAdd'])->name('newsAdd');
     Route::get('/news-edit', [AdminPageController::class, 'newsEdit'])->name('newsEdit');
+    Route::get('/feature', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'feature'))->name('feature');
+    Route::get('/feature-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'feature-add'))->name('feature.add');
     // The legacy feature editor reuses feature-add.html; the CMS links to this edit alias after create.
     Route::get('/feature-edit', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'feature-add'))->name('feature.edit');
+    Route::get('/faq', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'faq'))->name('faq');
+    Route::get('/faq-add', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'faq-add'))->name('faq.add');
+    Route::get('/social-media', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'social-media'))->name('social');
+    Route::get('/social_media', fn (\Illuminate\Http\Request $request) => app(AdminPageController::class)->show($request, 'social_media'))->name('social.legacy');
 
     // Legacy-layout CMS screens rendered server-side, then hydrated by cms.js.
     Route::get('/prestasi', [AdminPageController::class, 'prestasiIndex'])->name('prestasi');
@@ -183,6 +191,17 @@ Route::middleware(['auth', 'admin.role'])->prefix('admin')->name('admin.')->grou
     Route::post('/features/{id}/delete', [FeatureController::class, 'destroy']);
     Route::post('/features/{id}/images/reorder', [FeatureController::class, 'reorderImages']);
     Route::post('/features/{id}/images/{imageId}/delete', [FeatureController::class, 'deleteImage']);
+
+    // FAQs
+    Route::get('/faqs', [FaqController::class, 'index']);
+    Route::get('/faqs/{id}', [FaqController::class, 'show']);
+    Route::post('/faqs', [FaqController::class, 'store']);
+    Route::post('/faqs/{id}/update', [FaqController::class, 'update']);
+    Route::post('/faqs/{id}/delete', [FaqController::class, 'destroy']);
+
+    // Social Media
+    Route::get('/social-links', [SocialMediaController::class, 'index']);
+    Route::post('/social-links', [SocialMediaController::class, 'update']);
     
     // Presensi
     Route::get('/presensi', [AdminPageController::class, 'presensiIndex'])->name('presensi');

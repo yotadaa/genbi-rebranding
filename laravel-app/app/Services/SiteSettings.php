@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Models\Social;
+use Throwable;
 
 final class SiteSettings
 {
@@ -102,6 +104,7 @@ final class SiteSettings
             'footerRecentNewsCount' => max(1, (int) ($data['site.footer_recent_news_count'] ?? 3)),
             'videoResourceUrl' => (string) ($data['site.video_resource_url'] ?? ''),
             'baseUrl' => (string) ($data['site.base_url'] ?? ''),
+            'socials' => $this->socialLinks(),
             'heroSlides' => [
                 [
                     'image' => $bannerImage1,
@@ -222,6 +225,35 @@ final class SiteSettings
             'theme.admin_key' => 'genbi',
             'theme.custom_override_enabled' => false,
         ];
+    }
+
+    /** @return array<int, array{name:string,url:string,label:string}> */
+    private function socialLinks(): array
+    {
+        $channels = [
+            'YouTube' => ['url' => 'https://youtube.com/@genbijambi', 'label' => 'Yt'],
+            'Instagram' => ['url' => 'https://instagram.com/genbijambi', 'label' => 'Ig'],
+            'WhatsApp' => ['url' => 'https://wa.me/6289627896750', 'label' => 'Wa'],
+        ];
+
+        try {
+            $stored = Social::query()->get()->keyBy(fn (Social $social) => strtolower((string) $social->social_name));
+            foreach ($channels as $name => &$configuration) {
+                $social = $stored->get(strtolower($name));
+                if ($social) {
+                    $configuration['url'] = trim((string) $social->social_url);
+                }
+            }
+            unset($configuration);
+        } catch (Throwable) {
+            // Keep safe defaults when the legacy social table is unavailable.
+        }
+
+        return collect($channels)->map(fn (array $configuration, string $name) => [
+            'name' => $name,
+            'url' => $configuration['url'],
+            'label' => $configuration['label'],
+        ])->values()->all();
     }
 
     private function normalizeThemeKey(string $key): string

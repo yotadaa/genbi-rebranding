@@ -89,9 +89,30 @@ function mergeSiteSettings(base, override) {
     ...base,
     ...override,
     heroSlides: Array.isArray(override.heroSlides) && override.heroSlides.length ? override.heroSlides : base.heroSlides,
+    socials: Array.isArray(override.socials) ? override.socials : (base.socials || []),
     sidebar: { ...(base.sidebar || {}), ...(override.sidebar || {}) },
     colors: { ...(base.colors || {}), ...(override.colors || {}) },
   };
+}
+
+function escapeShellValue(value = '') {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[character]));
+}
+
+function renderSocialLinks() {
+  const links = Array.isArray(site.socials) ? site.socials : [];
+  return links
+    .filter((social) => String(social?.url || '').trim())
+    .map((social) => `
+      <a href="${escapeShellValue(social.url)}" class="social-mini" aria-label="${escapeShellValue(social.name || 'Social media')}" target="_blank" rel="noopener noreferrer">${escapeShellValue(social.label || social.name || '')}</a>
+    `)
+    .join('');
 }
 
 function renderHeader(activeKey) {
@@ -111,12 +132,7 @@ function renderHeader(activeKey) {
             <span class="h-4 w-px bg-white/30"></span>
             <a href="tel:${site.phone}" class="inline-flex items-center gap-2 hover:text-white">${icon('phone')}${site.phone}</a>
           </div>
-          <div class="flex items-center gap-3" aria-label="Social links">
-            <a href="#" class="social-mini">Fb</a>
-            <a href="#" class="social-mini">Ig</a>
-            <a href="#" class="social-mini">Yt</a>
-            <a href="#" class="social-mini">Wa</a>
-          </div>
+          <div class="flex items-center gap-3" aria-label="Social links">${renderSocialLinks()}</div>
         </div>
       </div>
       <header class="site-main-header border-b border-neutral-900/10 bg-[rgba(251,250,247,0.92)] backdrop-blur-xl">

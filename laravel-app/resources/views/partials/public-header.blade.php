@@ -4,6 +4,11 @@ $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
 $email = $site['email'] ?? 'genbijambibi@gmail.com';
 $phone = $site['phone'] ?? '089627896750';
+$socials = $site['socials'] ?? [
+    ['name' => 'Instagram', 'url' => 'https://instagram.com/genbijambi', 'label' => 'Ig'],
+    ['name' => 'YouTube', 'url' => 'https://youtube.com/@genbijambi', 'label' => 'Yt'],
+    ['name' => 'WhatsApp', 'url' => 'https://wa.me/6289627896750', 'label' => 'Wa'],
+];
 $navItems = [
     ['label' => 'Home', 'key' => 'home', 'href' => url('/')],
     ['label' => 'About', 'key' => 'about', 'href' => url('/about')],
@@ -27,10 +32,11 @@ $activeKey = $activeNav ?? '';
         <a href="tel:{{ $phone }}" class="inline-flex items-center gap-2 hover:text-white"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.28 6.72 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.37c0-.52-.36-.97-.86-1.1l-4.42-1.1a1.13 1.13 0 0 0-1.17.42l-.97 1.3a1.13 1.13 0 0 1-1.21.39 12.04 12.04 0 0 1-7.15-7.15 1.13 1.13 0 0 1 .39-1.21l1.3-.97c.36-.27.52-.73.42-1.17L6.98 3.61a1.13 1.13 0 0 0-1.1-.86H4.5A2.25 2.25 0 0 0 2.25 5v1.75Z"/></svg>{{ $phone }}</a>
       </div>
       <nav class="flex items-center gap-3" aria-label="Social links">
-        <a href="https://facebook.com/genbijambi" class="social-mini" aria-label="Facebook">Fb</a>
-        <a href="https://instagram.com/genbijambi" class="social-mini" aria-label="Instagram">Ig</a>
-        <a href="https://youtube.com/@genbijambi" class="social-mini" aria-label="YouTube">Yt</a>
-        <a href="https://wa.me/6289627896750" class="social-mini" aria-label="WhatsApp">Wa</a>
+        @foreach ($socials as $social)
+          @if (!empty($social['url']))
+            <a href="{{ $social['url'] }}" class="social-mini" aria-label="{{ $social['name'] }}" target="_blank" rel="noopener noreferrer">{{ $social['label'] }}</a>
+          @endif
+        @endforeach
       </nav>
     </div>
   </div>

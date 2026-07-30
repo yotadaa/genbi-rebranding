@@ -1571,7 +1571,7 @@
   }
 
 
-  function renderFeatureList() {
+  async function renderFeatureList() {
     const ssrList = document.querySelector('#admin-feature-list[data-ssr="true"]');
     if (ssrList) {
       enhanceAdminSelects(document.querySelector('#admin-content') || document);
@@ -1580,25 +1580,109 @@
       return;
     }
     const body = renderShell('Program Utama', 'Program utama tampil sebagai daftar editorial. Isi dapat dipindai tanpa visual yang ramai.', `<a href="${adminUrl('feature-add')}" class="btn btn-primary">Add Program Utama</a>`);
+    const state = { query: '', status: '', home: '', items: [] };
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('Program Utama')}
-        <div class="simple-card-grid mt-5">
-          ${programs.map((item) => `
-            <article class="simple-admin-card">
-              <div class="meta">${escape(item.focus)}</div>
-              <h2>${escape(item.title)} · ${escape(item.name)}</h2>
-              <p>${escape(item.description)}</p>
-              <div class="mt-4 flex gap-2">${rowActions('Program Utama')}</div>
-            </article>
-          `).join('')}
+        <div class="cms-toolbar">
+          <label class="cms-search">${Admin.icon('search')}<input id="feature-search" placeholder="Cari Program Utama..." autocomplete="off" /></label>
+          ${selectControl({ id: 'feature-status-filter', value: '', options: [{ value: '', label: 'Semua Status' }, { value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }, { value: 'archived', label: 'Archived' }] })}
+          ${selectControl({ id: 'feature-home-filter', value: '', options: [{ value: '', label: 'Semua Penempatan' }, { value: '1', label: 'Tampil di Beranda' }, { value: '0', label: 'Tidak di Beranda' }] })}
         </div>
+        <div id="feature-live-list" class="simple-card-grid mt-5"><div class="config-empty">Memuat Program Utama...</div></div>
       </section>
     `;
-    bindDeleteButtons('Program akan dihapus dari daftar simulasi.');
+    enhanceAdminSelects(body);
+
+    const list = document.querySelector('#feature-live-list');
+    const renderItems = () => {
+      if (!state.items.length) {
+        list.innerHTML = '<div class="config-empty">Belum ada Program Utama yang sesuai dengan filter.</div>';
+        return;
+      }
+      list.innerHTML = state.items.map((item) => {
+        const images = Array.isArray(item.images) ? item.images : [];
+        return `
+          <article class="simple-admin-card" data-feature-card="${item.id}">
+            <span class="program-icon" data-program-icon="${escape(item.icon_key || 'sparkles')}"></span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="cms-pill cms-pill-blue">${escape(item.status || 'draft')}</span>
+              <span class="cms-pill muted">${item.show_on_home ? 'Tampil di Beranda' : 'Tidak di Beranda'}</span>
+            </div>
+            <div class="meta">${escape(item.focus || 'Belum ada fokus')}</div>
+            <h2>${escape(item.title || 'Tanpa label')} · ${escape(item.name || 'Tanpa nama')}</h2>
+            <p>${escape(item.description || 'Belum ada deskripsi Program Utama.')}</p>
+            ${images.length ? `<div class="feature-image-microstack">${images.slice(0, 4).map((image) => `<img src="${escape(image.url || image.path || '')}" alt="" loading="lazy" />`).join('')}</div>` : ''}
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a class="cms-action edit" href="${adminUrl('feature-edit')}?id=${item.id}">Edit</a>
+              <button type="button" class="cms-action delete" data-delete-feature="${item.id}">Delete</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      hydrateFeatureIcons(list);
+      list.querySelectorAll('[data-delete-feature]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const id = Number(button.dataset.deleteFeature || 0);
+          const ok = await Admin.showConfirm({
+            title: 'Hapus Program Utama?',
+            message: 'Program akan diarsipkan dan tidak lagi tampil di halaman publik.',
+            confirmText: 'Hapus',
+            danger: true,
+          });
+          if (!ok) return;
+          const res = await fetch(route('admin.featureDelete', { id }), {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
+            credentials: 'same-origin',
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            Admin.showToast(json.error || json.message || 'Gagal menghapus Program Utama.');
+            return;
+          }
+          state.items = state.items.filter((item) => Number(item.id) !== id);
+          renderItems();
+          Admin.showToast('Program Utama berhasil dihapus.');
+        });
+      });
+    };
+
+    const load = async () => {
+      list.innerHTML = '<div class="config-empty">Memuat Program Utama...</div>';
+      const endpoint = Core.buildEndpoint(route('admin.features'), {
+        q: state.query,
+        status: state.status,
+        show_on_home: state.home,
+        per_page: 100,
+      });
+      const res = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        list.innerHTML = `<div class="config-empty">${escape(json.error || json.message || 'Gagal memuat Program Utama.')}</div>`;
+        return;
+      }
+      state.items = Array.isArray(json.data) ? json.data : [];
+      renderItems();
+    };
+
+    let searchTimer = 0;
+    document.querySelector('#feature-search')?.addEventListener('input', (event) => {
+      state.query = event.target.value.trim();
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(load, 250);
+    });
+    document.querySelector('#feature-status-filter')?.addEventListener('change', (event) => {
+      state.status = event.target.value;
+      load();
+    });
+    document.querySelector('#feature-home-filter')?.addEventListener('change', (event) => {
+      state.home = event.target.value;
+      load();
+    });
+    await load();
   }
 
-  function renderFeatureEditor() {
+  async function renderFeatureEditor() {
     const form = document.querySelector('#feature-editor-form[data-ssr="true"]');
     if (form) {
       enhanceAdminSelects(document.querySelector('#admin-content') || document);
@@ -1608,21 +1692,87 @@
       hydrateFeatureIcons(document.querySelector('#admin-content') || document);
       return;
     }
-    const body = renderShell('Add Program Utama', 'Tambah program dengan field besar dan tombol input custom.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
+    const id = Number(new URLSearchParams(window.location.search).get('id') || 0);
+    const isEdit = id > 0;
+    let item = {
+      id: 0, title: '', name: '', focus: '', description: '', icon_key: 'sparkles',
+      show_on_home: false, status: 'draft', sort_order: 0, images: [],
+    };
+    if (isEdit) {
+      const res = await fetch(route('admin.featureShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.data) {
+        const errorBody = renderShell('Edit Program Utama', 'Data Program Utama tidak dapat dimuat.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
+        errorBody.innerHTML = `<section class="admin-card p-8 text-center text-sm text-red-700">${escape(json.error || json.message || 'Program Utama tidak ditemukan.')}</section>`;
+        return;
+      }
+      item = { ...item, ...json.data, images: Array.isArray(json.data.images) ? json.data.images : [] };
+    }
+    const body = renderShell(isEdit ? 'Edit Program Utama' : 'Add Program Utama', 'Kelola identitas program, visibilitas, ikon, dan galeri dengan layout editorial lama.', `<a href="${adminUrl('feature')}" class="btn btn-secondary">View All</a>`);
+    const imageCards = item.images.map((image, index) => `
+      <article class="feature-image-card" data-image-id="${Number(image.id || 0)}" data-image-path="${escape(image.path || image.url || '')}">
+        <img src="${escape(image.url || image.path || '')}" alt="Preview Program Utama ${index + 1}" />
+        <div class="feature-image-card-meta">
+          <span>#${index + 1}</span>
+          <div class="flex gap-2">
+            <button type="button" class="feature-image-move" data-direction="up" aria-label="Geser ke atas">↑</button>
+            <button type="button" class="feature-image-move" data-direction="down" aria-label="Geser ke bawah">↓</button>
+            <button type="button" class="feature-image-remove" aria-label="Hapus gambar">Hapus</button>
+          </div>
+        </div>
+      </article>
+    `).join('');
     body.innerHTML = `
-      <form class="editor-workspace compact" id="feature-form">
-        <main class="block-writing-surface">
-          <div class="news-title-block" contenteditable="true" data-placeholder="Nama program..."></div>
-          <div class="news-excerpt-block" contenteditable="true" data-placeholder="Fokus program..."></div>
-          <article class="news-body-block smaller" contenteditable="true" data-placeholder="Manfaat program untuk anggota dan publik..."></article>
+      <form class="feature-editor-form" id="feature-editor-form" data-edit="${isEdit ? '1' : '0'}" data-item-id="${id}">
+        <main class="feature-editor-main">
+          <section class="feature-story-card">
+            <label class="feature-label" for="feature-title">Label singkat</label>
+            <input id="feature-title" class="story-title-input" maxlength="120" value="${escape(item.title)}" placeholder="Contoh: GGTC" required />
+            <label class="feature-label mt-3" for="feature-name">Nama Program Utama</label>
+            <input id="feature-name" class="story-name-input" maxlength="255" value="${escape(item.name)}" placeholder="Nama lengkap program..." required />
+          </section>
+          <section class="feature-grid">
+            <div class="feature-story-card">
+              ${control('Fokus Program', `<input id="feature-focus" class="config-input" maxlength="120" value="${escape(item.focus)}" placeholder="Contoh: Literasi digital" />`)}
+              ${control('Deskripsi', `<textarea id="feature-description" class="config-input" rows="8" maxlength="5000" placeholder="Jelaskan manfaat dan arah program...">${escape(item.description)}</textarea>`)}
+            </div>
+            <div class="feature-media-card">
+              <div class="feature-media-head">
+                <div><h2>Galeri Program</h2><p>Unggah beberapa foto. Urutan pertama menjadi gambar utama.</p></div>
+                <button type="button" id="feature-upload-btn" class="btn btn-secondary">Upload Gambar</button>
+              </div>
+              <input id="feature-image-files" class="hidden" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+              <div id="feature-image-empty" class="feature-image-empty ${item.images.length ? 'hidden' : ''}">Belum ada gambar Program Utama.</div>
+              <div id="feature-image-board" class="feature-image-board">${imageCards}</div>
+            </div>
+          </section>
         </main>
-        <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Program Config</h2>${control('Icon', '<input class="config-input" placeholder="users, bank, phone..." />')}${control('Show on Home', selectControl({ id: 'feature-show-home', value: 'Show', options: ['Show', 'Hide'] }))}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit Program Utama</button>
+        <aside class="editor-config-sidebar feature-config-sidebar">
+          <section class="config-card">
+            <h2>Program Config</h2>
+            <div class="config-field">
+              <span>Icon</span>
+              <div id="feature-icon-picker" class="feature-icon-picker" data-selected-icon="${escape(item.icon_key || 'sparkles')}">
+                <button type="button" id="feature-icon-button" class="feature-icon-button">
+                  <span class="feature-icon-button-preview" data-feature-icon-preview="${escape(item.icon_key || 'sparkles')}"></span>
+                  <span><strong>Pilih ikon</strong><small id="feature-icon-label">${escape(item.icon_key || 'sparkles')}</small></span>
+                </button>
+              </div>
+            </div>
+            ${control('Show on Home', selectControl({ id: 'feature-show-home', value: item.show_on_home ? '1' : '0', options: [{ value: '1', label: 'Show' }, { value: '0', label: 'Hide' }] }))}
+            ${control('Status', selectControl({ id: 'feature-status', value: item.status || 'draft', options: [{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }, { value: 'archived', label: 'Archived' }] }))}
+            ${control('Sort Order', `<input id="feature-sort-order" class="config-input" type="number" min="0" value="${Number(item.sort_order || 0)}" />`)}
+          </section>
+          <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update' : 'Submit'} Program Utama</button>
         </aside>
       </form>
     `;
-    bindSimpleSubmit('#feature-form', 'Submit program?', 'Program ditambahkan pada mode simulasi.');
+    const liveForm = document.querySelector('#feature-editor-form');
+    enhanceAdminSelects(body);
+    setupFeatureIconPicker(liveForm);
+    bindFeatureImageBoard(liveForm);
+    bindFeatureForm(liveForm);
+    hydrateFeatureIcons(body);
   }
 
   function hydrateFeatureIcons(root = document) {
@@ -1910,7 +2060,7 @@
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        Admin.showToast(json.error || 'Gagal menyimpan Program Utama.');
+        Admin.showToast(json.error || json.message || 'Gagal menyimpan Program Utama.');
         return;
       }
       Admin.showToast(isEdit ? 'Program Utama diperbarui.' : 'Program Utama ditambahkan.');
@@ -1986,53 +2136,162 @@
     bindSimpleSubmit('#why-form', 'Submit item edukasi?', 'Item edukasi ditambahkan pada mode simulasi.');
   }
 
-  function renderFaqList() {
+  async function renderFaqList() {
     const body = renderShell('View FAQs', 'FAQ ringkas untuk menjawab pertanyaan umum pengunjung.', `<a href="${adminUrl('faq-add')}" class="btn btn-primary">Add New</a>`);
     body.innerHTML = `
       <section class="admin-card p-4 md:p-6">
-        ${renderSearchToolbar('FAQ')}
-        <div class="simple-card-grid mt-5">
-          <article class="simple-admin-card">
-            <div class="meta">Show on home: Yes</div>
-            <h2>GenBI Provinsi Jambi</h2>
-            <p>Informasi umum tentang komunitas, kegiatan, dan anggota GenBI Jambi.</p>
-            <div class="mt-4 flex gap-2">${rowActions('FAQ')}</div>
-          </article>
-        </div>
+        <div class="cms-toolbar"><label class="cms-search">${Admin.icon('search')}<input id="faq-search" placeholder="Cari pertanyaan atau jawaban..." autocomplete="off" /></label></div>
+        <div id="faq-live-list" class="simple-card-grid mt-5"><div class="config-empty">Memuat FAQ...</div></div>
       </section>
     `;
-    bindDeleteButtons('FAQ akan dihapus dari daftar simulasi.');
+    const list = document.querySelector('#faq-live-list');
+    let query = '';
+    const load = async () => {
+      list.innerHTML = '<div class="config-empty">Memuat FAQ...</div>';
+      const endpoint = Core.buildEndpoint(route('admin.faqs'), { q: query, per_page: 100 });
+      const res = await fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        list.innerHTML = `<div class="config-empty">${escape(json.error || json.message || 'Gagal memuat FAQ.')}</div>`;
+        return;
+      }
+      const items = Array.isArray(json.data) ? json.data : [];
+      list.innerHTML = items.length ? items.map((item) => `
+        <article class="simple-admin-card" data-faq-card="${item.id}">
+          <div class="meta">Show on home: ${item.show_on_home ? 'Yes' : 'No'}</div>
+          <h2>${escape(item.title)}</h2>
+          <p>${escape(item.content)}</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <a class="cms-action edit" href="${adminUrl('faq-add')}?id=${item.id}">Edit</a>
+            <button type="button" class="cms-action delete" data-faq-delete="${item.id}">Delete</button>
+          </div>
+        </article>
+      `).join('') : '<div class="config-empty">Belum ada FAQ yang sesuai dengan pencarian.</div>';
+      list.querySelectorAll('[data-faq-delete]').forEach((button) => button.addEventListener('click', async () => {
+        const id = Number(button.dataset.faqDelete || 0);
+        const ok = await Admin.showConfirm({ title: 'Hapus FAQ?', message: 'Pertanyaan dan jawabannya akan dihapus permanen.', confirmText: 'Hapus', danger: true });
+        if (!ok) return;
+        const response = await fetch(route('admin.faqDelete', { id }), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
+          credentials: 'same-origin',
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          Admin.showToast(result.error || result.message || 'Gagal menghapus FAQ.');
+          return;
+        }
+        button.closest('[data-faq-card]')?.remove();
+        Admin.showToast('FAQ berhasil dihapus.');
+        if (!list.querySelector('[data-faq-card]')) list.innerHTML = '<div class="config-empty">Belum ada FAQ.</div>';
+      }));
+    };
+    let timer = 0;
+    document.querySelector('#faq-search')?.addEventListener('input', (event) => {
+      query = event.target.value.trim();
+      window.clearTimeout(timer);
+      timer = window.setTimeout(load, 250);
+    });
+    await load();
   }
 
-  function renderFaqEditor() {
-    const body = renderShell('Add FAQ', 'FAQ menggunakan area tulis lebar agar jawaban tidak terasa seperti input sempit.', `<a href="${adminUrl('faq')}" class="btn btn-secondary">View All</a>`);
+  async function renderFaqEditor() {
+    const id = Number(new URLSearchParams(window.location.search).get('id') || 0);
+    const isEdit = id > 0;
+    let item = { title: '', content: '', show_on_home: false };
+    if (isEdit) {
+      const response = await fetch(route('admin.faqShow', { id }), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || !json.data) {
+        const errorBody = renderShell('Edit FAQ', 'Data FAQ tidak dapat dimuat.', `<a href="${adminUrl('faq')}" class="btn btn-secondary">View All</a>`);
+        errorBody.innerHTML = `<section class="admin-card p-8 text-center text-sm text-red-700">${escape(json.error || json.message || 'FAQ tidak ditemukan.')}</section>`;
+        return;
+      }
+      item = json.data;
+    }
+    const body = renderShell(isEdit ? 'Edit FAQ' : 'Add FAQ', 'FAQ menggunakan area tulis lebar agar jawaban tidak terasa seperti input sempit.', `<a href="${adminUrl('faq')}" class="btn btn-secondary">View All</a>`);
     body.innerHTML = `
       <form class="editor-workspace compact" id="faq-form">
         <main class="block-writing-surface">
-          <div class="news-title-block" contenteditable="true" data-placeholder="Pertanyaan FAQ..."></div>
-          <article class="news-body-block smaller" contenteditable="true" data-placeholder="Tulis jawaban FAQ..."></article>
+          <label class="feature-label" for="faq-title">Pertanyaan FAQ</label>
+          <input id="faq-title" class="story-title-input" maxlength="60" value="${escape(item.title || '')}" placeholder="Pertanyaan FAQ..." required />
+          <label class="feature-label mt-8" for="faq-content">Jawaban FAQ</label>
+          <textarea id="faq-content" class="news-body-block smaller mt-3" rows="12" maxlength="10000" placeholder="Tulis jawaban FAQ..." required>${escape(item.content || '')}</textarea>
         </main>
         <aside class="editor-config-sidebar">
-          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', selectControl({ id: 'faq-show-home', value: 'Yes', options: ['Yes', 'No'] }))}</section>
-          <button type="submit" class="btn btn-primary w-full">Submit FAQ</button>
+          <section class="config-card"><h2>Visibility</h2>${control('Show on Home', selectControl({ id: 'faq-show-home', value: item.show_on_home ? '1' : '0', options: [{ value: '1', label: 'Yes' }, { value: '0', label: 'No' }] }))}</section>
+          <button type="submit" class="btn btn-primary w-full">${isEdit ? 'Update' : 'Submit'} FAQ</button>
         </aside>
       </form>
     `;
-    bindSimpleSubmit('#faq-form', 'Submit FAQ?', 'FAQ ditambahkan pada mode simulasi.');
+    enhanceAdminSelects(body);
+    document.querySelector('#faq-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        title: document.querySelector('#faq-title')?.value?.trim() || '',
+        content: document.querySelector('#faq-content')?.value?.trim() || '',
+        show_on_home: document.querySelector('#faq-show-home')?.value === '1',
+      };
+      const response = await fetch(isEdit ? route('admin.faqUpdate', { id }) : route('admin.faqStore'), {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        Admin.showToast(json.error || json.message || 'Gagal menyimpan FAQ.');
+        return;
+      }
+      Admin.showToast(isEdit ? 'FAQ berhasil diperbarui.' : 'FAQ berhasil ditambahkan.');
+      window.setTimeout(() => { window.location.href = adminUrl('faq'); }, 650);
+    });
   }
 
-  function renderSocialMedia() {
-    const body = renderShell('Social Media', 'Kosongkan field jika kanal tidak ingin tampil di halaman publik.', '<button id="save-social" class="btn btn-primary">Submit</button>');
+  async function renderSocialMedia() {
+    const body = renderShell('Social Media', 'Kosongkan field jika kanal tidak ingin tampil di halaman publik.');
+    body.innerHTML = '<section class="admin-card p-8 text-center text-sm text-neutral-500">Memuat social media...</section>';
+    const response = await fetch(route('admin.socialLinks'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      body.innerHTML = `<section class="admin-card p-8 text-center text-sm text-red-700">${escape(json.error || json.message || 'Gagal memuat social media.')}</section>`;
+      return;
+    }
+    const items = Array.isArray(json.data) ? json.data : [];
+    const byName = new Map(items.map((item) => [String(item.name || '').toLowerCase(), item]));
+    const fields = ['YouTube', 'Instagram', 'WhatsApp'].map((name) => {
+      const item = byName.get(name.toLowerCase()) || { name, url: '' };
+      return control(name, `<input id="social-${name.toLowerCase()}" class="config-input" type="url" maxlength="60" value="${escape(item.url || '')}" placeholder="https://..." autocomplete="url" />`);
+    }).join('');
     body.innerHTML = `
-      <section class="admin-card p-5 md:p-7">
-        <div class="grid max-w-3xl gap-4">
-          ${control('YouTube', '<input class="config-input" value="https://youtu.be/9fqrRMLTw6F" />')}
-          ${control('Instagram', '<input class="config-input" value="https://www.instagram.com/genbi_jambi" />')}
-          ${control('WhatsApp', '<input class="config-input" value="https://wa.me/6289627896750" />')}
-        </div>
-      </section>
+      <form id="social-media-form" class="admin-card p-5 md:p-7">
+        <div class="grid max-w-3xl gap-4">${fields}</div>
+        <p class="mt-5 text-sm leading-6 text-[rgb(var(--text-secondary))]">URL harus diawali http:// atau https://. Batas mengikuti tabel legacy: 60 karakter.</p>
+        <div class="mt-6"><button id="save-social" type="submit" class="btn btn-primary">Submit</button></div>
+      </form>
     `;
-    document.querySelector('#save-social').addEventListener('click', () => Admin.showToast('Social media disimpan pada mode simulasi.'));
+    document.querySelector('#social-media-form')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.querySelector('#save-social');
+      button.disabled = true;
+      button.textContent = 'Menyimpan...';
+      const payload = {
+        items: ['YouTube', 'Instagram', 'WhatsApp'].map((name) => ({
+          name,
+          url: document.querySelector(`#social-${name.toLowerCase()}`)?.value?.trim() || '',
+        })),
+      };
+      const save = await fetch(route('admin.socialUpdate'), {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      const result = await save.json().catch(() => ({}));
+      button.disabled = false;
+      button.textContent = 'Submit';
+      Admin.showToast(save.ok ? 'Social media berhasil disimpan.' : (result.error || result.message || 'Gagal menyimpan social media.'));
+    });
   }
 
   async function renderPhotoList() {
