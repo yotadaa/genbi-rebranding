@@ -66,7 +66,7 @@ function renderHeader(activeKey) {
             ${nav}
           </nav>
           <div class="hidden items-center gap-3 lg:flex">
-            <a data-transition href="${adminUrl('dashboard')}" class="btn btn-secondary">Admin Preview</a>
+            <a data-transition href="${adminUrl('dashboard')}" class="btn btn-secondary">Pratinjau Admin</a>
             <a data-transition href="${pageUrl('contact')}" class="btn btn-primary">Hubungi Kami ${icon('arrowRight')}</a>
           </div>
           <button id="open-menu" class="btn-icon lg:hidden" aria-label="Open menu">${icon('menu')}</button>
@@ -87,7 +87,7 @@ function renderHeader(activeKey) {
           ${navItems
             .map((item) => `<a data-transition href="${pageUrl(item.key)}" class="mobile-link ${item.key === activeKey ? 'mobile-link-active' : ''}">${item.label}<span>›</span></a>`)
             .join('')}
-          <a data-transition href="${adminUrl('dashboard')}" class="mobile-link">Admin Preview<span>›</span></a>
+          <a data-transition href="${adminUrl('dashboard')}" class="mobile-link">Pratinjau Admin<span>›</span></a>
         </nav>
         <div class="mt-8 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
           <strong>${site.name}</strong><br />${site.tagline}

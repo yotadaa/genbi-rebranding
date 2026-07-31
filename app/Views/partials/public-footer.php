@@ -1,8 +1,9 @@
 <?php
+
 /** @var callable $e */
 /** @var callable $url */
 if (!isset($siteSettings)) {
-    $siteSettings = null;
+  $siteSettings = null;
 }
 
 $site = $site ?? $siteSettings?->site() ?? [];
@@ -13,13 +14,13 @@ $email = $site['email'] ?? 'genbijambibi@gmail.com';
 $phone = $site['phone'] ?? '089627896750';
 $address = $site['address'] ?? 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361';
 $navItems = [
-    ['label' => 'Beranda', 'href' => $url('home')],
-    ['label' => 'About', 'href' => $url('about')],
-    ['label' => 'Team', 'href' => $url('team')],
-    ['label' => 'Prestasi', 'href' => $url('prestasi')],
-    ['label' => 'Kegiatan', 'href' => $url('event')],
-    ['label' => 'News', 'href' => $url('news')],
-    ['label' => 'Contact', 'href' => $url('contact')],
+  ['label' => 'Beranda', 'href' => $url('home')],
+  ['label' => 'Tentang', 'href' => $url('about')],
+  ['label' => 'Tim', 'href' => $url('team')],
+  ['label' => 'Prestasi', 'href' => $url('prestasi')],
+  ['label' => 'Kegiatan', 'href' => $url('event')],
+  ['label' => 'Berita', 'href' => $url('news')],
+  ['label' => 'Kontak', 'href' => $url('contact')],
 ];
 ?>
 <section class="border-t border-neutral-900/10 bg-blue-950 text-white">
@@ -53,4 +54,6 @@ $navItems = [
   </div>
   <div class="border-t border-white/10 py-5 text-center text-xs text-blue-100/70">Copyright &copy; <?= date('Y') ?>, GenBI Provinsi Jambi.</div>
 </section>
-<button id="back-to-top" class="back-to-top" aria-label="Back to top"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0-6.75 6.75M12 4.5l6.75 6.75"/></svg></button>
+<button id="back-to-top" class="back-to-top" aria-label="Back to top"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0-6.75 6.75M12 4.5l6.75 6.75" />
+  </svg></button>

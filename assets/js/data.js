@@ -28,11 +28,11 @@ const site = {
 
 const navItems = [
   { label: 'Beranda', href: '/', key: 'home' },
-  { label: 'About', href: '/about', key: 'about' },
-  { label: 'Team', href: '/team', key: 'team' },
+  { label: 'Tentang', href: '/about', key: 'about' },
+  { label: 'Tim', href: '/team', key: 'team' },
   { label: 'Prestasi', href: '/prestasi', key: 'prestasi' },
-  { label: 'News', href: '/news', key: 'news' },
-  { label: 'Contact', href: '/contact', key: 'contact' }
+  { label: 'Berita', href: '/news', key: 'news' },
+  { label: 'Kontak', href: '/contact', key: 'contact' }
 ];
 
 
