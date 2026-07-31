@@ -35,6 +35,7 @@ $content = $content ?? '';
   <div id="modal-root"></div>
   <script>window.GenBISiteSettings = <?= $settingsJson ?>;</script>
   <script defer src="/assets/js/dist/data.js?v=20260616g"></script>
+  <script defer src="/assets/js/dist/nav-label.js?v=20260731a"></script>
   <script defer src="/assets/js/dist/api-core.js?v=20260617a"></script>
   <script defer src="/assets/js/dist/api.js?v=20260616g"></script>
   <script defer src="/assets/js/dist/app.js?v=20260616g"></script>

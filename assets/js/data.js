@@ -27,7 +27,7 @@ const site = {
 };
 
 const navItems = [
-  { label: 'Home', href: '/', key: 'home' },
+  { label: 'Beranda', href: '/', key: 'home' },
   { label: 'About', href: '/about', key: 'about' },
   { label: 'Team', href: '/team', key: 'team' },
   { label: 'Prestasi', href: '/prestasi', key: 'prestasi' },

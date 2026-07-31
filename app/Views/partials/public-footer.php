@@ -1,6 +1,10 @@
 <?php
 /** @var callable $e */
 /** @var callable $url */
+if (!isset($siteSettings)) {
+    $siteSettings = null;
+}
+
 $site = $site ?? $siteSettings?->site() ?? [];
 $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
@@ -9,7 +13,7 @@ $email = $site['email'] ?? 'genbijambibi@gmail.com';
 $phone = $site['phone'] ?? '089627896750';
 $address = $site['address'] ?? 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361';
 $navItems = [
-    ['label' => 'Home', 'href' => $url('home')],
+    ['label' => 'Beranda', 'href' => $url('home')],
     ['label' => 'About', 'href' => $url('about')],
     ['label' => 'Team', 'href' => $url('team')],
     ['label' => 'Prestasi', 'href' => $url('prestasi')],
