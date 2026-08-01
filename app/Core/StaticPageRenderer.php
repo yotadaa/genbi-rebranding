@@ -44,8 +44,8 @@ final class StaticPageRenderer
 
         $scripts = array_map(static function (string $script): string {
             $script = str_replace(
-                ['../assets/js/admin/cms.js', '/assets/js/admin/cms.js'],
-                '/assets/js/dist/admin/cms.js?v=20260617a',
+                '../assets/js/admin/cms.js',
+                '/assets/js/admin/cms.js',
                 $script
             );
 

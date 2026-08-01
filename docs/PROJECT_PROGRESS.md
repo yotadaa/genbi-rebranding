@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after SSR Phase 5 (Admin Prestasi CMS SSR completion)
+Last updated: 2026-07-30 after SSR delivery/buildless migration planning
 
 ## Source Markdown Reviewed
 
@@ -90,6 +90,13 @@ Last updated: 2026-05-07 after SSR Phase 5 (Admin Prestasi CMS SSR completion)
 - [x] P3: SSR Phase 3 — Migrate public `/prestasi`, `/prestasi/{slug}`, `/team` and admin `/admin/team-member`, `/admin/prestasi` to server-side rendering with pagination.
 - [x] P3: SSR Phase 4 — Migrate public `/event` and `/event/{id}` to server-side rendering with pagination. Add Event to top nav. Add event CTA to homepage.
 - [x] P3: SSR Phase 5 — Complete admin Prestasi CMS SSR: list with filters/search/pagination, add/edit forms with hydration, detail preview modal.
+
+## Current SSR Delivery Status
+
+- [x] P0: PHP front controller is the default local server; the Node static server is explicitly isolated as `serve:static-fallback`.
+- [x] P0: Runtime layouts use editable source JS/CSS, with no `dist`, minified stylesheet, or generated theme stylesheet dependency.
+- [x] P1: Public and authenticated admin display routes render initial HTML on the server; JavaScript is progressive enhancement only.
+- [ ] P1: Confirm production Apache/Nginx document root is `/public` and deploy the PHP runtime to the live domain.
 
 ## Working Checklist
 
@@ -327,8 +334,41 @@ Last updated: 2026-05-07 after SSR Phase 5 (Admin Prestasi CMS SSR completion)
 - [x] Verify static fallback still works for non-news admin pages.
 - [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 2 completion.
 
+### Task 19: SSR Delivery Cutover and Buildless Asset Serving (Complete in code; production cutover pending)
+
+- [x] Make the PHP server (`php -S ... -t public public/index.php`) the default local SSR preview; isolate the Node server as `serve:static-fallback`.
+- [ ] Verify the production document root is `/public`, rewrite rules are active, and PHP 8.2+ with `pdo_mysql` is enabled (requires hosting access).
+- [x] Add `/news/view/{id}` alongside `/news/id/{id}` redirect handling to canonical `/news/{slug}`.
+- [x] Add SSR markers and local HTTP/browser smoke checks for public SSR pages; article-detail redirect/content smoke needs a seeded published record.
+- [x] Replace PHP runtime `/assets/js/dist/...` references with direct source files and preserve hydration guards.
+- [x] Replace `styles.min.css` and generated `theme.css` runtime dependencies with `styles.css` and PHP inline theme tokens.
+- [x] Serve editable CSS from the root source asset first and mark JS/CSS `no-cache, must-revalidate` so File Manager changes become visible without a bundle upload.
+- [x] Keep the Tailwind utility stylesheet as a baseline; runtime code no longer generates or loads a build artifact, and custom visual changes belong in editable `assets/css/styles.css`.
+- [x] Migrate SSR priority routes: Event CMS, Team add/edit, comments, category, photo, Prestasi token form/list, and dashboard.
+- [x] Render FAQ, social media, slider, language, page, and Why Choose prototype screens server-side; their persistence model remains a separate backend feature.
+- [x] Run `npm test`, PHP lint, JS syntax checks, HTTP response checks, and browser snapshots without executing `npm run build`.
+
+### Task 20: SSR Regression Follow-up
+
+- [x] Restore dashboard navigation initialization for `/admin` and `/admin/dashboard`.
+- [x] Preserve a valid SSR Prestasi submission form at `/prestasi/submit/{token}` instead of replacing it with a client-side token error.
+- [x] Port the existing Laravel public Feature layout to a PHP SSR page and register `/feature`.
+- [x] Audit and remove only files proven unused after the SSR cutover; preserve active Laravel work and unrelated local changes.
+- [x] Review the final SSR diff and commit all verified implementation changes in scope.
+
+### Task 21: Canonical Public Asset Directory
+
+- [x] Make `public/assets/` the only canonical asset directory for PHP, Apache, local preview, and File Manager updates.
+- [x] Preserve the current public SSR hydration scripts and migrate the existing Tailwind output into `public/assets/css/`.
+- [x] Remove the duplicate root `assets/` directory and root-first asset resolver.
+- [x] Update build/zip tooling paths, then validate browser delivery without running a build.
+- [x] Remove only confirmed-unused PHP runtime assets; do not modify, delete, stage, or commit anything under `laravel-app/`.
+
 ## Test Log
 
+- 2026-07-30: Canonical public-asset migration passed without `npm run build`: PHP, Apache, and the static fallback server delivered `/assets/...` from `public/assets/`; `npm test` passed (26 tests), PHP/Node syntax checks passed, and the legacy root `assets/` directory no longer existed. `laravel-app/` was not modified, deleted, staged, or committed.
+- 2026-07-30: SSR regression follow-up passed: Playwright confirmed dashboard navigation/topbar rendering with zero console errors; `/feature` rendered six published programs with zero console errors; the Prestasi browser smoke test kept the SSR form intact after loading its source script. PHP lint and `npm test` (26 tests) passed without running a build.
+- 2026-07-30: SSR/buildless cutover verification passed: `npm test` (26 tests), PHP lint for changed controllers/views/routes, JS syntax checks, PHP HTTP smoke for public `/news`, `/about`, and source assets, plus Playwright snapshots for `/news` and `/about` with zero console errors. No `npm run build` was used.
 - 2026-05-06: No test harness existed at initial audit.
 - 2026-05-06: `npm test` passed after API adapter, News integration, comment integration, and Prestasi normalization tests. Result: 6 passing tests.
 - 2026-05-06: `npm test` passed after P0 UI stability changes. Result: 8 passing tests.

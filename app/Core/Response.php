@@ -37,6 +37,7 @@ final class Response
             return;
         }
         echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     public function xml(string $content, int $status = 200, array $headers = []): void

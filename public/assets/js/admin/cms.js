@@ -65,11 +65,13 @@
 
   const prestasiCategories = ['QRIS', 'KTI', 'Essay', 'Inovasi Desa', 'Kreativitas', 'Ekonomi Syariah'];
 
+  const hasSsrPrototype = () => Boolean(document.querySelector('#admin-prototype-root[data-ssr="true"]'));
+
   const routes = {
-    language: () => { Admin.renderAdminShell('language'); renderLanguage(); },
+    language: () => { Admin.renderAdminShell('language'); hasSsrPrototype() ? bindSsrPrototype() : renderLanguage(); },
     category: () => { Admin.renderAdminShell('category'); renderCategoryList(); },
     comment: () => { Admin.renderAdminShell('comment'); renderCommentSetup(); },
-    'comment-setting': () => { Admin.renderAdminShell('comment-setting'); renderCommentSettings(); },
+    'comment-setting': () => { Admin.renderAdminShell('comment-setting'); document.querySelector('#comment-setting-form[data-ssr="true"]') ? bindSsrCommentSettings() : renderCommentSettings(); },
     news: () => { Admin.renderAdminShell('news-list'); mode === 'editor' ? renderNewsEditor(false) : renderNewsList(); },
     'news-edit': () => { Admin.renderAdminShell('news-list'); renderNewsEditor(true); },
     prestasi: () => { Admin.renderAdminShell('prestasi'); mode === 'editor' ? renderPrestasiEditor(false) : renderPrestasiList(); },
@@ -78,15 +80,16 @@
     'prestasi-token': () => { Admin.renderAdminShell('prestasi'); renderPrestasiTokenList(); },
     event: () => { Admin.renderAdminShell('event'); mode === 'editor' ? renderEventEditor() : renderEventList(); },
     'event-edit': () => { Admin.renderAdminShell('event'); renderEventEditor(); },
-    slider: () => { Admin.renderAdminShell('slider'); mode === 'editor' ? renderSliderEditor() : renderSliderList(); },
-    'slider-add': () => { Admin.renderAdminShell('slider'); renderSliderEditor(); },
+    slider: () => { Admin.renderAdminShell('slider'); hasSsrPrototype() ? bindSsrPrototype() : (mode === 'editor' ? renderSliderEditor() : renderSliderList()); },
+    'slider-add': () => { Admin.renderAdminShell('slider'); hasSsrPrototype() ? bindSsrPrototype() : renderSliderEditor(); },
     team: () => { Admin.renderAdminShell('team'); mode === 'editor' ? renderTeamEditor() : renderTeamList(); },
     feature: () => { Admin.renderAdminShell('feature'); mode === 'editor' ? renderFeatureEditor() : renderFeatureList(); },
     'feature-edit': () => { Admin.renderAdminShell('feature'); renderFeatureEditor(); },
-    why: () => { Admin.renderAdminShell('why'); mode === 'editor' ? renderWhyChooseEditor() : renderWhyChooseList(); },
-    faq: () => { Admin.renderAdminShell('faq'); mode === 'editor' ? renderFaqEditor() : renderFaqList(); },
-    social: () => { Admin.renderAdminShell('social'); renderSocialMedia(); },
+    why: () => { Admin.renderAdminShell('why'); hasSsrPrototype() ? bindSsrPrototype() : (mode === 'editor' ? renderWhyChooseEditor() : renderWhyChooseList()); },
+    faq: () => { Admin.renderAdminShell('faq'); hasSsrPrototype() ? bindSsrPrototype() : (mode === 'editor' ? renderFaqEditor() : renderFaqList()); },
+    social: () => { Admin.renderAdminShell('social'); hasSsrPrototype() ? bindSsrPrototype() : renderSocialMedia(); },
     photo: () => { Admin.renderAdminShell('gallery'); mode === 'editor' ? renderPhotoEditor() : renderPhotoList(); },
+    page: () => { Admin.renderAdminShell('page'); },
   };
 
   const teamSelection = new Set();
@@ -152,6 +155,11 @@
   }
 
   async function renderCategoryList() {
+    const ssrList = document.querySelector('#admin-category-list[data-ssr="true"]');
+    if (ssrList) {
+      bindCategoryActions(true);
+      return;
+    }
     const body = renderShell('View Categories', 'Kategori berita dipakai untuk filter publik, editor berita, dan Pengumuman di beranda.', '<button class="btn btn-primary" type="button" data-category-add>Add New</button>');
     let items = categories;
     try {
@@ -269,14 +277,15 @@
         }
         close();
         Admin.showToast(isEdit ? 'Kategori berhasil diperbarui.' : 'Kategori berhasil ditambahkan.');
-        renderCategoryList();
+        if (document.querySelector('#admin-category-list[data-ssr="true"]')) window.location.reload();
+        else renderCategoryList();
       } catch (error) {
         Admin.showToast('Gagal menyimpan kategori. Periksa koneksi.');
       }
     });
   }
 
-  function bindCategoryActions() {
+  function bindCategoryActions(isSsr = false) {
     document.querySelector('[data-category-add]')?.addEventListener('click', (event) => openCategoryForm({ trigger: event.currentTarget }));
 
     document.querySelectorAll('[data-category-edit]').forEach((button) => {
@@ -305,7 +314,8 @@
             return;
           }
           Admin.showToast('Kategori berhasil dihapus.');
-          renderCategoryList();
+          if (isSsr) window.location.reload();
+          else renderCategoryList();
         } catch (error) {
           Admin.showToast('Gagal menghapus kategori. Periksa koneksi.');
         }
@@ -967,6 +977,10 @@
   }
 
   async function renderCommentSetup() {
+    if (document.querySelector('#admin-comment-list[data-ssr="true"]')) {
+      bindSsrCommentActions();
+      return;
+    }
     const body = renderShell('News Comment Moderation', 'Kelola komentar pembaca. Moderator bisa meninjau, menyetujui, menolak, atau menghapus komentar sebelum tampil di halaman publik.');
     const state = { comments: [], query: '', status: 'Semua' };
     body.innerHTML = `
@@ -1065,6 +1079,58 @@
     Admin.showToast(`Komentar berhasil ${labels[action]} pada mode integrasi.`);
   }
 
+  function bindSsrPrototype() {
+    const root = document.querySelector('#admin-prototype-root[data-ssr="true"]');
+    if (!root) return;
+    enhanceAdminSelects(root);
+    const prototype = root.dataset.prototypePage || '';
+    if (prototype === 'language') {
+      root.querySelector('#save-language')?.addEventListener('click', () => Admin.showToast('Language data masih berada pada mode prototipe.'));
+      return;
+    }
+    if (prototype === 'slider-add') {
+      bindLiveSliderForm(Number(root.querySelector('#slider-form')?.dataset.slot || 1));
+      return;
+    }
+    if (prototype === 'social-media' || prototype === 'social_media' || prototype === 'social') {
+      root.querySelector('#save-social')?.addEventListener('click', () => Admin.showToast('Social media masih berada pada mode prototipe.'));
+      return;
+    }
+    if (prototype === 'faq-add') {
+      bindSimpleSubmit('#faq-form', 'Submit FAQ?', 'FAQ ditambahkan pada mode simulasi.');
+      return;
+    }
+    if (prototype === 'why-choose-add' || prototype === 'why_choose-add') {
+      bindSimpleSubmit('#why-form', 'Submit item edukasi?', 'Item edukasi ditambahkan pada mode simulasi.');
+    }
+  }
+
+  function bindSsrCommentActions() {
+    document.querySelectorAll('[data-comment-action]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const action = button.dataset.commentAction || '';
+        const id = button.dataset.id || '';
+        const labels = { approve: 'menyetujui', reject: 'menolak', delete: 'menghapus' };
+        if (!id || !labels[action]) return;
+        if (action !== 'approve') {
+          const ok = await Admin.showConfirm({
+            title: action === 'delete' ? 'Hapus komentar?' : 'Tolak komentar?',
+            message: `Admin akan ${labels[action]} komentar ini.`,
+            confirmText: action === 'delete' ? 'Hapus' : 'Tolak',
+            danger: true,
+          });
+          if (!ok) return;
+        }
+        const result = await API.moderateComment(id, action);
+        if (result?.ok === false) {
+          Admin.showToast('Gagal memperbarui komentar.');
+          return;
+        }
+        window.location.reload();
+      });
+    });
+  }
+
   async function renderCommentSettings() {
     const body = renderShell('Comment Settings', 'Atur perilaku komentar publik secara global, termasuk voting, balasan, moderasi, dan rate limit.');
     body.innerHTML = '<div class="admin-card p-6 text-sm text-neutral-600">Memuat pengaturan komentar...</div>';
@@ -1096,6 +1162,11 @@
   }
 
   async function renderEventList() {
+    const ssrList = document.querySelector('#admin-event-list[data-ssr="true"]');
+    if (ssrList) {
+      bindAgendaActions();
+      return;
+    }
     const body = renderShell('Agenda', 'Agenda komunitas tampil dari data `tbl_event` yang sama dengan halaman publik dan section Agenda Utama di landing page.', `<a href="${adminUrl('event-add')}" class="btn btn-primary">Add Agenda</a>`);
     body.innerHTML = '<div class="admin-card p-8 text-center text-neutral-500">Memuat data agenda...</div>';
     let items = [];
@@ -1131,7 +1202,12 @@
         const ok = await Admin.showConfirm({ title: 'Hapus agenda?', message: 'Agenda akan dihapus dari database dan landing page.', confirmText: 'Delete', danger: true });
         if (!ok) return;
         const res = await fetch(route('admin.eventDelete', { id }), { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() }, credentials: 'same-origin', body: JSON.stringify({ _csrf_token: getAdminCsrfToken() }) });
-        if (res.ok) { Admin.showToast('Agenda berhasil dihapus.'); renderEventList(); } else { Admin.showToast('Gagal menghapus agenda.'); }
+        if (res.ok) {
+          Admin.showToast('Agenda berhasil dihapus.');
+          const ssrList = document.querySelector('#admin-event-list[data-ssr="true"]');
+          if (ssrList) button.closest('tr')?.remove();
+          else renderEventList();
+        } else { Admin.showToast('Gagal menghapus agenda.'); }
       });
     });
   }
@@ -1220,6 +1296,16 @@
 
 
   async function renderEventEditor() {
+    const ssrForm = document.querySelector('#event-form[data-ssr="true"]');
+    if (ssrForm) {
+      const eventId = Number(ssrForm.dataset.itemId) || 0;
+      const isEdit = ssrForm.dataset.edit === '1';
+      let item = {};
+      try { item = JSON.parse(ssrForm.dataset.item || '{}'); } catch { item = {}; }
+      const eventEditor = initMediumEditor(item, isEdit, { buildBlocks: buildEventBlocks, placeholder: 'Mulai tulis agenda. Tekan Tab atau klik plus untuk memilih blok.', extraTools: { embedMap: { class: MapEmbedTool, inlineToolbar: false } } });
+      bindSsrEventForm(ssrForm, eventEditor, item, isEdit, eventId);
+      return;
+    }
     const eventId = Number(new URLSearchParams(location.search).get('id')) || 0;
     const isEdit = page === 'event-edit' || eventId > 0;
     let item = null;
@@ -1248,6 +1334,53 @@
       } else {
         Admin.showToast(json.error || 'Gagal menyimpan agenda.');
       }
+    });
+  }
+
+  function bindSsrEventForm(form, eventEditor, item, isEdit, eventId) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      let contentHtml = '';
+      if (eventEditor?.save) {
+        try { const saved = await eventEditor.save(); contentHtml = blocksToEventHtml(saved.blocks || []); }
+        catch { contentHtml = form.querySelector('#editor-fallback article')?.innerHTML || ''; }
+      } else {
+        contentHtml = form.querySelector('#editor-fallback article')?.innerHTML || '';
+      }
+      const payload = {
+        title: form.querySelector('#event-title-field')?.textContent?.trim() || '',
+        excerpt: form.querySelector('#event-short-content-field')?.textContent?.trim() || '',
+        content: contentHtml,
+        location: form.querySelector('#event-location')?.value?.trim() || '',
+        map: extractMapEmbedUrl(form.querySelector('#event-map')?.value || ''),
+        start_date: form.querySelector('#event-start-date')?.value || '',
+        end_date: form.querySelector('#event-end-date')?.value || '',
+        photo: item?.photo || '',
+        banner: item?.banner || '',
+        meta_title: form.querySelector('#event-meta-title')?.value?.trim() || '',
+        meta_description: form.querySelector('#event-meta-description')?.value?.trim() || '',
+      };
+      const url = isEdit ? route('admin.eventUpdate', { id: eventId }) : route('admin.eventStore');
+      const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() }, credentials: 'same-origin', body: JSON.stringify(payload) });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        Admin.showToast(isEdit ? 'Agenda diperbarui.' : 'Agenda ditambahkan.');
+        if (!isEdit && json.data?.id) window.setTimeout(() => { window.location.href = `${adminUrl('event-edit')}?id=${json.data.id}`; }, 700);
+      } else {
+        Admin.showToast(json.error || 'Gagal menyimpan agenda.');
+      }
+    });
+  }
+
+  function bindSsrCommentSettings() {
+    const form = document.querySelector('#comment-setting-form[data-ssr="true"]');
+    if (!form) return;
+    enhanceAdminSelects(form);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(form).entries());
+      await API.updateCommentSettings(payload);
+      Admin.showToast('Pengaturan komentar berhasil disimpan.');
     });
   }
 
@@ -1511,6 +1644,31 @@
   }
 
   async function renderTeamEditor() {
+    const ssrForm = document.querySelector('#team-form[data-ssr="true"]');
+    if (ssrForm) {
+      const id = Number(ssrForm.dataset.itemId) || 0;
+      const isEdit = ssrForm.dataset.edit === '1';
+      enhanceAdminSelects(document.querySelector('#admin-content') || document);
+      document.querySelector('#team-photo-upload')?.addEventListener('change', uploadTeamPhoto);
+      ssrForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = teamEditorPayload();
+        const res = await fetch(isEdit ? route('admin.teamMemberUpdate', { id }) : route('admin.teamMembers'), {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getAdminCsrfToken() },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          Admin.showToast(isEdit ? 'Anggota diperbarui.' : 'Anggota ditambahkan.');
+          if (!isEdit && json.data?.id) setTimeout(() => { window.location.href = `${adminUrl('team-member-edit')}?id=${json.data.id}`; }, 900);
+        } else {
+          Admin.showToast(json.error || 'Gagal menyimpan anggota.');
+        }
+      });
+      return;
+    }
     const id = Number(new URLSearchParams(location.search).get('id')) || 4;
     const isEdit = location.pathname.includes('edit');
     let item = isEdit ? (teamMembers.find((entry) => entry.id === id) || teamMembers[0]) : { name: '', role: '', division: '', commission: '', campus: '', status: '', bio: '', year: new Date().getFullYear() };
@@ -2036,6 +2194,11 @@
   }
 
   async function renderPhotoList() {
+    const ssrList = document.querySelector('#admin-photo-list[data-ssr="true"]');
+    if (ssrList) {
+      bindSsrPhotoList(ssrList);
+      return;
+    }
     const body = renderShell('View Photos', 'Galeri foto tampil sebagai kartu agar preview lebih jelas.', `<a href="${adminUrl('photo-add')}" class="btn btn-primary">Add New</a>`);
     body.innerHTML = '<section class="admin-card p-8 text-center text-sm text-neutral-500">Memuat galeri foto...</section>';
     const res = await fetch(route('admin.photos'), { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
@@ -2070,6 +2233,11 @@
   }
 
   async function renderPhotoEditor() {
+    const ssrForm = document.querySelector('#photo-form[data-ssr="true"]');
+    if (ssrForm) {
+      bindSsrPhotoForm(ssrForm, Number(ssrForm.dataset.photoId) || 0);
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
     let item = { title: '', caption: '', image: '', status: 'show' };
@@ -2116,6 +2284,43 @@
       const json = await res.json().catch(() => ({}));
       if (!res.ok) { Admin.showToast(json.error || 'Gagal menyimpan foto.'); return; }
       Admin.showToast('Foto berhasil disimpan.');
+      window.location.href = adminUrl('photo');
+    });
+  }
+
+  function bindSsrPhotoList(root) {
+    root.querySelectorAll('[data-photo-delete]').forEach((button) => button.addEventListener('click', async () => {
+      const ok = await Admin.showConfirm({ title: 'Hapus foto?', message: 'Foto akan dihapus dari galeri.', confirmText: 'Hapus', danger: true });
+      if (!ok) return;
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const response = await fetch(route('admin.photoDelete', { id: button.dataset.photoDelete }), { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin' });
+      if (response.ok) window.location.reload();
+      else Admin.showToast('Gagal menghapus foto.');
+    }));
+  }
+
+  function bindSsrPhotoForm(form, id) {
+    form.querySelector('#photo-file')?.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const upload = new FormData();
+      upload.append('image', file);
+      const res = await fetch(route('admin.photoUpload'), { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin', body: upload });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.data?.url) { Admin.showToast(json.error || 'Upload gagal.'); return; }
+      const image = form.querySelector('#photo-image');
+      if (image) image.value = json.data.url;
+      renderSafeImagePreview('#photo-preview', json.data.url, 'Preview');
+    });
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const token = API.getCsrfToken ? API.getCsrfToken() : '';
+      const payload = { title: form.querySelector('#photo-title')?.value?.trim() || '', image: form.querySelector('#photo-image')?.value?.trim() || '', caption: form.querySelector('#photo-caption')?.value?.trim() || '', status: form.querySelector('#photo-visibility')?.value || 'show', _csrf_token: token };
+      const endpoint = id ? route('admin.photoUpdate', { id }) : route('admin.photoStore');
+      const res = await fetch(endpoint, { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token }, credentials: 'same-origin', body: JSON.stringify(payload) });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { Admin.showToast(json.error || 'Gagal menyimpan foto.'); return; }
       window.location.href = adminUrl('photo');
     });
   }
@@ -3268,6 +3473,11 @@
   }
 
   async function renderPrestasiTokenList(generated = null) {
+    if (!generated && document.querySelector('#admin-prestasi-token-list[data-ssr="true"]')) {
+      document.querySelector('#generate-token-btn')?.addEventListener('click', () => showGenerateModal());
+      bindTokenRevokeButtons();
+      return;
+    }
     const body = renderShell(
       'Prestasi Token',
       'Generate dan kelola token form prestasi sekali pakai untuk dibagikan ke anggota yang mengisi dari luar admin.',
@@ -3393,7 +3603,8 @@
           });
           if (res.ok) {
             Admin.showToast('Token berhasil direvoke.');
-            renderPrestasiTokenList(); // Refresh list
+            if (document.querySelector('#admin-prestasi-token-list[data-ssr="true"]')) window.location.reload();
+            else renderPrestasiTokenList();
           } else {
             Admin.showToast('Gagal merevoke token.');
           }

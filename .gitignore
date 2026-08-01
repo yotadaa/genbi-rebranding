@@ -27,6 +27,16 @@ public/uploads.zip
 !public/uploads/.htaccess
 !public/uploads/**/.htaccess
 
+laravel-app/.env
+laravel-app/storage/logs/*
+laravel-app/storage/cache/*
+laravel-app/public/uploads/*
+laravel-app/public/uploads.zip
+
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+
 # Local OS/editor noise
 .DS_Store
 Thumbs.db
@@ -34,5 +44,6 @@ Thumbs.db
 .vscode/
 
 # Temporary outputs
+output/playwright/
 *.log
 *.tmp

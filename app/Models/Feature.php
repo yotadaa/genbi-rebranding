@@ -89,6 +89,28 @@ final class Feature
         return $this->attachImages($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function published(int $limit = 100): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        $conditions = [$this->activeWhere()];
+        if ($this->hasFeatureColumn('status')) {
+            $conditions[] = "status = 'published'";
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT * FROM tbl_feature WHERE ' . implode(' AND ', $conditions)
+            . ' ORDER BY ' . $this->adminOrderBy() . ' LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $this->attachImages($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     public function create(array $data): int
     {
         if (!$this->db) {

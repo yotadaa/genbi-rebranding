@@ -14,10 +14,6 @@ fi
 echo "Building Tailwind CSS..."
 npm run build:css
 
-echo "Copying Tailwind CSS to served public assets..."
-mkdir -p public/assets/css
-cp assets/css/tailwind.css public/assets/css/tailwind.css
-
 echo "Building theme CSS..."
 npm run build:themes
 
@@ -27,7 +23,6 @@ npm run build:js
 echo "Creating build asset zip: $ZIP_PATH"
 rm -f "$ZIP_PATH"
 zip -r "$ZIP_PATH" \
-  assets/css/tailwind.css \
   public/assets/css/tailwind.css \
   public/assets/css/styles.min.css \
   public/assets/css/theme.css \

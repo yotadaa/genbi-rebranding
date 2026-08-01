@@ -35,7 +35,9 @@ final class HomeController
         $meta = SeoService::renderMetaBlock($seo);
         $jsonld = StructuredData::organization();
 
-        if ($this->viewRenderer instanceof ViewRenderer && $this->featureModel instanceof Feature) {
+        // The page remains SSR even while the database is temporarily unavailable;
+        // individual sections already have safe empty/static fallbacks below.
+        if ($this->viewRenderer instanceof ViewRenderer) {
             $html = $this->viewRenderer->renderWithLayout('public/home/index.php', 'layouts/public.php', [
                 'site' => $this->siteSettings?->site() ?? $this->siteData(),
                 'homeContent' => ($this->siteSettings?->site() ?? $this->siteData())['home'] ?? [],
@@ -48,7 +50,7 @@ final class HomeController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-home',
-                'scripts' => '<script defer src="/assets/js/dist/pages/home.js?v=20260508e"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/home.js"></script>',
             ]);
             $response->html($html);
             return;

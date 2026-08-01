@@ -7,8 +7,12 @@ const API = window.GenBIAPI;
 renderShell('event');
 
 const ssrList = document.querySelector('#event-list[data-ssr="true"]');
+const ssrDetail = document.body.dataset.ssr === 'true' && !document.querySelector('#event-list');
 
-if (ssrList) {
+if (ssrDetail) {
+  document.body.classList.add('page-ready');
+  observeFadeUp();
+} else if (ssrList) {
   // SSR path: content already rendered server-side
   // Bind search form Enter key
   const searchInput = document.querySelector('#event-search');

@@ -143,13 +143,13 @@ final class NewsController
             }
         }
 
-        $success = $this->news->updateNews($id, $sanitized);
-
-        if ($success) {
-            $response->json(['data' => ['id' => $id, 'updated' => true]]);
-        } else {
-            $response->json(['error' => 'Gagal memperbarui atau berita tidak ditemukan'], 404);
+        $existing = $this->news->findById($id);
+        if (!$existing) {
+            $response->json(['error' => 'Berita tidak ditemukan'], 404);
         }
+
+        $this->news->updateNews($id, $sanitized);
+        $response->json(['data' => ['id' => $id, 'updated' => true]]);
     }
 
     public function delete(Request $request, Response $response, array $params): void

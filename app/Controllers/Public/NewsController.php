@@ -80,7 +80,7 @@ final class NewsController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news',
-                'scripts' => '<script defer src="/assets/js/dist/pages/news.js"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/news.js"></script>',
             ]);
             $response->html($html);
             return;
@@ -172,7 +172,7 @@ final class NewsController
                 'meta' => $meta,
                 'jsonld' => $jsonld,
                 'bodyClass' => 'page-news-detail',
-                'scripts' => '<script defer src="/assets/js/dist/pages/news-detail.js"></script>',
+                'scripts' => '<script defer src="/assets/js/pages/news-detail.js"></script>',
             ]);
             $response->html($html, is_array($item) ? 200 : 404);
             return;

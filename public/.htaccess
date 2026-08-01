@@ -7,3 +7,11 @@
 
   RewriteRule ^ index.php [L]
 </IfModule>
+
+<IfModule mod_headers.c>
+  # Do not keep a stale public asset after a File Manager upload just because
+  # its URL did not change.
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>

@@ -1,4 +1,4 @@
-(function(){"use strict";const{renderShell:n}=window.GenBIApp,{observeFadeUp:s}=window.GenBIUI,t={...window.GenBIData.site||{},...window.GenBISiteSettings||{}};n("contact"),o(),r(),s();function o(){const e=document.querySelector("#contact-info");e&&(e.innerHTML=`
+(function(){"use strict";const{renderShell:n}=window.GenBIApp,{observeFadeUp:s}=window.GenBIUI,t={...window.GenBIData.site||{},...window.GenBISiteSettings||{}};n("contact"),document.body.dataset.ssr!=="true"&&o(),r(),s();function o(){const e=document.querySelector("#contact-info");e&&(e.innerHTML=`
     <div class="soft-card p-6">
       <p class="eyebrow">Alamat</p>
       <p class="mt-4 text-base leading-7 text-neutral-700">${t.address}</p>

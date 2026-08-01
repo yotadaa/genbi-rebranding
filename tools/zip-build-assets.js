@@ -10,7 +10,6 @@ const zipPath = path.resolve(rootDir, process.argv[2] || 'public/assets-build.zi
 const npmCommand = 'npm';
 
 const zipEntries = [
-  'assets/css/tailwind.css',
   'public/assets/css/tailwind.css',
   'public/assets/css/styles.min.css',
   'public/assets/css/theme.css',
@@ -36,14 +35,6 @@ function run(label, command, args) {
   if (result.status !== 0) {
     process.exit(result.status || 1);
   }
-}
-
-function copyTailwindToPublic() {
-  console.log('Copying Tailwind CSS to served public assets...');
-  const source = path.join(rootDir, 'assets/css/tailwind.css');
-  const target = path.join(rootDir, 'public/assets/css/tailwind.css');
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.copyFileSync(source, target);
 }
 
 function collectFiles(entryPath) {
@@ -182,7 +173,6 @@ function writeZip(outputPath, files) {
 
 try {
   run('Building Tailwind CSS...', npmCommand, ['run', 'build:css']);
-  copyTailwindToPublic();
   run('Building theme CSS...', npmCommand, ['run', 'build:themes']);
   run('Building JS dist and minified site CSS...', npmCommand, ['run', 'build:js']);
 

@@ -9,7 +9,7 @@ const site = {
 };
 
 renderShell('contact');
-renderContactInfoFallback();
+if (document.body.dataset.ssr !== 'true') renderContactInfoFallback();
 setupForm();
 observeFadeUp();
 

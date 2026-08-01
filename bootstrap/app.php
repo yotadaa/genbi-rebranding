@@ -19,6 +19,7 @@ use App\Controllers\Public\AboutController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
+use App\Controllers\Public\FeatureController;
 use App\Controllers\Public\NewsController;
 use App\Controllers\Public\PageController;
 use App\Controllers\Public\ContactController;
@@ -148,6 +149,7 @@ $viewRenderer->share([
 ]);
 
 $pageController = new PageController($renderer);
+$featureController = new FeatureController($renderer, $featureModel, $viewRenderer);
 $aboutController = new AboutController($viewRenderer);
 $contactController = new ContactController($viewRenderer, $contactSettingModel, $siteSettings);
 $homeController = new HomeController($renderer, $featureModel, $newsModel, $eventModel, $teamModel, $viewRenderer, $siteSettings);
@@ -165,7 +167,7 @@ $authController = new AuthController($authService, $loginThrottle);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
 $roleMiddleware = new RoleMiddleware(['superadmin', 'admin']);
-$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel, $siteSettings, $presensiEventModel, $presensiSubmissionModel, $genbiPointModel);
+$adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel, $siteSettings, $presensiEventModel, $presensiSubmissionModel, $genbiPointModel, $eventModel, $categoryModel, $commentModel, $photoGalleryModel, $tokenModel);
 $adminEventController = new AdminEventController($eventModel);
 $adminNewsController = new AdminNewsController($newsModel);
 $adminCategoryController = new AdminCategoryController($categoryModel);
@@ -177,7 +179,7 @@ $adminPrestasiTokenController = new PrestasiTokenController($tokenModel);
 $adminTeamMemberController = new AdminTeamMemberController($teamModel);
 $adminFeatureController = new \App\Controllers\Admin\FeatureController($featureModel);
 $adminContactSettingController = new \App\Controllers\Admin\ContactSettingController($contactSettingModel);
-$adminCommentSettingController = new CommentSettingController($settingModel);
+$adminCommentSettingController = new CommentSettingController($settingModel, $viewRenderer);
 $adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
 $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryModel);
 

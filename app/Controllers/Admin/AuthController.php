@@ -95,7 +95,7 @@ final class AuthController
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
-<body class="admin-login-body page-ready">
+<body class="admin-login-body page-ready" data-ssr="true">
   <main class="admin-login-page">
     <section class="admin-login-hero" aria-label="GenBI admin login introduction">
       <div class="admin-login-hero-bg"></div>
