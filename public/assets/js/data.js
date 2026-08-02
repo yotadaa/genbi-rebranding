@@ -32,6 +32,7 @@ const navItems = [
   { label: 'Tentang', href: '/about', key: 'about' },
   { label: 'Tim', href: '/team', key: 'team' },
   { label: 'Prestasi', href: '/prestasi', key: 'prestasi' },
+  { label: 'Buku', href: '/buku', key: 'buku' },
   {
     label: 'Kegiatan',
     href: '/event',

@@ -16,6 +16,7 @@ $navItems = [
   ['label' => 'Tentang', 'key' => 'about'],
   ['label' => 'Tim', 'key' => 'team'],
   ['label' => 'Prestasi', 'key' => 'prestasi'],
+  ['label' => 'Buku', 'key' => 'buku', 'href' => '/buku'],
   ['label' => 'Kegiatan', 'key' => 'kegiatan', 'href' => '/event', 'children' => [
     ['label' => 'Agenda', 'key' => 'event', 'href' => '/event'],
     ['label' => 'Program Utama', 'key' => 'feature', 'href' => '/feature'],
@@ -79,7 +80,7 @@ $activeKey = $activeNav ?? '';
           <?php endif; ?>
         <?php endforeach; ?>
       </nav>
-      <div class="hidden items-center gap-3 lg:flex">
+      <div class="hidden items-center gap-3 lg:flex shrink-0">
         <a data-transition href="<?= $url('contact') ?>" class="btn btn-primary">Hubungi Kami <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
           </svg></a>

@@ -131,7 +131,7 @@ function renderHeader(activeKey) {
           <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             ${nav}
           </nav>
-          <div class="hidden items-center gap-3 lg:flex">
+          <div class="hidden items-center gap-3 lg:flex shrink-0">
             <a data-transition href="${adminUrl('dashboard')}" class="btn btn-secondary">Pratinjau Admin</a>
             <a data-transition href="${pageUrl('contact')}" class="btn btn-primary">Hubungi Kami ${icon('arrowRight')}</a>
           </div>
