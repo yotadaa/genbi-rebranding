@@ -16,6 +16,7 @@ use App\Controllers\Admin\PrestasiTokenController;
 use App\Controllers\Admin\PhotoGalleryController as AdminPhotoGalleryController;
 use App\Controllers\Admin\TeamMemberController as AdminTeamMemberController;
 use App\Controllers\Public\AboutController;
+use App\Controllers\Public\BukuController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\HomeController;
 use App\Controllers\Public\FeedController;
@@ -151,6 +152,7 @@ $viewRenderer->share([
 $pageController = new PageController($renderer);
 $featureController = new FeatureController($renderer, $featureModel, $viewRenderer);
 $aboutController = new AboutController($viewRenderer);
+$bukuController = new BukuController($viewRenderer);
 $contactController = new ContactController($viewRenderer, $contactSettingModel, $siteSettings);
 $homeController = new HomeController($renderer, $featureModel, $newsModel, $eventModel, $teamModel, $viewRenderer, $siteSettings);
 $newsController = new NewsController($renderer, $newsModel, $commentModel, $viewRenderer);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Request;
 use App\Core\Response;
 use App\Controllers\Public\AboutController;
+use App\Controllers\Public\BukuController;
 use App\Controllers\Public\CommentController;
 use App\Controllers\Public\EventController;
 use App\Controllers\Public\FeedController;
@@ -20,6 +21,7 @@ use App\Controllers\Public\TeamController;
 use App\Middleware\CsrfMiddleware;
 
 /** @var AboutController $aboutController */
+/** @var BukuController $bukuController */
 /** @var PageController $pageController */
 /** @var FeatureController $featureController */
 /** @var ContactController $contactController */
@@ -42,6 +44,7 @@ $router->get('/feature', static fn(Request $request, Response $response) => $fea
 $router->get('/prestasi', static fn(Request $request, Response $response) => $prestasiController->index($request, $response));
 $router->get('/prestasi/submit/{token}', static fn(Request $request, Response $response, array $params) => $prestasiController->submissionForm($request, $response, $params));
 $router->get('/prestasi/{slug}', static fn(Request $request, Response $response, array $params) => $prestasiController->show($request, $response, $params));
+$router->get('/buku', static fn(Request $request, Response $response) => $bukuController->index($request, $response));
 $router->get('/presensi/{token}/members', static fn(Request $request, Response $response, array $params) => $presensiController->members($request, $response, $params));
 $router->get('/presensi/{token}', static fn(Request $request, Response $response, array $params) => $presensiController->show($request, $response, $params));
 $router->get('/event', static fn(Request $request, Response $response) => $eventController->index($request, $response));
