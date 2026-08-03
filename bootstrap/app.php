@@ -42,6 +42,7 @@ use App\Core\Router;
 use App\Core\StaticPageRenderer;
 use App\Core\ViewRenderer;
 use App\Models\News;
+use App\Models\Buku;
 use App\Models\Category;
 use App\Models\NewsComment;
 use App\Models\Prestasi;
@@ -122,9 +123,11 @@ try {
     $siteSettings = new SiteSettings($settingModel);
     $commentThrottle = new CommentThrottleService();
     $commentModel = new NewsComment($db, $commentVoteModel);
+    $bukuModel = new Buku($db);
 } catch (\Throwable $exception) {
     error_log('[GenBI DB] ' . $exception->getMessage());
     $newsModel = null;
+    $bukuModel = null;
     $commentModel = null;
     $prestasiModel = null;
     $presensiEventModel = null;
@@ -152,7 +155,7 @@ $viewRenderer->share([
 $pageController = new PageController($renderer);
 $featureController = new FeatureController($renderer, $featureModel, $viewRenderer);
 $aboutController = new AboutController($viewRenderer);
-$bukuController = new BukuController($viewRenderer);
+$bukuController = new BukuController($viewRenderer, $bukuModel);
 $contactController = new ContactController($viewRenderer, $contactSettingModel, $siteSettings);
 $homeController = new HomeController($renderer, $featureModel, $newsModel, $eventModel, $teamModel, $viewRenderer, $siteSettings);
 $newsController = new NewsController($renderer, $newsModel, $commentModel, $viewRenderer);
