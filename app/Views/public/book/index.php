@@ -17,16 +17,136 @@ $defaultGradients = [
 ];
 ?>
 <style>
-    /* 1. Gaya Dasar Tombol Tidak Aktif (Biru Muda / Putih) */
+    /* ==================================================
+       A. GAYA ANIMASI BUKU MEMBUKA & LEMBARAN KERTAS 3D
+       ================================================== */
+    .book-3d-perspective {
+        perspective: 1200px;
+    }
+
+    /* Container utama buku dengan sistem koordinat 3D */
+    .book-wrapper-3d {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Saat kursor mendekat: Seluruh buku miring 3D ke posisi siap dibaca */
+    .book-card:hover .book-wrapper-3d {
+        transform: rotateY(-24deg) rotateX(7deg) translateY(-8px) scale(1.02);
+    }
+
+    /* 1. SAMPUL DEPAN (Front Cover) yang bergerak membuka */
+    .book-front-cover {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 3px 12px 12px 3px;
+        transform-origin: left center;
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
+        z-index: 30;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Saat Hover: Sampul depan berayun membuka ke sebelah kiri! */
+    .book-card:hover .book-front-cover {
+        transform: rotateY(-22deg);
+        box-shadow: 15px 15px 30px -5px rgba(15, 23, 42, 0.5);
+    }
+
+    /* 2. LEMBARAN KERTAS 1 (Page Layer Atas) */
+    .book-page-1 {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        left: 3px;
+        right: -4px;
+        background: linear-gradient(to right, #e2e8f0, #ffffff 20%, #f8fafc 85%, #cbd5e1);
+        border-radius: 2px 8px 8px 2px;
+        z-index: 20;
+        transform-origin: left center;
+        transition: all 0.5s ease 0.05s;
+        border-right: 2px solid #94a3b8;
+    }
+
+    /* 3. LEMBARAN KERTAS 2 (Page Layer Tengah - Tumpukan bergaris kertas) */
+    .book-page-2 {
+        position: absolute;
+        top: 7px;
+        bottom: 7px;
+        left: 3px;
+        right: -8px;
+        border-radius: 2px 8px 8px 2px;
+        z-index: 15;
+        transform-origin: left center;
+        transition: all 0.5s ease 0.1s;
+        border-right: 2px solid #cbd5e1;
+        /* Tekstur ratusan lembaran kertas asli */
+        background: repeating-linear-gradient(90deg,
+                #ffffff,
+                #ffffff 2px,
+                #e2e8f0 2px,
+                #e2e8f0 4px);
+    }
+
+    /* 4. SAMPUL BELAKANG (Back Cover) & Pondasi Bayangan */
+    .book-back-cover {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: -12px;
+        border-radius: 3px 10px 10px 3px;
+        z-index: 10;
+        box-shadow: 5px 15px 30px rgba(0, 0, 0, 0.25);
+        transition: all 0.6s ease;
+    }
+
+    /* Efek MEREKAH: Saat dihover, lembaran-lembaran kertas mengintip keluar satu per satu */
+    .book-card:hover .book-page-1 {
+        transform: rotateY(-12deg);
+        right: -9px;
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .book-card:hover .book-page-2 {
+        transform: rotateY(-6deg);
+        right: -18px;
+        box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .book-card:hover .book-back-cover {
+        right: -25px;
+        box-shadow: 20px 30px 50px -5px rgba(30, 58, 138, 0.55);
+    }
+
+    /* Efek Kilatan Cahaya (Sheen) pada Sampul Depan */
+    .glossy-sheen {
+        background: linear-gradient(105deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.45) 45%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 54%);
+        transform: translateX(-150%);
+        transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .book-card:hover .glossy-sheen {
+        transform: translateX(150%);
+    }
+
+    /* ==================================================
+       B. GAYA PAGINATION ANTI-KONFLIK TERBAIK
+       ================================================== */
     #buku-pagination .page-link {
         padding: 0 1.25rem;
         height: 42px;
         min-width: 42px;
         border: 1px solid #93c5fd;
-        /* Border Biru Muda */
         background-color: #ffffff;
         color: #2563eb;
-        /* Warna Teks Biru Cerah */
         font-weight: 700;
         font-size: 0.8rem;
         text-transform: uppercase;
@@ -41,27 +161,21 @@ $defaultGradients = [
         cursor: pointer;
     }
 
-    /* 2. Gaya Saat Mouse Hover (Biru Tua) */
     #buku-pagination .page-link:hover {
         background-color: #1e3a8a !important;
-        /* Biru Tua Pekat */
         color: #ffffff !important;
         border-color: #1e3a8a !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3) !important;
     }
 
-    /* 3. Gaya Tombol AKTIF (Angka Halaman Saat Ini) */
     #buku-pagination .page-active {
         height: 42px;
         min-width: 42px;
         padding: 0 0.5rem;
         border: 2px solid #1e3a8a;
-        /* Border Biru Tua */
         background-color: #dbeafe;
-        /* Background Biru Muda Terang */
         color: #0f172a;
-        /* Warna Angka Gelap Pekat */
         font-weight: 900;
         font-size: 0.9rem;
         border-radius: 9999px;
@@ -71,7 +185,6 @@ $defaultGradients = [
         box-shadow: 0 2px 6px rgba(30, 58, 138, 0.15);
     }
 
-    /* 4. Gaya Tombol Disable (Ujung Halaman) */
     #buku-pagination .page-disabled {
         padding: 0 1.25rem;
         height: 42px;
@@ -153,22 +266,18 @@ $defaultGradients = [
 
         <!-- ==========================================
          3. SKELETON LOADER (Animasi Loading UI)
-         Ditayangkan sekejap untuk efek terbaik
          ========================================== -->
         <div id="buku-skeleton-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
             <?php for ($s = 0; $s < 6; $s++): ?>
                 <div class="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm animate-pulse flex flex-col justify-between">
-                    <!-- Skeleton Cover Buku -->
                     <div class="w-52 sm:w-56 md:w-60 aspect-[3/4] mx-auto mb-6 bg-neutral-200 rounded-r-lg rounded-l-[3px] shadow-inner relative overflow-hidden">
                         <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-[shimmer_2s_infinite]"></div>
                     </div>
-                    <!-- Skeleton Keterangan -->
                     <div class="space-y-3">
                         <div class="h-3 w-1/3 bg-blue-100 rounded-full"></div>
                         <div class="h-5 w-11/12 bg-neutral-200 rounded"></div>
                         <div class="h-5 w-3/4 bg-neutral-200 rounded"></div>
                         <div class="h-3 w-1/2 bg-neutral-200 rounded mt-2"></div>
-                        <!-- Skeleton Action Button -->
                         <div class="pt-4 border-t border-neutral-100 flex items-center gap-3 mt-4">
                             <div class="h-9 flex-1 bg-blue-50 rounded-lg"></div>
                             <div class="h-9 w-10 bg-neutral-100 rounded-lg"></div>
@@ -179,48 +288,65 @@ $defaultGradients = [
         </div>
 
         <!-- ==========================================
-         4. GRID KATALOG BUKU ASLI (DARI DATABASE)
-         Awalnya disembunyikan (hidden), akan tayang mulus lewat JS
+         4. GRID KATALOG BUKU ASLI (DENGAN EFEK MEMBUKA & LEMBARAN KERTAS)
          ========================================== -->
         <div id="buku-real-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14 hidden transition-opacity duration-500 opacity-0">
             <?php if (!empty($books)): ?>
                 <?php foreach ($books as $index => $book): ?>
                     <?php $bgGradient = $defaultGradients[$index % count($defaultGradients)]; ?>
 
-                    <div class="book-card group flex flex-col items-center sm:items-start text-center sm:text-left bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" data-kategori="<?= htmlspecialchars($book['kategori']) ?>" data-judul="<?= strtolower(htmlspecialchars($book['judul'] . ' ' . $book['penulis'])) ?>">
+                    <div class="book-card group flex flex-col items-center sm:items-start text-center sm:text-left bg-white p-6 rounded-2xl border border-neutral-200/80 hover:border-blue-300 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-kategori="<?= htmlspecialchars($book['kategori']) ?>" data-judul="<?= strtolower(htmlspecialchars($book['judul'] . ' ' . $book['penulis'])) ?>">
 
-                        <!-- Wrapper Cover 3D Book Spine Effect -->
-                        <div class="relative w-52 sm:w-56 md:w-60 aspect-[3/4] mx-auto mb-6 rounded-r-lg rounded-l-[3px] shadow-[10px_15px_30px_rgba(0,0,0,0.2)] group-hover:shadow-[15px_25px_40px_rgba(30,58,138,0.3)] transform transition-all duration-500 group-hover:-translate-y-2 overflow-hidden flex flex-col justify-between p-5 text-white bg-gradient-to-br <?= $bgGradient ?>">
+                        <!-- Ruang Perspektif 3D -->
+                        <div class="book-3d-perspective w-52 sm:w-56 md:w-60 aspect-[3/4] mx-auto mb-6">
 
-                            <!-- Efek Punggung & Lipatan Buku 3D -->
-                            <div class="absolute top-0 left-0 bottom-0 w-6 bg-gradient-to-r from-black/50 via-white/15 to-transparent z-10 pointer-events-none border-l-2 border-white/20"></div>
-                            <div class="absolute top-0 right-0 bottom-0 w-1.5 bg-gradient-to-l from-black/30 to-transparent z-10 pointer-events-none"></div>
+                            <!-- Pembungkus Buku 3D -->
+                            <div class="book-wrapper-3d">
 
-                            <?php if (!empty($book['cover'])): ?>
-                                <!-- Cover Gambar dari Database / Unsplash -->
-                                <img src="<?= htmlspecialchars($book['cover']) ?>" alt="Cover <?= htmlspecialchars($book['judul']) ?>" class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105" loading="lazy">
-                            <?php else: ?>
-                                <!-- Desain Cover CSS Default Eksklusif -->
-                                <div class="relative z-0 flex items-center justify-between text-[10px] font-bold tracking-widest text-blue-200/80 uppercase border-b border-white/15 pb-2">
-                                    <span>GENBI JAMBI</span>
-                                    <span><?= htmlspecialchars((string)$book['tahun']) ?></span>
+                                <!-- A. SAMPUL BELAKANG & LEMBARAN KERTAS DI BAWAH SAMPUL -->
+                                <div class="book-back-cover bg-gradient-to-br <?= $bgGradient ?>"></div>
+                                <div class="book-page-2"></div>
+                                <div class="book-page-1"></div>
+
+                                <!-- B. SAMPUL DEPAN (FRONT COVER YANG MEMBUKA) -->
+                                <div class="book-front-cover overflow-hidden flex flex-col justify-between p-5 text-white bg-gradient-to-br <?= $bgGradient ?>">
+
+                                    <!-- Kilauan Cahaya (Sheen) -->
+                                    <div class="glossy-sheen absolute inset-0 z-20 pointer-events-none"></div>
+
+                                    <!-- Efek Punggung Buku & Jilidan Kiri -->
+                                    <div class="absolute top-0 left-0 bottom-0 w-6 bg-gradient-to-r from-black/60 via-white/15 to-transparent z-10 pointer-events-none border-l-2 border-white/30"></div>
+                                    <div class="absolute top-0 right-0 bottom-0 w-2 bg-gradient-to-l from-black/40 to-transparent z-10 pointer-events-none"></div>
+                                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-b from-white/20 to-transparent z-10 pointer-events-none"></div>
+
+                                    <?php if (!empty($book['cover'])): ?>
+                                        <!-- Cover Gambar dari Database / Unsplash -->
+                                        <img src="<?= htmlspecialchars($book['cover']) ?>" alt="Cover <?= htmlspecialchars($book['judul']) ?>" class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105" loading="lazy">
+                                    <?php else: ?>
+                                        <!-- Desain Cover CSS Default Eksklusif -->
+                                        <div class="relative z-0 flex items-center justify-between text-[10px] font-bold tracking-widest text-blue-200/80 uppercase border-b border-white/15 pb-2">
+                                            <span>GENBI JAMBI</span>
+                                            <span><?= htmlspecialchars((string)$book['tahun']) ?></span>
+                                        </div>
+                                        <div class="relative z-0 my-auto text-left">
+                                            <span class="inline-block px-2 py-0.5 mb-2 bg-amber-400 text-neutral-950 text-[10px] font-extrabold tracking-wider uppercase rounded shadow-sm">
+                                                <?= htmlspecialchars($book['kategori']) ?>
+                                            </span>
+                                            <h3 class="font-serif text-lg font-bold leading-snug tracking-tight text-white drop-shadow">
+                                                <?= htmlspecialchars($book['judul']) ?>
+                                            </h3>
+                                            <p class="mt-2 text-[11px] text-neutral-200 line-clamp-3 italic leading-relaxed">
+                                                "<?= htmlspecialchars($book['sinopsis']) ?>"
+                                            </p>
+                                        </div>
+                                        <div class="relative z-0 pt-2 border-t border-white/15 text-[11px] font-medium text-blue-200/90 text-left flex items-center justify-between">
+                                            <span class="truncate"><?= htmlspecialchars($book['penulis']) ?></span>
+                                            <span class="text-amber-300 text-[10px] font-bold">BI</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="relative z-0 my-auto text-left">
-                                    <span class="inline-block px-2 py-0.5 mb-2 bg-amber-400 text-neutral-950 text-[10px] font-extrabold tracking-wider uppercase rounded shadow-sm">
-                                        <?= htmlspecialchars($book['kategori']) ?>
-                                    </span>
-                                    <h3 class="font-serif text-lg font-bold leading-snug tracking-tight text-white drop-shadow">
-                                        <?= htmlspecialchars($book['judul']) ?>
-                                    </h3>
-                                    <p class="mt-2 text-[11px] text-neutral-200 line-clamp-3 italic leading-relaxed">
-                                        "<?= htmlspecialchars($book['sinopsis']) ?>"
-                                    </p>
-                                </div>
-                                <div class="relative z-0 pt-2 border-t border-white/15 text-[11px] font-medium text-blue-200/90 text-left flex items-center justify-between">
-                                    <span class="truncate"><?= htmlspecialchars($book['penulis']) ?></span>
-                                    <span class="text-amber-300 text-[10px] font-bold">BI</span>
-                                </div>
-                            <?php endif; ?>
+
+                            </div>
                         </div>
 
                         <!-- Detail Keterangan Buku -->
@@ -354,11 +480,10 @@ $defaultGradients = [
         let currentFilter = 'Semua';
         let currentSearch = '';
 
-        // 1. EFEK SKELETON AWAL: Sembuyikan skeleton dan tampilkan buku asli setelah 600ms
+        // 1. EFEK SKELETON AWAL
         setTimeout(() => {
             skeletonGrid.style.display = 'none';
             realGrid.classList.remove('hidden');
-            // Trigger transisi opacity
             setTimeout(() => {
                 realGrid.classList.remove('opacity-0');
                 realGrid.classList.add('opacity-100');
@@ -384,7 +509,6 @@ $defaultGradients = [
                 }
             });
 
-            // Cek jika kosong
             if (visibleCount === 0 && bookCards.length > 0) {
                 emptySearch.classList.remove('hidden');
                 if (currentSearch !== '') {
@@ -396,14 +520,12 @@ $defaultGradients = [
                 emptySearch.classList.add('hidden');
             }
 
-            // Update teks counter di atas
             counterText.innerHTML = `Menampilkan <strong class="text-neutral-900">${visibleCount}</strong> buku untuk kategori <strong class="text-blue-900">${currentFilter}</strong>.`;
         }
 
-        // 3. EVENT LISTENER TOMBOL KATEGORI (Dengan Efek Skeleton Singkat!)
+        // 3. EVENT LISTENER TOMBOL KATEGORI
         filterButtons.forEach(btn => {
             btn.addEventListener('click', function() {
-                // Ubah tampilan tombol aktif
                 filterButtons.forEach(b => {
                     b.className = 'filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200';
                 });
@@ -411,7 +533,6 @@ $defaultGradients = [
 
                 currentFilter = this.getAttribute('data-filter');
 
-                // Munculkan skeleton shimmer 350ms agar animasi berasa halus & nyata
                 realGrid.style.opacity = '0';
                 skeletonGrid.style.display = 'grid';
                 emptySearch.classList.add('hidden');
@@ -424,7 +545,7 @@ $defaultGradients = [
             });
         });
 
-        // 4. EVENT LISTENER PENCARIAN (Live Typing)
+        // 4. EVENT LISTENER PENCARIAN
         if (searchInput) {
             searchInput.addEventListener('input', function(e) {
                 currentSearch = e.target.value.toLowerCase().trim();
