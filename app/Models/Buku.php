@@ -114,4 +114,180 @@ class Buku
             return 0;
         }
     }
+
+    /**
+     * Mengambil daftar seluruh buku untuk halaman Admin (termasuk Draft)
+     */
+    public function allForAdmin(int $limit = 25, int $offset = 0, array $filters = []): array
+    {
+        if (!$this->db) return [];
+
+        try {
+            $sql = "SELECT * FROM tbl_buku WHERE deleted_at IS NULL";
+            $params = [];
+
+            // Filter status jika ada
+            if (!empty($filters['status'])) {
+                $sql .= " AND status = :status";
+                $params[':status'] = $filters['status'];
+            }
+
+            // Filter pencarian kata kunci
+            if (!empty($filters['q'])) {
+                $sql .= " AND (judul LIKE :q OR penulis LIKE :q OR kategori LIKE :q)";
+                $params[':q'] = "%" . trim($filters['q']) . "%";
+            }
+
+            $sql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+        } catch (\Throwable $e) {
+            error_log('[Buku Admin All Error] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Menghitung total buku untuk paginasi Admin
+     */
+    public function countForAdmin(array $filters = []): int
+    {
+        if (!$this->db) return 0;
+        try {
+            $sql = "SELECT COUNT(*) FROM tbl_buku WHERE deleted_at IS NULL";
+            $params = [];
+
+            if (!empty($filters['status'])) {
+                $sql .= " AND status = :status";
+                $params[':status'] = $filters['status'];
+            }
+            if (!empty($filters['q'])) {
+                $sql .= " AND (judul LIKE :q OR penulis LIKE :q OR kategori LIKE :q)";
+                $params[':q'] = "%" . trim($filters['q']) . "%";
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return (int) $stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Mencari satu buku berdasarkan ID (Untuk Edit & Preview)
+     */
+    public function find(int $id): ?array
+    {
+        if (!$this->db) return null;
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM tbl_buku WHERE buku_id = :id AND deleted_at IS NULL LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $row ? self::mapRow($row) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Menambahkan data buku baru ke database
+     */
+    public function create(array $data): int
+    {
+        if (!$this->db) return 0;
+        try {
+            $stmt = $this->db->prepare("INSERT INTO tbl_buku 
+                (judul, slug, file_path, penulis, penerbit, deskripsi, sinopsis, foto_cover_buku, tahun_terbit, isbn, page_count, kategori, status, created_at) 
+                VALUES 
+                (:judul, :slug, :file_path, :penulis, :penerbit, :deskripsi, :sinopsis, :foto_cover, :tahun, :isbn, :page_count, :kategori, :status, NOW())");
+
+            $stmt->execute([
+                ':judul' => $data['judul'] ?? '',
+                ':slug' => $data['slug'] ?? '',
+                ':file_path' => $data['file_path'] ?? '',
+                ':penulis' => $data['penulis'] ?? 'GenBI Jambi',
+                ':penerbit' => $data['penerbit'] ?? 'Bank Indonesia',
+                ':deskripsi' => $data['deskripsi'] ?? '',
+                ':sinopsis' => $data['sinopsis'] ?? '',
+                ':foto_cover' => $data['cover'] ?? '',
+                ':tahun' => (int) ($data['tahun'] ?? date('Y')),
+                ':isbn' => $data['isbn'] ?? '-',
+                ':page_count' => (int) ($data['halaman'] ?? 0),
+                ':kategori' => $data['kategori'] ?? 'Publikasi',
+                ':status' => $data['status'] ?? 'published',
+            ]);
+            return (int) $this->db->lastInsertId();
+        } catch (\Throwable $e) {
+            error_log('[Buku Create Error] ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Memperbarui data buku yang ada
+     */
+    public function update(int $id, array $data): bool
+    {
+        if (!$this->db || $data === []) return false;
+
+        $map = [
+            'judul' => 'judul',
+            'slug' => 'slug',
+            'file_path' => 'file_path',
+            'penulis' => 'penulis',
+            'penerbit' => 'penerbit',
+            'deskripsi' => 'deskripsi',
+            'sinopsis' => 'sinopsis',
+            'cover' => 'foto_cover_buku',
+            'tahun' => 'tahun_terbit',
+            'isbn' => 'isbn',
+            'halaman' => 'page_count',
+            'kategori' => 'kategori',
+            'status' => 'status',
+        ];
+
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($map as $key => $col) {
+            if (array_key_exists($key, $data)) {
+                $fields[] = "$col = :$key";
+                $params[":$key"] = in_array($key, ['tahun', 'halaman']) ? (int) $data[$key] : $data[$key];
+            }
+        }
+
+        if ($fields === []) return false;
+
+        try {
+            $sql = "UPDATE tbl_buku SET " . implode(', ', $fields) . ", updated_at = NOW() WHERE buku_id = :id AND deleted_at IS NULL";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (\Throwable $e) {
+            error_log('[Buku Update Error] ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Hapus lembut (Soft Delete) dari database
+     */
+    public function delete(int $id): bool
+    {
+        if (!$this->db) return false;
+        try {
+            $stmt = $this->db->prepare("UPDATE tbl_buku SET deleted_at = NOW() WHERE buku_id = :id AND deleted_at IS NULL");
+            return $stmt->execute([':id' => $id]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 }

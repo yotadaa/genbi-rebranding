@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Controllers\Admin\AdminPageController;
 use App\Controllers\Admin\AuthController;
+use App\Controllers\Admin\BukuAdminController as AdminBukuController;
 use App\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Controllers\Admin\CommentSettingController;
 use App\Controllers\Admin\NewsController as AdminNewsController;
@@ -25,6 +26,7 @@ use App\Middleware\CsrfMiddleware;
 use App\Middleware\RoleMiddleware;
 
 /** @var AuthController $authController */
+/** @var AdminBukuController $adminBukuController */
 /** @var AdminPageController $adminPageController */
 /** @var AdminNewsController $adminNewsController */
 /** @var AdminCategoryController $adminCategoryController */
@@ -70,6 +72,7 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $adminCommentSettingController,
     $adminSettingsController,
     $adminPhotoGalleryController,
+    $adminBukuController
 ) {
     // Dashboard
     $router->get('/admin', static fn(Request $request, Response $response) => $adminPageController->dashboard($request, $response));
@@ -163,6 +166,14 @@ $router->group([$authMiddleware, $csrfMiddleware, $roleMiddleware], static funct
     $router->post('/admin/photos/upload', static fn(Request $request, Response $response) => $adminPhotoGalleryController->upload($request, $response));
     $router->post('/admin/photos/{id}/update', static fn(Request $request, Response $response, array $params) => $adminPhotoGalleryController->update($request, $response, $params));
     $router->post('/admin/photos/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminPhotoGalleryController->delete($request, $response, $params));
+
+    // Buku CMS
+    $router->get('/admin/buku/list', static fn(Request $request, Response $response) => $adminBukuController->index($request, $response));
+    $router->get('/admin/buku/{id}', static fn(Request $request, Response $response, array $params) => $adminBukuController->show($request, $response, $params));
+    $router->post('/admin/buku', static fn(Request $request, Response $response) => $adminBukuController->store($request, $response));
+    $router->post('/admin/buku/upload', static fn(Request $request, Response $response) => $adminBukuController->upload($request, $response));
+    $router->post('/admin/buku/{id}/update', static fn(Request $request, Response $response, array $params) => $adminBukuController->update($request, $response, $params));
+    $router->post('/admin/buku/{id}/delete', static fn(Request $request, Response $response, array $params) => $adminBukuController->delete($request, $response, $params));
 
     // Live settings
     $router->get('/admin/settings', static fn(Request $request, Response $response) => $adminSettingsController->edit($request, $response));

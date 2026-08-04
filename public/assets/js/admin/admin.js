@@ -177,6 +177,10 @@
       { key: 'news-list', label: 'News', href: adminUrl('news') },
       { key: 'comment', label: 'Comment', href: adminUrl('comment') }
     ] },
+    { key: 'buku', label: 'Katalog Buku', href: adminUrl('buku'), icon: 'bookOpen', children: [
+      { key: 'buku-list', label: 'Daftar Buku', href: adminUrl('buku') },
+      { key: 'buku-add', label: 'Tambah Buku', href: adminUrl('buku-add') }
+    ] },
     { key: 'prestasi', label: 'Prestasi', href: adminUrl('prestasi'), icon: 'feature', children: [
       { key: 'prestasi-list', label: 'Prestasi', href: adminUrl('prestasi') },
       { key: 'prestasi-token', label: 'Token Form', href: adminUrl('prestasi-token') }

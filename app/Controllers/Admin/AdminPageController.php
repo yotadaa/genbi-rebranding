@@ -42,8 +42,8 @@ final class AdminPageController
         private ?NewsComment $commentModel = null,
         private ?PhotoGallery $photoGalleryModel = null,
         private ?PrestasiToken $prestasiTokenModel = null,
-    ) {
-    }
+        private ?\App\Models\Buku $bukuModel = null,
+    ) {}
 
     public function dashboard(Request $request, Response $response): void
     {
@@ -83,7 +83,7 @@ HTML;
                 'page' => $request->query('page'),
                 'per_page' => $request->query('per_page'),
             ], 25, 100);
-            
+
             // Build filters array
             $filters = [];
             if ($request->query('status')) {
@@ -92,7 +92,7 @@ HTML;
             if ($request->query('q')) {
                 $filters['q'] = $request->query('q');
             }
-            
+
             // Parse category[] query params
             $categoryParams = $_GET['category'] ?? [];
             if (!is_array($categoryParams)) {
@@ -102,7 +102,7 @@ HTML;
             if (!empty($categoryIds)) {
                 $filters['categories'] = $categoryIds;
             }
-            
+
             $layout = $request->query('layout') ?: 'list';
             $categories = $this->news?->categories() ?? [];
             $items = $this->news?->allForAdmin($pg['per_page'], $pg['offset'], $filters) ?? [];
@@ -549,6 +549,58 @@ HTML;
         return null;
     }
 
+    private function renderAdminBukuSsr(string $page, Request $request): ?string
+    {
+        if (!$this->bukuModel) return null;
+
+        $script = '<script defer src="/assets/js/admin/cms.js"></script>';
+
+        if ($page === 'buku') {
+            $pg = Paginator::resolve([
+                'page' => $request->query('page'),
+                'per_page' => $request->query('per_page'),
+            ], 25, 100);
+
+            $filters = [
+                'status' => (string) ($request->query('status') ?? ''),
+                'q' => (string) ($request->query('q') ?? ''),
+            ];
+
+            $items = $this->bukuModel->allForAdmin($pg['per_page'], $pg['offset'], $filters);
+            $total = $this->bukuModel->countForAdmin($filters);
+
+            return $this->viewRenderer->renderWithLayout('admin/buku/index.php', 'layouts/admin.php', [
+                'title' => 'Katalog Buku | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'buku',
+                'cmsMode' => 'list',
+                'items' => $items,
+                'page' => $pg['page'],
+                'perPage' => $pg['per_page'],
+                'total' => $total,
+                'totalPages' => Paginator::totalPages($total, $pg['per_page']),
+                'filters' => $filters,
+                'scripts' => $script,
+            ]);
+        }
+
+        if (in_array($page, ['buku-add', 'buku-edit'], true)) {
+            $id = (int) ($request->query('id') ?? 0);
+            $item = ($page === 'buku-edit' || $id > 0) ? $this->bukuModel->find($id) : null;
+
+            return $this->viewRenderer->renderWithLayout('admin/buku/form.php', 'layouts/admin.php', [
+                'title' => ($item ? 'Edit Buku' : 'Tambah Buku Baru') . ' | Admin GenBI',
+                'csrfToken' => CsrfService::token(),
+                'cmsPage' => 'buku',
+                'cmsMode' => 'editor',
+                'item' => $item,
+                'scripts' => $script,
+            ]);
+        }
+
+        return null;
+    }
+
     private function renderAdminContentSsr(string $page, Request $request): ?string
     {
         $script = '<script defer src="/assets/js/admin/cms.js"></script>';
@@ -640,9 +692,20 @@ HTML;
     private function renderAdminPrototypeSsr(string $page, Request $request): ?string
     {
         $supported = [
-            'language', 'slider', 'slider-add', 'why', 'why-choose', 'why_choose',
-            'why-choose-add', 'why_choose-add', 'faq', 'faq-add', 'social',
-            'social-media', 'social_media', 'page',
+            'language',
+            'slider',
+            'slider-add',
+            'why',
+            'why-choose',
+            'why_choose',
+            'why-choose-add',
+            'why_choose-add',
+            'faq',
+            'faq-add',
+            'social',
+            'social-media',
+            'social_media',
+            'page',
         ];
         if (!in_array($page, $supported, true)) {
             return null;
@@ -681,7 +744,7 @@ HTML;
     public function show(Request $request, Response $response, array $params): void
     {
         $page = preg_replace('/[^a-z0-9_-]/i', '', $params['page'] ?? 'dashboard') ?: 'dashboard';
-        
+
         // SSR for admin pages
         if ($this->viewRenderer instanceof ViewRenderer) {
             $ssrHtml = $this->renderAdminNewsSsr($page, $request);
@@ -700,6 +763,9 @@ HTML;
             if ($ssrHtml === null && in_array($page, ['event', 'event-add', 'event-edit'], true)) {
                 $ssrHtml = $this->renderAdminEventSsr($page, $request);
             }
+            if ($ssrHtml === null && in_array($page, ['buku', 'buku-add', 'buku-edit'], true)) {
+                $ssrHtml = $this->renderAdminBukuSsr($page, $request);
+            }
             if ($ssrHtml === null && in_array($page, ['feature', 'feature-add', 'feature-edit'], true)) {
                 $ssrHtml = $this->renderAdminFeatureSsr($page, $request);
             }
@@ -712,11 +778,37 @@ HTML;
             // A temporary database outage must not silently turn a clean admin
             // route back into an empty client-rendered fallback page.
             if ($ssrHtml === null && in_array($page, [
-                'news', 'news-add', 'news-edit', 'team-member', 'team-member-add', 'team-member-edit',
-                'prestasi', 'prestasi-add', 'prestasi-edit', 'presensi', 'presensi-add', 'presensi-edit',
-                'presensi-detail', 'genbi-poin', 'genbi-poin-add', 'genbi-poin-edit', 'genbi-poin-detail',
-                'event', 'event-add', 'event-edit', 'feature', 'feature-add', 'feature-edit',
-                'category', 'comment', 'photo', 'photo-add', 'prestasi-token',
+                'news',
+                'news-add',
+                'news-edit',
+                'team-member',
+                'team-member-add',
+                'team-member-edit',
+                'buku',
+                'buku-add',
+                'buku-edit',
+                'prestasi',
+                'prestasi-add',
+                'prestasi-edit',
+                'presensi',
+                'presensi-add',
+                'presensi-edit',
+                'presensi-detail',
+                'genbi-poin',
+                'genbi-poin-add',
+                'genbi-poin-edit',
+                'genbi-poin-detail',
+                'event',
+                'event-add',
+                'event-edit',
+                'feature',
+                'feature-add',
+                'feature-edit',
+                'category',
+                'comment',
+                'photo',
+                'photo-add',
+                'prestasi-token',
             ], true)) {
                 $ssrHtml = $this->renderAdminNoDataSsr($page);
             }
@@ -725,7 +817,7 @@ HTML;
                 return;
             }
         }
-        
+
         if ($this->viewRenderer instanceof ViewRenderer && $this->siteSettings instanceof SiteSettings) {
             $extracted = $this->renderer->extractAdminPage('admin/' . $page . '.html', [
                 'noindex' => true,

@@ -90,6 +90,9 @@
     social: () => { Admin.renderAdminShell('social'); hasSsrPrototype() ? bindSsrPrototype() : renderSocialMedia(); },
     photo: () => { Admin.renderAdminShell('gallery'); mode === 'editor' ? renderPhotoEditor() : renderPhotoList(); },
     page: () => { Admin.renderAdminShell('page'); },
+    buku: () => { Admin.renderAdminShell('buku-list'); },
+    'buku-add': () => { Admin.renderAdminShell('buku-add'); },
+    'buku-edit': () => { Admin.renderAdminShell('buku-list'); },
   };
 
   const teamSelection = new Set();
