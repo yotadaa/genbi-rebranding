@@ -90,7 +90,7 @@
     social: () => { Admin.renderAdminShell('social'); hasSsrPrototype() ? bindSsrPrototype() : renderSocialMedia(); },
     photo: () => { Admin.renderAdminShell('gallery'); mode === 'editor' ? renderPhotoEditor() : renderPhotoList(); },
     page: () => { Admin.renderAdminShell('page'); },
-    buku: () => { Admin.renderAdminShell('buku-list'); },
+    buku: () => { Admin.renderAdminShell(window.location.pathname.includes('add') ? 'buku-add' : 'buku-list'); },
     'buku-add': () => { Admin.renderAdminShell('buku-add'); },
     'buku-edit': () => { Admin.renderAdminShell('buku-list'); },
   };

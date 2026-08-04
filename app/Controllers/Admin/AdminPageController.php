@@ -559,7 +559,7 @@ HTML;
             $pg = Paginator::resolve([
                 'page' => $request->query('page'),
                 'per_page' => $request->query('per_page'),
-            ], 25, 100);
+            ], 10, 100);
 
             $filters = [
                 'status' => (string) ($request->query('status') ?? ''),
@@ -591,7 +591,7 @@ HTML;
             return $this->viewRenderer->renderWithLayout('admin/buku/form.php', 'layouts/admin.php', [
                 'title' => ($item ? 'Edit Buku' : 'Tambah Buku Baru') . ' | Admin GenBI',
                 'csrfToken' => CsrfService::token(),
-                'cmsPage' => 'buku',
+                'cmsPage' => $page, // <- PASTIKAN BAGIAN INI MEMAKAI $page (bukan string 'buku')
                 'cmsMode' => 'editor',
                 'item' => $item,
                 'scripts' => $script,
