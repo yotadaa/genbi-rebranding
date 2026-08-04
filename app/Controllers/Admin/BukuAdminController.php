@@ -47,12 +47,12 @@ class BukuAdminController
     public function store(Request $request, Response $response): void
     {
         $payload = $this->sanitize($request->json());
-        if ($payload['judul'] === '') {
+        if (empty($payload['judul'])) {
             $response->json(['error' => 'Judul buku wajib diisi'], 422);
             return;
         }
 
-        if ($payload['slug'] === '') {
+        if (empty($payload['slug'])) {
             $payload['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $payload['judul']), '-'));
         }
 
@@ -90,44 +90,54 @@ class BukuAdminController
     // Untuk mengunggah file gambar (cover buku)
     public function upload(Request $request, Response $response): void
     {
-        if (empty($_FILES['cover']) && empty($_FILES['image'])) {
-            $response->json(['error' => 'Tidak ada file gambar yang diunggah'], 422);
+        // 1. Cek apakah ada file yang diupload (bisa bernama 'cover', 'image', atau 'pdf', 'file')
+        if (empty($_FILES['cover']) && empty($_FILES['image']) && empty($_FILES['pdf']) && empty($_FILES['file'])) {
+            $response->json(['error' => 'Tidak ada file yang diunggah'], 422);
             return;
         }
-
-        $file = $_FILES['cover'] ?? $_FILES['image'];
-        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || $file['size'] > self::MAX_UPLOAD_SIZE) {
-            $response->json(['error' => 'Upload gagal atau ukuran melebihi 5MB'], 422);
+        $file = $_FILES['cover'] ?? $_FILES['image'] ?? $_FILES['pdf'] ?? $_FILES['file'];
+        $isPdfUpload = !empty($_FILES['pdf']) || !empty($_FILES['file']);
+        // Batasan ukuran: Cover Foto maks 5MB, Dokumen PDF maks 25MB
+        $maxSize = $isPdfUpload ? (25 * 1024 * 1024) : (5 * 1024 * 1024);
+        if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] <= 0 || $file['size'] > $maxSize) {
+            $response->json(['error' => 'Upload gagal atau ukuran file melebihi batas maksimal (' . ($isPdfUpload ? '25MB' : '5MB') . ')'], 422);
             return;
         }
-
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-        if (!in_array($mime, self::ALLOWED_IMAGE_TYPES, true) || @getimagesize($file['tmp_name']) === false) {
-            $response->json(['error' => 'Format file harus berupa gambar (JPG, PNG, WEBP)'], 422);
-            return;
+        // 2. Validasi Tipe File
+        if ($isPdfUpload) {
+            if ($mime !== 'application/pdf') {
+                $response->json(['error' => 'Format file dokumen harus berupa PDF (.pdf)'], 422);
+                return;
+            }
+            $ext = 'pdf';
+            $prefix = 'ebook-';
+        } else {
+            if (!in_array($mime, self::ALLOWED_IMAGE_TYPES, true) || @getimagesize($file['tmp_name']) === false) {
+                $response->json(['error' => 'Format file harus berupa gambar (JPG, PNG, WEBP)'], 422);
+                return;
+            }
+            $ext = match ($mime) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/gif' => 'gif',
+                default => 'jpg'
+            };
+            $prefix = 'cover-';
         }
-
-        $ext = match ($mime) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/gif' => 'gif',
-            default => 'jpg'
-        };
-
+        // 3. Persiapan Folder Tujuan
         $dir = dirname(__DIR__, 3) . '/public' . self::UPLOAD_DIR;
         if (!is_dir($dir)) mkdir($dir, 0755, true);
-
-        // Buat htaccess keamanan
+        // Buat htaccess keamanan (hanya mematikan eksekusi script PHP)
         $htaccess = $dir . '.htaccess';
         if (!is_file($htaccess)) file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\n");
-
-        $filename = 'cover-' . bin2hex(random_bytes(6)) . '.' . $ext;
+        // 4. Simpan dengan nama acak aman
+        $filename = $prefix . bin2hex(random_bytes(6)) . '.' . $ext;
         if (!move_uploaded_file($file['tmp_name'], $dir . $filename)) {
-            $response->json(['error' => 'Gagal menyimpan foto ke server'], 500);
+            $response->json(['error' => 'Gagal menyimpan file ke sistem server'], 500);
             return;
         }
-
         $response->json(['data' => ['url' => self::UPLOAD_DIR . $filename, 'filename' => $filename]], 201);
     }
 
