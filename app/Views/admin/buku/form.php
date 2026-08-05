@@ -19,34 +19,93 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 <?= $isEdit ? 'Edit Data & Karya Buku' : 'Tambah Buku Baru' ?>
             </h1>
             <p class="mt-1 text-sm text-neutral-600">
-                Lengkapi metadata karya publikasi, sampul buku, dan berkas digital E-Book/PDF GenBI.
+                <?= $isEdit ? 'Perbaiki informasi karya, ganti foto sampul, atau perbaharui berkas dokumen E-Book GenBI.' : 'Lengkapi metadata karya publikasi, sampul buku, dan berkas digital E-Book/PDF GenBI.' ?>
             </p>
         </div>
         <div class="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-blue-900 text-xs font-semibold">
-            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-            <span>Modul Literasi Digital GenBI</span>
+            <span class="w-2 h-2 rounded-full <?= $isEdit ? 'bg-amber-500' : 'bg-blue-600' ?>"></span>
+            <span><?= $isEdit ? 'Mode Pembaharuan Data (Update)' : 'Modul Literasi Digital GenBI' ?></span>
         </div>
     </header>
+
+    <!-- BANNER INFORMASI KHUSUS MODE UPDATE / EDIT -->
+    <?php if ($isEdit): ?>
+        <div class="mt-6 p-5 bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-2xl shadow-md text-white flex flex-col md:flex-row md:items-center justify-between gap-4 border border-blue-700/50">
+            <div class="flex items-start md:items-center gap-4">
+                <div class="p-3 bg-white/10 backdrop-blur-md rounded-xl text-blue-200 shadow-inner">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md bg-amber-400 text-neutral-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">Mode Edit / Update</span>
+                        <span class="text-xs font-bold text-blue-200">ID Buku: #<?= (int) ($item['id'] ?? 0) ?></span>
+                    </div>
+                    <h2 class="text-base md:text-lg font-extrabold tracking-tight text-white mt-1">Mengedit Karya: <?= $e($item['judul'] ?? '') ?></h2>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs font-medium text-blue-100/90">
+                        <span class="inline-flex items-center gap-1"><span class="text-blue-300">👁️ Dilihat Pengunjung:</span> <?= number_format((int) ($item['view_count'] ?? 0)) ?>x</span>
+                        <span class="text-blue-300/60">•</span>
+                        <span class="inline-flex items-center gap-1"><span class="text-blue-300">📦 Ukuran Dokumen:</span> <?= $e($item['file_size_formatted'] ?? '0 KB') ?></span>
+                        <span class="text-blue-300/60">•</span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="text-blue-300">📌 Status:</span>
+                            <span class="font-bold <?= ($item['status'] ?? '') === 'published' ? 'text-emerald-300' : 'text-amber-300' ?>"><?= strtoupper($e($item['status'] ?? 'DRAFT')) ?></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <?php if (!empty($item['slug'])): ?>
+                <div class="flex-shrink-0">
+                    <a href="/buku/<?= $e($item['slug']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-900 hover:bg-blue-50 font-extrabold text-xs rounded-xl shadow transition-all transform active:scale-95">
+                        <span>Pratinjau di Web Publik ↗</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <!-- Form Utama -->
     <form id="buku-form" class="admin-card mt-6 p-6 md:p-10 shadow-sm border border-neutral-200/80 rounded-2xl bg-white space-y-8" onsubmit="submitBukuForm(event)">
 
         <!-- BLOK 1: INFORMASI KARYA & KLASIFIKASI -->
         <div>
-            <div class="flex items-center gap-2 pb-3 mb-6 border-b border-neutral-200 text-neutral-900">
-                <span class="flex items-center justify-center w-4 h-4 rounded-full bg-blue-900 text-white text-xs font-bold">1</span>
-                <h3 class="text-base font-extrabold tracking-wide uppercase">Informasi Karya & Klasifikasi</h3>
+            <div class="flex items-center justify-between pb-3 mb-6 border-b border-neutral-200 text-neutral-900">
+                <div class="flex items-center gap-2">
+                    <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-900 text-white text-xs font-bold">1</span>
+                    <h3 class="text-base font-extrabold tracking-wide uppercase">Informasi Karya & Klasifikasi</h3>
+                </div>
+                <?php if ($isEdit): ?>
+                    <span class="text-xs font-semibold text-blue-600">Menampilkan data asli dari database</span>
+                <?php endif; ?>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Judul Buku -->
-                <div class="md:col-span-6">
+                <div class="lg:col-span-6">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Judul Buku / Karya <span class="text-red-500">*</span></label>
-                    <input type="text" name="judul" value="<?= $e($item['judul'] ?? '') ?>" placeholder="Contoh: Majalah GenBI Jambi Edisi 2026" required class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
+                    <input type="text" id="judul-input" name="judul" value="<?= $e($item['judul'] ?? '') ?>" placeholder="Contoh: Majalah GenBI Jambi Edisi 2026" required class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
+                </div>
+
+                <!-- Slug / Tautan Web (PENTING AGAR ADMIN BISA KONTROL ATAU LIHAT URL BUKU) -->
+                <div class="lg:col-span-6">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-sm font-bold text-neutral-800 tracking-wide">Slug / Tautan Web <span class="text-neutral-400 text-xs font-normal">(Auto / Kustom)</span></label>
+                        <?php if ($isEdit && !empty($item['slug'])): ?>
+                            <span class="text-[11px] font-bold text-emerald-600">✅ Tersedia di Database</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="relative mt-2">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 font-mono text-xs sm:text-sm select-none">
+                            /buku/
+                        </div>
+                        <input type="text" id="slug-input" name="slug" value="<?= $e($item['slug'] ?? '') ?>" placeholder="majalah-genbi-jambi-edisi-2026" class="form-input w-full pl-16 pr-4 py-2.5 rounded-xl border border-neutral-300 bg-neutral-50 py-2.5 px-4 text-sm font-mono text-blue-900 shadow-sm focus:bg-white focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
+                    </div>
+                    <p class="mt-1.5 text-[11px] text-neutral-500 italic">💡 Tautan unik web publik. <?= $isEdit ? 'Jika diubah, pastikan tidak mengandung spasi atau simbol.' : 'Jika dibiarkan kosong, sistem akan membuat dari judul secara otomatis.' ?></p>
                 </div>
 
                 <!-- Kategori Buku -->
-                <div class="md:col-span-3">
+                <div class="lg:col-span-6">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Kategori Buku</label>
                     <select name="kategori" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-semibold text-blue-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all">
                         <?php
@@ -60,11 +119,11 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 </div>
 
                 <!-- Status Publikasi -->
-                <div class="md:col-span-3">
+                <div class="lg:col-span-6">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Status Tayangan</label>
                     <select name="status" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-bold text-neutral-800 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all">
-                        <option value="published" <?= ($item['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published (Tayang)</option>
-                        <option value="draft" <?= ($item['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft (Disembunyikan)</option>
+                        <option value="published" <?= ($item['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published (Tayangkan di Web Publik)</option>
+                        <option value="draft" <?= ($item['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft (Disembunyikan dari Pengunjung)</option>
                     </select>
                 </div>
             </div>
@@ -73,7 +132,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         <!-- BLOK 2: DETAIL PENERBITAN & METADATA -->
         <div>
             <div class="flex items-center gap-2 pb-3 mb-6 border-b border-neutral-200 text-neutral-900 mt-6">
-                <span class="flex items-center justify-center w-4 h-4 rounded-full bg-blue-900 text-white text-xs font-bold">2</span>
+                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-900 text-white text-xs font-bold">2</span>
                 <h3 class="text-base font-extrabold tracking-wide uppercase">Detail Penerbitan & Spesifikasi Buku</h3>
             </div>
 
@@ -99,7 +158,9 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 <!-- Jumlah Halaman -->
                 <div class="lg:col-span-1">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Jum. Halaman</label>
-                    <?php $hlm = (int) preg_replace('/\D/', '', (string) ($item['halaman'] ?? '0')); ?>
+                    <?php
+                    $hlm = !empty($item['page_count']) ? (int) $item['page_count'] : ((int) preg_replace('/\D/', '', (string) ($item['halaman'] ?? '0')));
+                    ?>
                     <input type="number" name="halaman" value="<?= $hlm > 0 ? $hlm : '' ?>" placeholder="Cth: 120" min="1" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
                 </div>
 
@@ -114,7 +175,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         <!-- BLOK 3: SAMPUL BUKU (COVER) & BERKAS E-BOOK (PDF / LINK) -->
         <div>
             <div class="flex items-center gap-2 pb-3 mb-6 border-b border-neutral-200 text-neutral-900 mt-6">
-                <span class="flex items-center justify-center w-4 h-4 rounded-full bg-blue-900 text-white text-xs font-bold">3</span>
+                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-900 text-white text-xs font-bold">3</span>
                 <h3 class="text-base font-extrabold tracking-wide uppercase">Cover & Berkas Digital (PDF / Link E-Book)</h3>
             </div>
 
@@ -124,10 +185,10 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <div>
                         <div class="flex items-center justify-between border-b border-neutral-200 pb-3 mb-4">
                             <label class="block text-sm font-extrabold text-neutral-900 tracking-wide">Foto Cover Buku</label>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900">Rasio 3:4</span>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['cover']) ? 'bg-emerald-100 text-emerald-900' : 'bg-blue-100 text-blue-900' ?>"><?= !empty($item['cover']) ? '✅ Ada di DB' : 'Rasio 3:4' ?></span>
                         </div>
 
-                        <!-- Layout Cover & Info dengan Ukuran Statis (Anti-Aneh / Anti-Terpotong) -->
+                        <!-- Layout Cover & Info dengan Ukuran Statis -->
                         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <!-- Kotak Preview dengan dimensi statis yang pasti -->
                             <div style="width: 160px; min-width: 160px; height: 220px;" class="bg-white border-2 border-dashed border-neutral-300 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-2.5 relative flex-shrink-0">
@@ -138,7 +199,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                                     </svg>
                                     <span class="text-[11px] font-bold text-neutral-400">Belum Ada Cover</span>
                                 </div>
-                                <!-- Preview Gambar (object-contain menjaga rasio asli) -->
+                                <!-- Preview Gambar -->
                                 <img id="cover-preview" src="<?= $e($item['cover'] ?? '') ?>" alt="Cover Preview" class="w-full h-full object-contain rounded-lg drop-shadow-sm <?= empty($item['cover']) ? 'hidden' : '' ?>" />
                             </div>
 
@@ -151,10 +212,21 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                         </svg>
-                                        <span>Pilih Foto Cover</span>
+                                        <span><?= !empty($item['cover']) ? 'Ganti Foto Cover' : 'Pilih Foto Cover' ?></span>
                                         <input type="file" id="cover-file-input" accept="image/*" onchange="handleCoverSelect(this)" class="hidden" />
                                     </label>
                                 </div>
+
+                                <!-- Menampilkan Read Data Alamat Cover Saat Ini (Jika Edit) -->
+                                <?php if ($isEdit && !empty($item['cover'])): ?>
+                                    <div class="p-2.5 bg-white border border-neutral-200/80 rounded-xl text-left flex items-center justify-between gap-2 shadow-xs">
+                                        <div class="overflow-hidden">
+                                            <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">File di Server:</p>
+                                            <p class="text-xs text-blue-700 truncate font-mono font-medium"><?= $e(basename($item['cover'])) ?></p>
+                                        </div>
+                                        <a href="<?= $e($item['cover']) ?>" target="_blank" class="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-lg text-xs font-bold transition-colors">Buka ↗</a>
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="text-xs font-medium text-neutral-600 space-y-1 leading-relaxed bg-white/80 p-3 rounded-xl border border-neutral-200/60 shadow-xs text-left">
                                     <p class="font-bold text-neutral-800 mb-1">📌 Ketentuan File :</p>
@@ -165,7 +237,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 
                                 <div class="pt-1 border-t border-neutral-200/60">
                                     <p id="upload-status" class="text-xs font-semibold text-neutral-500 leading-relaxed text-left">
-                                        <span class="text-blue-600 italic font-medium">💡 Akan diunggah saat Anda klik Simpan di bawah.</span>
+                                        <span class="text-blue-600 italic font-medium">💡 <?= !empty($item['cover']) ? 'Jika tidak memilih foto baru, foto lama dipertahankan.' : 'Akan diunggah saat Anda klik Simpan di bawah.' ?></span>
                                     </p>
                                 </div>
                             </div>
@@ -178,12 +250,31 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <div class="space-y-4">
                         <div class="flex items-center justify-between border-b border-neutral-200 pb-3">
                             <label class="block text-sm font-extrabold text-neutral-900 tracking-wide">Berkas Dokumen E-Book / PDF</label>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900">PDF / Cloud</span>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['file_path']) ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900' ?>"><?= !empty($item['file_path']) ? '✅ File Aktif' : 'PDF / Cloud' ?></span>
                         </div>
 
-                        <p class="text-xs text-neutral-600 leading-relaxed bg-white/80 p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
-                            Pilih file PDF dari perangkat Anda, <strong>ATAU</strong> sematkan tautan dokumen eksternal seperti <span class="text-blue-700 font-bold">Google Drive / OneDrive</span>.
-                        </p>
+                        <!-- Read Data Status Dokumen Aktif (Khusus Mode Update) -->
+                        <?php if ($isEdit && !empty($item['file_path'])): ?>
+                            <div class="p-3.5 bg-emerald-50/80 border border-emerald-300/80 rounded-xl text-left space-y-2 shadow-xs">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-emerald-900">Dokumen Aktif di Database:</span>
+                                    </div>
+                                    <span class="text-[11px] font-bold bg-white px-2 py-0.5 rounded-md text-emerald-800 border border-emerald-200"><?= $e($item['file_size_formatted'] ?? '0 KB') ?></span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 bg-white p-2.5 rounded-lg border border-emerald-200">
+                                    <p class="text-xs text-neutral-700 font-mono truncate max-w-[200px] sm:max-w-xs font-medium"><?= $e($item['file_path']) ?></p>
+                                    <a href="<?= $e($item['file_path']) ?>" target="_blank" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs shadow-sm whitespace-nowrap transition-colors">
+                                        Unduh / Buka ↗
+                                    </a>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-xs text-neutral-600 leading-relaxed bg-white/80 p-3.5 rounded-xl border border-neutral-200/60 shadow-xs">
+                                Pilih file PDF dari perangkat Anda, <strong>ATAU</strong> sematkan tautan dokumen eksternal seperti <span class="text-blue-700 font-bold">Google Drive / OneDrive</span>.
+                            </p>
+                        <?php endif; ?>
 
                         <!-- Kotak Input Link / Path -->
                         <div class="space-y-3 pt-1">
@@ -205,22 +296,16 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                     </svg>
-                                    <span>Pilih File PDF (Maks 25 MB)</span>
+                                    <span><?= !empty($item['file_path']) ? 'Ganti File PDF' : 'Pilih File PDF (Maks 25 MB)' ?></span>
                                     <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" onchange="handlePdfSelect(this)" class="hidden" />
                                 </label>
-
-                                <?php if (!empty($item['file_path'])): ?>
-                                    <a href="<?= $e($item['file_path']) ?>" target="_blank" id="btn-open-pdf" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-bold text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-100 rounded-xl shadow-sm transition-all">
-                                        <span>Buka File Saat Ini ↗</span>
-                                    </a>
-                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-3 mt-4 border-t border-neutral-200/60">
                         <p id="pdf-upload-status" class="text-xs font-semibold text-neutral-500 leading-relaxed">
-                            <span class="text-emerald-700 italic font-medium">💡 File PDF akan diunggah otomatis saat Anda klik Simpan.</span>
+                            <span class="text-emerald-700 italic font-medium">💡 <?= !empty($item['file_path']) ? 'Jika tidak memilih file baru, dokumen lama tetap aman dipertahankan.' : 'File PDF akan diunggah otomatis saat Anda klik Simpan.' ?></span>
                         </p>
                     </div>
                 </div>
@@ -230,7 +315,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         <!-- BLOK 4: SINOPSIS KARYA -->
         <div>
             <div class="flex items-center gap-2 pb-3 mb-4 border-b border-neutral-200 text-neutral-900 mt-6">
-                <span class="flex items-center justify-center w-4 h-4 rounded-full bg-blue-900 text-white text-xs font-bold">4</span>
+                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-blue-900 text-white text-xs font-bold">4</span>
                 <h3 class="text-base font-extrabold tracking-wide uppercase">Sinopsis / Ringkasan Buku <span class="text-red-500">*</span></h3>
             </div>
 
@@ -252,8 +337,33 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 <!-- Include SweetAlert2 Library untuk Notifikasi Modern -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Skrip Pratinjau Lokal & Submit Form yang Menggabungkan Upload + SweetAlert2 -->
+<!-- Skrip Pratinjau Lokal, Generator Slug & Submit Form -->
 <script>
+    // 0. Auto-Generate Slug dari Judul Buku
+    (function() {
+        var judulInput = document.getElementById('judul-input');
+        var slugInput = document.getElementById('slug-input');
+        var isEditMode = <?= $isEdit ? 'true' : 'false' ?>;
+        var customSlug = isEditMode; // Jika mode edit, abaikan override otomatis kecuali user mengosongkannya
+
+        if (judulInput && slugInput) {
+            slugInput.addEventListener('input', function() {
+                customSlug = (this.value.trim() !== '');
+            });
+
+            judulInput.addEventListener('input', function() {
+                if (!customSlug || slugInput.value.trim() === '') {
+                    var txt = this.value.toLowerCase()
+                        .trim()
+                        .replace(/[^a-z0-9\s-]/g, '') // Hapus karakter spesial non-alfanumerik
+                        .replace(/\s+/g, '-') // Ganti spasi dengan minus (-)
+                        .replace(/-+/g, '-'); // Hindari duplikasi minus
+                    slugInput.value = txt;
+                }
+            });
+        }
+    })();
+
     // 1. Pratinjau Lokal Foto Cover (Menggunakan FileReader agar 100% anti gagal di semua browser)
     function handleCoverSelect(input) {
         if (!input.files || !input.files[0]) return;
@@ -375,6 +485,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
             btn.innerHTML = '⏳ Menyimpan Data ke Database...';
             var data = {
                 judul: form.judul.value,
+                slug: form.slug.value,
                 kategori: form.kategori.value,
                 status: form.status.value,
                 penulis: form.penulis.value,

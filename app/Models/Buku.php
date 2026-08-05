@@ -39,6 +39,7 @@ class Buku
             'tahun' => (string) ($row['tahun_terbit'] ?? date('Y')),
             'isbn' => (string) ($row['isbn'] ?? '-'),
             'halaman' => ((int) ($row['page_count'] ?? 0)) > 0 ? (int) $row['page_count'] . ' Halaman' : '-',
+            'page_count' => (int) ($row['page_count'] ?? 0),
             'kategori' => (string) ($row['kategori'] ?? 'Publikasi'),
             'status' => (string) ($row['status'] ?? 'draft'),
             'view_count' => (int) ($row['view_count'] ?? 0),
