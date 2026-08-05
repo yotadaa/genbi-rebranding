@@ -104,6 +104,7 @@ $activeKey = $activeNav ?? '';
         <?php endforeach; ?>
       </nav>
       <div class="hidden items-center gap-3 lg:flex shrink-0">
+        <a data-transition href="/admin/dashboard" class="btn btn-secondary">Pratinjau Admin</a>
         <a data-transition href="<?= $url('contact') ?>" class="btn btn-primary">Hubungi Kami <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
           </svg></a>
@@ -149,6 +150,9 @@ $activeKey = $activeNav ?? '';
               </svg></span></a>
         <?php endif; ?>
       <?php endforeach; ?>
+      <a data-transition href="/admin/dashboard" class="mobile-link">Pratinjau Admin<span class="mobile-link-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6" />
+          </svg></span></a>
     </nav>
     <div class="mt-8 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
       <strong><?= $e($siteName) ?></strong><br /><?= $e($site['tagline'] ?? 'Bersama GenBI, Energi untuk Negeri') ?>
