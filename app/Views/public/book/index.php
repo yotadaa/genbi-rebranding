@@ -18,7 +18,7 @@ $defaultGradients = [
 ?>
 <style>
     /* ==================================================
-       A. GAYA ANIMASI BUKU MEMBUKA & LEMBARAN KERTAS 3D
+    A. GAYA ANIMASI BUKU MEMBUKA & LEMBARAN KERTAS 3D
        ================================================== */
     .book-3d-perspective {
         perspective: 1200px;
@@ -30,12 +30,14 @@ $defaultGradients = [
         width: 100%;
         height: 100%;
         transform-style: preserve-3d;
-        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        /* Saat kursor menjauh (menutup), gunakan ease-out tanpa overshoot/pantulan mundur ke belakang! */
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* Saat kursor mendekat: Seluruh buku miring 3D ke posisi siap dibaca */
     .book-card:hover .book-wrapper-3d {
         transform: rotateY(-24deg) rotateX(7deg) translateY(-8px) scale(1.02);
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     /* 1. SAMPUL DEPAN (Front Cover) yang bergerak membuka */
@@ -45,15 +47,20 @@ $defaultGradients = [
         height: 100%;
         border-radius: 3px 12px 12px 3px;
         transform-origin: left center;
-        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
+        /* Tambahkan translateZ(3px) agar selamanya berada di lapisan depan kertas dalam ruang 3D */
+        transform: translateZ(3px);
+        /* Transisi saat kembali (menutup): sangat halus tanpa overshoot ke minus/belakang */
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
         z-index: 30;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
     /* Saat Hover: Sampul depan berayun membuka ke sebelah kiri! */
     .book-card:hover .book-front-cover {
-        transform: rotateY(-22deg);
+        transform: rotateY(-22deg) translateZ(3px);
         box-shadow: 15px 15px 30px -5px rgba(15, 23, 42, 0.5);
+        /* Saat membuka (hover), berikan efek ayunan/bounce yang estetis */
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
     }
 
     /* 2. LEMBARAN KERTAS 1 (Page Layer Atas) */
@@ -67,7 +74,9 @@ $defaultGradients = [
         border-radius: 2px 8px 8px 2px;
         z-index: 20;
         transform-origin: left center;
-        transition: all 0.5s ease 0.05s;
+        transform: translateZ(2px);
+        /* Saat menutup (unhover), delay 0s agar lembaran langsung bersembunyi rapi di bawah sampul! */
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0s;
         border-right: 2px solid #94a3b8;
     }
 
@@ -81,7 +90,9 @@ $defaultGradients = [
         border-radius: 2px 8px 8px 2px;
         z-index: 15;
         transform-origin: left center;
-        transition: all 0.5s ease 0.1s;
+        transform: translateZ(1px);
+        /* Saat menutup, delay 0s agar tidak tersisa di luar sampul */
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0s;
         border-right: 2px solid #cbd5e1;
         /* Tekstur ratusan lembaran kertas asli */
         background: repeating-linear-gradient(90deg,
@@ -100,26 +111,30 @@ $defaultGradients = [
         right: -12px;
         border-radius: 3px 10px 10px 3px;
         z-index: 10;
+        transform: translateZ(0px);
         box-shadow: 5px 15px 30px rgba(0, 0, 0, 0.25);
-        transition: all 0.6s ease;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* Efek MEREKAH: Saat dihover, lembaran-lembaran kertas mengintip keluar satu per satu */
     .book-card:hover .book-page-1 {
-        transform: rotateY(-12deg);
+        transform: rotateY(-12deg) translateZ(2px);
         right: -9px;
         box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.15);
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s;
     }
 
     .book-card:hover .book-page-2 {
-        transform: rotateY(-6deg);
+        transform: rotateY(-6deg) translateZ(1px);
         right: -18px;
         box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.2);
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
     }
 
     .book-card:hover .book-back-cover {
         right: -25px;
         box-shadow: 20px 30px 50px -5px rgba(30, 58, 138, 0.55);
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     /* Efek Kilatan Cahaya (Sheen) pada Sampul Depan */
@@ -138,8 +153,8 @@ $defaultGradients = [
     }
 
     /* ==================================================
-       B. GAYA PAGINATION ANTI-KONFLIK TERBAIK
-       ================================================== */
+    B. GAYA PAGINATION ANTI-KONFLIK TERBAIK
+    ================================================== */
     #buku-pagination .page-link {
         padding: 0 1.25rem;
         height: 42px;
@@ -288,8 +303,8 @@ $defaultGradients = [
         </div>
 
         <!-- ==========================================
-         4. GRID KATALOG BUKU ASLI (DENGAN EFEK MEMBUKA & LEMBARAN KERTAS)
-         ========================================== -->
+        4. GRID KATALOG BUKU ASLI (DENGAN EFEK MEMBUKA & LEMBARAN KERTAS)
+        ========================================== -->
         <div id="buku-real-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14 hidden transition-opacity duration-500 opacity-0">
             <?php if (!empty($books)): ?>
                 <?php foreach ($books as $index => $book): ?>
