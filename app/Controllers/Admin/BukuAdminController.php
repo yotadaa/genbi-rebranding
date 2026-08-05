@@ -47,8 +47,18 @@ class BukuAdminController
     public function store(Request $request, Response $response): void
     {
         $payload = $this->sanitize($request->json());
-        if (empty($payload['judul'])) {
-            $response->json(['error' => 'Judul buku wajib diisi'], 422);
+
+        // 1. Validasi Server-Side (Melindungi Database & Server)
+        if (empty($payload['judul']) || strlen(trim($payload['judul'])) < 3) {
+            $response->json(['error' => 'Judul buku wajib diisi dan minimal 3 karakter.', 'field' => 'judul'], 422);
+            return;
+        }
+        if (empty($payload['sinopsis']) || strlen(trim($payload['sinopsis'])) < 10) {
+            $response->json(['error' => 'Sinopsis / ringkasan karya wajib diisi (minimal 10 karakter).', 'field' => 'sinopsis'], 422);
+            return;
+        }
+        if (!empty($payload['tahun']) && ((int) $payload['tahun'] < 1900 || (int) $payload['tahun'] > 2100)) {
+            $response->json(['error' => 'Tahun terbit tidak valid (range 1900 - 2100).', 'field' => 'tahun'], 422);
             return;
         }
 
@@ -57,26 +67,57 @@ class BukuAdminController
         }
 
         $id = $this->buku?->create($payload) ?? 0;
-        $response->json($id ? ['data' => ['id' => $id]] : ['error' => 'Gagal menyimpan buku'], $id ? 201 : 500);
+        $response->json($id ? ['data' => ['id' => $id]] : ['error' => 'Gagal menyimpan buku ke database.'], $id ? 201 : 500);
     }
 
-    // Untuk memperbarui data buku berdasarkan ID
+    // Untuk memperbarui data buku berdasarkan ID (Mendukung Partial & Full Update)
     public function update(Request $request, Response $response, array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
         $payload = $this->sanitize($request->json());
 
-        if (array_key_exists('judul', $payload) && empty($payload['slug'])) {
-            $payload['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $payload['judul']), '-'));
-        }
-
         if ($payload === []) {
-            $response->json(['error' => 'Tidak ada data perubahan yang dikirim'], 422);
+            $response->json(['error' => 'Tidak ada data perubahan yang dikirim.'], 422);
             return;
         }
 
+        // 1. Ambil data buku lama dari database untuk memastikan data ada dan untuk pembandingan file
+        $oldBook = $this->buku?->find($id);
+        if (!$oldBook) {
+            $response->json(['error' => 'Data buku tidak ditemukan di database.'], 404);
+            return;
+        }
+
+        // 2. Validasi Server-Side jika parameter dikirim dalam request (Partial Validation)
+        if (array_key_exists('judul', $payload) && (empty($payload['judul']) || strlen(trim((string) $payload['judul'])) < 3)) {
+            $response->json(['error' => 'Judul buku tidak boleh kosong (minimal 3 karakter).', 'field' => 'judul'], 422);
+            return;
+        }
+        if (array_key_exists('sinopsis', $payload) && (empty($payload['sinopsis']) || strlen(trim((string) $payload['sinopsis'])) < 10)) {
+            $response->json(['error' => 'Sinopsis tidak boleh kosong (minimal 10 karakter).', 'field' => 'sinopsis'], 422);
+            return;
+        }
+        if (array_key_exists('tahun', $payload) && ((int) $payload['tahun'] < 1900 || (int) $payload['tahun'] > 2100)) {
+            $response->json(['error' => 'Tahun terbit tidak valid.', 'field' => 'tahun'], 422);
+            return;
+        }
+
+        // 3. Penanganan Slug: jika judul diubah tapi slug kosong, buat otomatis atau pertahankan yang lama
+        if (array_key_exists('judul', $payload) && empty($payload['slug'])) {
+            $payload['slug'] = !empty($oldBook['slug']) ? $oldBook['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', (string) $payload['judul']), '-'));
+        }
+
+        // 4. Manajemen File Fisik: jika cover atau file dokumen berganti dengan URL baru, bersihkan file fisik lama di server
+        if (!empty($payload['cover']) && $payload['cover'] !== ($oldBook['cover'] ?? '')) {
+            $this->cleanupPhysicalFile((string) ($oldBook['cover'] ?? ''));
+        }
+        if (!empty($payload['file_path']) && $payload['file_path'] !== ($oldBook['file_path'] ?? '')) {
+            $this->cleanupPhysicalFile((string) ($oldBook['file_path'] ?? ''));
+        }
+
+        // 5. Simpan pemutakhiran (hanya inputan yang diubah/dikirim yang akan diupdate ke MySQL, sisanya aman tidak berubah)
         $ok = $this->buku?->update($id, $payload) ?? false;
-        $response->json($ok ? ['data' => ['id' => $id, 'updated' => true]] : ['error' => 'Gagal memperbarui data buku'], $ok ? 200 : 404);
+        $response->json($ok ? ['data' => ['id' => $id, 'updated' => true]] : ['error' => 'Gagal memperbarui data buku.'], $ok ? 200 : 500);
     }
 
     // Untuk menghapus data buku berdasarkan ID sekaligus membersihkan file fisik di server (c-panel storage)

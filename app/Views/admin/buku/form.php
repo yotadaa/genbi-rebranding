@@ -39,17 +39,17 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded-md bg-amber-400 text-neutral-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">Mode Edit / Update</span>
+                        <span class="px-2.5 py-0.5 rounded-md bg-amber-400 text-neutral-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">Mode Update</span>
                         <span class="text-xs font-bold text-blue-200">ID Buku: #<?= (int) ($item['id'] ?? 0) ?></span>
                     </div>
                     <h2 class="text-base md:text-lg font-extrabold tracking-tight text-white mt-1">Mengedit Karya: <?= $e($item['judul'] ?? '') ?></h2>
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs font-medium text-blue-100/90">
-                        <span class="inline-flex items-center gap-1"><span class="text-blue-300">👁️ Dilihat Pengunjung:</span> <?= number_format((int) ($item['view_count'] ?? 0)) ?>x</span>
+                        <span><strong class="text-blue-300 font-semibold">Dilihat Pengunjung:</strong> <?= number_format((int) ($item['view_count'] ?? 0)) ?>x</span>
                         <span class="text-blue-300/60">•</span>
-                        <span class="inline-flex items-center gap-1"><span class="text-blue-300">📦 Ukuran Dokumen:</span> <?= $e($item['file_size_formatted'] ?? '0 KB') ?></span>
+                        <span><strong class="text-blue-300 font-semibold">Ukuran Dokumen:</strong> <?= $e($item['file_size_formatted'] ?? '0 KB') ?></span>
                         <span class="text-blue-300/60">•</span>
-                        <span class="inline-flex items-center gap-1">
-                            <span class="text-blue-300">📌 Status:</span>
+                        <span>
+                            <strong class="text-blue-300 font-semibold">Status:</strong>
                             <span class="font-bold <?= ($item['status'] ?? '') === 'published' ? 'text-emerald-300' : 'text-amber-300' ?>"><?= strtoupper($e($item['status'] ?? 'DRAFT')) ?></span>
                         </span>
                     </div>
@@ -57,8 +57,8 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
             </div>
             <?php if (!empty($item['slug'])): ?>
                 <div class="flex-shrink-0">
-                    <a href="/buku/<?= $e($item['slug']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-blue-900 hover:bg-blue-50 font-extrabold text-xs rounded-xl shadow transition-all transform active:scale-95">
-                        <span>Pratinjau di Web Publik ↗</span>
+                    <a href="/buku/<?= $e($item['slug']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white text-blue-900 hover:bg-blue-50 font-extrabold text-xs rounded-xl shadow transition-all transform active:scale-95">
+                        <span>Pratinjau Web Publik</span>
                     </a>
                 </div>
             <?php endif; ?>
@@ -66,7 +66,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
     <?php endif; ?>
 
     <!-- Form Utama -->
-    <form id="buku-form" class="admin-card mt-6 p-6 md:p-10 shadow-sm border border-neutral-200/80 rounded-2xl bg-white space-y-8" onsubmit="submitBukuForm(event)">
+    <form id="buku-form" novalidate class="admin-card mt-6 p-6 md:p-10 shadow-sm border border-neutral-200/80 rounded-2xl bg-white space-y-8" onsubmit="submitBukuForm(event)">
 
         <!-- BLOK 1: INFORMASI KARYA & KLASIFIKASI -->
         <div>
@@ -84,15 +84,17 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 <!-- Judul Buku -->
                 <div class="lg:col-span-6">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Judul Buku / Karya <span class="text-red-500">*</span></label>
-                    <input type="text" id="judul-input" name="judul" value="<?= $e($item['judul'] ?? '') ?>" placeholder="Contoh: Majalah GenBI Jambi Edisi 2026" required class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
+                    <div>
+                        <input type="text" id="judul-input" name="judul" value="<?= $e($item['judul'] ?? '') ?>" placeholder="Contoh: Majalah GenBI Jambi Edisi 2026" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
+                    </div>
                 </div>
 
-                <!-- Slug / Tautan Web (PENTING AGAR ADMIN BISA KONTROL ATAU LIHAT URL BUKU) -->
+                <!-- Slug / Tautan Web -->
                 <div class="lg:col-span-6">
                     <div class="flex items-center justify-between">
                         <label class="block text-sm font-bold text-neutral-800 tracking-wide">Slug / Tautan Web <span class="text-neutral-400 text-xs font-normal">(Auto / Kustom)</span></label>
                         <?php if ($isEdit && !empty($item['slug'])): ?>
-                            <span class="text-[11px] font-bold text-emerald-600">✅ Tersedia di Database</span>
+                            <span class="text-[11px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200">Tersedia di Database</span>
                         <?php endif; ?>
                     </div>
                     <div class="relative mt-2">
@@ -101,7 +103,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                         </div>
                         <input type="text" id="slug-input" name="slug" value="<?= $e($item['slug'] ?? '') ?>" placeholder="majalah-genbi-jambi-edisi-2026" class="form-input w-full pl-16 pr-4 py-2.5 rounded-xl border border-neutral-300 bg-neutral-50 py-2.5 px-4 text-sm font-mono text-blue-900 shadow-sm focus:bg-white focus:border-blue-700 focus:ring-2 focus:ring-blue-100 placeholder:text-neutral-400 transition-all" />
                     </div>
-                    <p class="mt-1.5 text-[11px] text-neutral-500 italic">💡 Tautan unik web publik. <?= $isEdit ? 'Jika diubah, pastikan tidak mengandung spasi atau simbol.' : 'Jika dibiarkan kosong, sistem akan membuat dari judul secara otomatis.' ?></p>
+                    <p class="mt-1.5 text-[11px] text-neutral-500 italic">Tautan unik web publik. <?= $isEdit ? 'Jika diubah, pastikan tidak mengandung spasi atau simbol.' : 'Jika dibiarkan kosong, sistem akan membuat dari judul secara otomatis.' ?></p>
                 </div>
 
                 <!-- Kategori Buku -->
@@ -140,19 +142,25 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 <!-- Penulis -->
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Penulis / Tim Penyusun</label>
-                    <input type="text" name="penulis" value="<?= $e($item['penulis'] ?? 'GenBI Jambi') ?>" placeholder="Nama penulis atau tim" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    <div>
+                        <input type="text" name="penulis" value="<?= $e($item['penulis'] ?? 'GenBI Jambi') ?>" placeholder="Nama penulis atau tim" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    </div>
                 </div>
 
                 <!-- Penerbit -->
                 <div class="lg:col-span-1">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Penerbit / Instansi</label>
-                    <input type="text" name="penerbit" value="<?= $e($item['penerbit'] ?? 'Bank Indonesia') ?>" placeholder="Nama instansi/penerbit" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    <div>
+                        <input type="text" name="penerbit" value="<?= $e($item['penerbit'] ?? 'Bank Indonesia') ?>" placeholder="Nama instansi/penerbit" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    </div>
                 </div>
 
                 <!-- Tahun Terbit -->
                 <div class="lg:col-span-1">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Tahun Terbit</label>
-                    <input type="number" name="tahun" value="<?= $e($item['tahun'] ?? date('Y')) ?>" min="1990" max="2100" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-bold text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    <div>
+                        <input type="number" name="tahun" value="<?= $e($item['tahun'] ?? date('Y')) ?>" placeholder="2026" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-bold text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    </div>
                 </div>
 
                 <!-- Jumlah Halaman -->
@@ -161,13 +169,17 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <?php
                     $hlm = !empty($item['page_count']) ? (int) $item['page_count'] : ((int) preg_replace('/\D/', '', (string) ($item['halaman'] ?? '0')));
                     ?>
-                    <input type="number" name="halaman" value="<?= $hlm > 0 ? $hlm : '' ?>" placeholder="Cth: 120" min="1" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    <div>
+                        <input type="number" name="halaman" value="<?= $hlm > 0 ? $hlm : '' ?>" placeholder="Cth: 120" min="1" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" />
+                    </div>
                 </div>
 
                 <!-- Nomor ISBN -->
                 <div class="sm:col-span-2 lg:col-span-5">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Nomor ISBN / Kode Identitas Karya (Opsional)</label>
-                    <input type="text" name="isbn" value="<?= $e($item['isbn'] ?? '-') ?>" placeholder="Contoh: 978-602-8519-93-9 atau biarkan berisi -" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-mono text-neutral-700 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all max-w-md" />
+                    <div>
+                        <input type="text" name="isbn" value="<?= $e($item['isbn'] ?? '-') ?>" placeholder="Contoh: 978-602-8519-93-9 atau biarkan berisi -" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-mono text-neutral-700 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all max-w-md" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,17 +197,17 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <div>
                         <div class="flex items-center justify-between border-b border-neutral-200 pb-3 mb-4">
                             <label class="block text-sm font-extrabold text-neutral-900 tracking-wide">Foto Cover Buku</label>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['cover']) ? 'bg-emerald-100 text-emerald-900' : 'bg-blue-100 text-blue-900' ?>"><?= !empty($item['cover']) ? '✅ Ada di DB' : 'Rasio 3:4' ?></span>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['cover']) ? 'bg-emerald-100 text-emerald-900' : 'bg-blue-100 text-blue-900' ?>"><?= !empty($item['cover']) ? 'Tersedia di Server' : 'Rasio 3:4' ?></span>
                         </div>
 
                         <!-- Layout Cover & Info dengan Ukuran Statis -->
                         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                             <!-- Kotak Preview dengan dimensi statis yang pasti -->
                             <div style="width: 160px; min-width: 160px; height: 220px;" class="bg-white border-2 border-dashed border-neutral-300 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center p-2.5 relative flex-shrink-0">
-                                <!-- SVG Placeholder jika foto belum ada -->
+                                <!-- Placeholder jika foto belum ada -->
                                 <div id="cover-placeholder" class="flex flex-col items-center justify-center text-center p-2 <?= !empty($item['cover']) ? 'hidden' : '' ?>">
-                                    <svg class="w-10 h-10 mb-2 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    <svg class="w-8 h-8 mb-2 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
                                     <span class="text-[11px] font-bold text-neutral-400">Belum Ada Cover</span>
                                 </div>
@@ -209,9 +221,6 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 
                                 <div>
                                     <label class="inline-flex items-center justify-center gap-2 cursor-pointer px-4 py-2.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-xl shadow-md transition-all transform active:scale-95 w-full sm:w-auto">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                                        </svg>
                                         <span><?= !empty($item['cover']) ? 'Ganti Foto Cover' : 'Pilih Foto Cover' ?></span>
                                         <input type="file" id="cover-file-input" accept="image/*" onchange="handleCoverSelect(this)" class="hidden" />
                                     </label>
@@ -224,20 +233,20 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                                             <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">File di Server:</p>
                                             <p class="text-xs text-blue-700 truncate font-mono font-medium"><?= $e(basename($item['cover'])) ?></p>
                                         </div>
-                                        <a href="<?= $e($item['cover']) ?>" target="_blank" class="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-lg text-xs font-bold transition-colors">Buka ↗</a>
+                                        <a href="<?= $e($item['cover']) ?>" target="_blank" class="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-lg text-xs font-bold transition-colors">Buka</a>
                                     </div>
                                 <?php endif; ?>
 
                                 <div class="text-xs font-medium text-neutral-600 space-y-1 leading-relaxed bg-white/80 p-3 rounded-xl border border-neutral-200/60 shadow-xs text-left">
-                                    <p class="font-bold text-neutral-800 mb-1">📌 Ketentuan File :</p>
-                                    <p>• Format : <span class="font-semibold text-neutral-800">JPG, PNG, WEBP</span></p>
-                                    <p>• Ukuran Maksimal : <span class="font-semibold text-neutral-800">5 MB</span></p>
-                                    <p>• Rasio Disarankan : <span class="font-semibold text-neutral-800">3 : 4 (Potret)</span></p>
+                                    <p class="font-bold text-neutral-800 mb-1">Ketentuan File:</p>
+                                    <p>• Format: <span class="font-semibold text-neutral-800">JPG, PNG, WEBP</span></p>
+                                    <p>• Ukuran Maksimal: <span class="font-semibold text-neutral-800">5 MB</span></p>
+                                    <p>• Rasio Disarankan: <span class="font-semibold text-neutral-800">3 : 4 (Potret)</span></p>
                                 </div>
 
                                 <div class="pt-1 border-t border-neutral-200/60">
                                     <p id="upload-status" class="text-xs font-semibold text-neutral-500 leading-relaxed text-left">
-                                        <span class="text-blue-600 italic font-medium">💡 <?= !empty($item['cover']) ? 'Jika tidak memilih foto baru, foto lama dipertahankan.' : 'Akan diunggah saat Anda klik Simpan di bawah.' ?></span>
+                                        <span class="text-blue-600 font-medium">Catatan: <?= !empty($item['cover']) ? 'Jika tidak memilih foto baru, foto lama dipertahankan.' : 'Akan diunggah saat Anda klik Simpan di bawah.' ?></span>
                                     </p>
                                 </div>
                             </div>
@@ -250,23 +259,20 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <div class="space-y-4">
                         <div class="flex items-center justify-between border-b border-neutral-200 pb-3">
                             <label class="block text-sm font-extrabold text-neutral-900 tracking-wide">Berkas Dokumen E-Book / PDF</label>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['file_path']) ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900' ?>"><?= !empty($item['file_path']) ? '✅ File Aktif' : 'PDF / Cloud' ?></span>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold <?= !empty($item['file_path']) ? 'bg-emerald-100 text-emerald-900' : 'bg-neutral-200 text-neutral-800' ?>"><?= !empty($item['file_path']) ? 'File Aktif' : 'PDF / Cloud' ?></span>
                         </div>
 
                         <!-- Read Data Status Dokumen Aktif (Khusus Mode Update) -->
                         <?php if ($isEdit && !empty($item['file_path'])): ?>
                             <div class="p-3.5 bg-emerald-50/80 border border-emerald-300/80 rounded-xl text-left space-y-2 shadow-xs">
                                 <div class="flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                        <span class="text-xs font-bold text-emerald-900">Dokumen Aktif di Database:</span>
-                                    </div>
+                                    <span class="text-xs font-bold text-emerald-900">Dokumen Aktif di Database:</span>
                                     <span class="text-[11px] font-bold bg-white px-2 py-0.5 rounded-md text-emerald-800 border border-emerald-200"><?= $e($item['file_size_formatted'] ?? '0 KB') ?></span>
                                 </div>
                                 <div class="flex items-center justify-between gap-3 bg-white p-2.5 rounded-lg border border-emerald-200">
                                     <p class="text-xs text-neutral-700 font-mono truncate max-w-[200px] sm:max-w-xs font-medium"><?= $e($item['file_path']) ?></p>
                                     <a href="<?= $e($item['file_path']) ?>" target="_blank" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs shadow-sm whitespace-nowrap transition-colors">
-                                        Unduh / Buka ↗
+                                        Unduh / Buka
                                     </a>
                                 </div>
                             </div>
@@ -279,23 +285,15 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                         <!-- Kotak Input Link / Path -->
                         <div class="space-y-3 pt-1">
                             <div>
-                                <label class="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Tautan / Alamat File :</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                                        </svg>
-                                    </div>
-                                    <input type="text" id="pdf-url-input" name="file_path" value="<?= $e($item['file_path'] ?? '') ?>" placeholder="https://drive.google.com/... atau pilih dari tombol di bawah" class="form-input w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-300 bg-white text-sm font-medium text-neutral-800 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all" />
+                                <label class="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Tautan / Alamat File:</label>
+                                <div>
+                                    <input type="text" id="pdf-url-input" name="file_path" value="<?= $e($item['file_path'] ?? '') ?>" placeholder="https://drive.google.com/... atau pilih dari tombol di bawah" class="form-input w-full py-2.5 px-4 rounded-xl border border-neutral-300 bg-white text-sm font-medium text-neutral-800 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all" />
                                 </div>
                             </div>
 
                             <!-- Tombol Pilih PDF & Buka Preview -->
                             <div class="flex flex-wrap items-center gap-2.5 pt-2">
                                 <label class="inline-flex items-center gap-2 cursor-pointer px-4 py-2.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-md transition-all transform active:scale-95">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                    </svg>
                                     <span><?= !empty($item['file_path']) ? 'Ganti File PDF' : 'Pilih File PDF (Maks 25 MB)' ?></span>
                                     <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" onchange="handlePdfSelect(this)" class="hidden" />
                                 </label>
@@ -305,7 +303,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 
                     <div class="pt-3 mt-4 border-t border-neutral-200/60">
                         <p id="pdf-upload-status" class="text-xs font-semibold text-neutral-500 leading-relaxed">
-                            <span class="text-emerald-700 italic font-medium">💡 <?= !empty($item['file_path']) ? 'Jika tidak memilih file baru, dokumen lama tetap aman dipertahankan.' : 'File PDF akan diunggah otomatis saat Anda klik Simpan.' ?></span>
+                            <span class="text-emerald-700 font-medium">Catatan: <?= !empty($item['file_path']) ? 'Jika tidak memilih file baru, dokumen lama tetap aman dipertahankan.' : 'File PDF akan diunggah otomatis saat Anda klik Simpan.' ?></span>
                         </p>
                     </div>
                 </div>
@@ -319,7 +317,9 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 <h3 class="text-base font-extrabold tracking-wide uppercase">Sinopsis / Ringkasan Buku <span class="text-red-500">*</span></h3>
             </div>
 
-            <textarea name="sinopsis" rows="6" placeholder="Tuliskan ringkasan menarik, abstraksi, atau latar belakang penulisan buku/modul ini agar pembaca tertarik membaca..." required class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white p-4 text-sm font-normal text-neutral-800 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all leading-relaxed"><?= $e($item['sinopsis'] ?? '') ?></textarea>
+            <div>
+                <textarea name="sinopsis" rows="6" placeholder="Tuliskan ringkasan menarik, abstraksi, atau latar belakang penulisan buku/modul ini agar pembaca tertarik membaca..." class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white p-4 text-sm font-normal text-neutral-800 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all leading-relaxed"><?= $e($item['sinopsis'] ?? '') ?></textarea>
+            </div>
         </div>
 
         <!-- FOOTER: TOMBOL AKSI -->
@@ -364,7 +364,37 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         }
     })();
 
-    // 1. Pratinjau Lokal Foto Cover (Menggunakan FileReader agar 100% anti gagal di semua browser)
+    // Helper: Cari elemen input berdasar name atau id agar aman dan tidak pernah null
+    function getFormEl(fieldName) {
+        var form = document.getElementById('buku-form');
+        if (form && form[fieldName]) return form[fieldName];
+        return document.querySelector('[name="' + fieldName + '"]') || document.getElementById(fieldName + '-input') || document.getElementById(fieldName);
+    }
+
+    // Helper: Reset status validasi visual
+    function clearValidationErrors() {
+        var errorFields = ['judul', 'sinopsis', 'tahun'];
+        errorFields.forEach(function(fieldName) {
+            var el = getFormEl(fieldName);
+            if (el && el.classList) {
+                el.classList.remove('border-red-500', 'ring-2', 'ring-red-400', 'bg-red-50/10');
+            }
+        });
+    }
+
+    // Helper: Tandai input tidak valid (warna merah + scroll)
+    function highlightErrorField(fieldName, shouldScroll = false) {
+        var el = getFormEl(fieldName);
+        if (el && el.classList) {
+            el.classList.add('border-red-500', 'ring-2', 'ring-red-400', 'bg-red-50/10');
+            if (shouldScroll) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => el.focus(), 500);
+            }
+        }
+    }
+
+    // 1. Pratinjau Lokal Foto Cover
     function handleCoverSelect(input) {
         if (!input.files || !input.files[0]) return;
 
@@ -377,16 +407,16 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
             var status = document.getElementById('upload-status');
 
             if (placeholder) placeholder.classList.add('hidden');
-            prev.src = e.target.result; // Data URL Base64 (100% didukung browser & anti brokend-image)
+            prev.src = e.target.result;
             prev.classList.remove('hidden');
 
-            status.innerHTML = '✅ <span class="text-emerald-700 font-bold">Foto terpilih: ' + file.name + '</span><br><span class="text-[11px] text-blue-700 font-medium italic">💡 Akan diunggah otomatis saat Anda klik tombol Simpan di bawah.</span>';
+            status.innerHTML = '<span class="text-emerald-700 font-bold">Foto terpilih: ' + file.name + '</span><br><span class="text-[11px] text-slate-500 font-medium italic">Akan diunggah otomatis saat Anda menyimpan data.</span>';
         };
 
         reader.readAsDataURL(file);
     }
 
-    // 2. Pemilihan Lokal File PDF (Tanpa upload ke server sebelum klik Simpan)
+    // 2. Pemilihan Lokal File PDF
     function handlePdfSelect(input) {
         if (!input.files || !input.files[0]) return;
 
@@ -394,13 +424,13 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         var sizeMb = (file.size / (1024 * 1024)).toFixed(2);
         var status = document.getElementById('pdf-upload-status');
 
-        status.innerHTML = '✅ <span class="text-emerald-700 font-bold">File PDF terpilih: ' + file.name + ' (' + sizeMb + ' MB)</span><br><span class="text-[11px] text-emerald-700 font-medium italic">💡 File PDF akan diunggah otomatis saat Anda klik tombol Simpan di bawah.</span>';
+        status.innerHTML = '<span class="text-emerald-700 font-bold">File PDF terpilih: ' + file.name + ' (' + sizeMb + ' MB)</span><br><span class="text-[11px] text-slate-500 font-medium italic">Akan diunggah otomatis saat Anda menyimpan data.</span>';
     }
 
     // Helper: Fungsi asynchronous untuk upload file ke server via fetch
     async function uploadFileToServer(file, fieldName, statusEl, progressMsg, token) {
         if (statusEl) {
-            statusEl.innerHTML = '⏳ <span class="text-amber-600 font-bold animate-pulse">' + progressMsg + '</span>';
+            statusEl.innerHTML = '<span class="text-amber-600 font-bold animate-pulse">' + progressMsg + '</span>';
         }
 
         var formData = new FormData();
@@ -416,22 +446,22 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 
         if (!res.ok) {
             var errText = await res.text();
-            throw new Error('Gagal mengunggah file ' + file.name + ' (HTTP ' + res.status + ')');
+            throw new Error('Gagal mengunggah berkas ' + file.name + ' (HTTP ' + res.status + ')');
         }
 
         var json = await res.json();
         if (!json.data || !json.data.url) {
-            throw new Error(json.error || 'Gagal mengunggah file ' + file.name);
+            throw new Error(json.error || 'Gagal mengunggah berkas ' + file.name);
         }
 
         if (statusEl) {
-            statusEl.innerHTML = '✅ <span class="text-emerald-700 font-bold">File ' + file.name + ' berhasil diunggah!</span>';
+            statusEl.innerHTML = '<span class="text-emerald-700 font-bold">Berkas ' + file.name + ' berhasil disiapkan.</span>';
         }
 
         return json.data.url;
     }
 
-    // 3. Skrip Submit Form (Eksekusi Upload File Dahulu -> Simpan Data -> Tampilkan SweetAlert2)
+    // 3. Skrip Submit Form & Validasi Keamanan Data
     async function submitBukuForm(event) {
         event.preventDefault();
 
@@ -439,50 +469,79 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         var btn = document.getElementById('submit-btn');
         var originalText = btn.innerHTML;
 
-        // Validasi Peringatan Awal (Warning SweetAlert)
-        if (!form.judul.value.trim() || !form.sinopsis.value.trim()) {
+        // Reset semua highlight validasi sebelumnya
+        clearValidationErrors();
+
+        // Validasi Client-Side
+        var errors = [];
+        var firstErrorField = null;
+
+        var judulVal = (form.judul ? form.judul.value : '').trim();
+        var sinopsisVal = (form.sinopsis ? form.sinopsis.value : '').trim();
+        var tahunVal = (form.tahun ? form.tahun.value : '').trim();
+
+        if (!judulVal) {
+            errors.push('Judul Buku tidak boleh kosong.');
+            highlightErrorField('judul', !firstErrorField);
+            if (!firstErrorField) firstErrorField = 'judul';
+        }
+
+        if (!sinopsisVal) {
+            errors.push('Sinopsis atau ringkasan buku tidak boleh kosong.');
+            highlightErrorField('sinopsis', !firstErrorField);
+            if (!firstErrorField) firstErrorField = 'sinopsis';
+        }
+
+        if (tahunVal && (isNaN(tahunVal) || parseInt(tahunVal) < 1900 || parseInt(tahunVal) > (new Date().getFullYear() + 5))) {
+            errors.push('Tahun terbit tidak berada pada kisaran yang valid.');
+            highlightErrorField('tahun', !firstErrorField);
+            if (!firstErrorField) firstErrorField = 'tahun';
+        }
+
+        if (errors.length > 0) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Data Belum Lengkap',
-                    text: 'Mohon isi Judul Buku dan Sinopsis terlebih dahulu sebelum menyimpan data.',
-                    confirmButtonColor: '#1e3a8a',
-                    confirmButtonText: 'Mengerti'
+                    title: 'Validasi Form Gagal',
+                    html: '<div class="text-left text-sm font-medium text-slate-700 mt-2">Mohon perbaiki isian bertanda merah berikut: <ul class="list-disc pl-5 mt-2 space-y-1">' + errors.map(e => `<li>${e}</li>`).join('') + '</ul></div>',
+                    confirmButtonColor: '#1e293b',
+                    confirmButtonText: 'Periksa Kembali'
                 });
             } else {
-                alert('⚠️ Mohon isi Judul Buku dan Sinopsis terlebih dahulu!');
+                alert('Validasi Gagal:\n' + errors.join('\n'));
             }
             return;
         }
 
+        // Mulai pemrosesan submit
         btn.disabled = true;
-        btn.innerHTML = '⏳ Sedang Memproses Karya...';
+        btn.innerHTML = 'Sedang Memproses...';
 
         var token = document.querySelector('meta[name="csrf-token"]')?.content || '';
         var isEdit = <?= $isEdit ? 'true' : 'false' ?>;
         var url = isEdit ? '/admin/buku/<?= (int) ($item['id'] ?? 0) ?>/update' : '/admin/buku';
 
         try {
-            // A. Unggah Foto Cover ke server jika ada file foto baru dipilih
+            // A. Unggah Foto Cover jika ada file foto baru
             var coverInput = document.getElementById('cover-file-input');
             if (coverInput && coverInput.files && coverInput.files[0]) {
-                btn.innerHTML = '⏳ Mengunggah Foto Sampul...';
+                btn.innerHTML = 'Mengunggah Foto Sampul...';
                 var coverStatus = document.getElementById('upload-status');
-                var coverUrl = await uploadFileToServer(coverInput.files[0], 'cover', coverStatus, 'Mengunggah foto sampul ke server...', token);
+                var coverUrl = await uploadFileToServer(coverInput.files[0], 'cover', coverStatus, 'Mengunggah foto sampul...', token);
                 document.getElementById('cover-url-input').value = coverUrl;
             }
 
-            // B. Unggah Berkas PDF ke server jika ada file PDF baru dipilih
+            // B. Unggah Berkas PDF jika ada file PDF baru
             var pdfInput = document.getElementById('pdf-file-input');
             if (pdfInput && pdfInput.files && pdfInput.files[0]) {
-                btn.innerHTML = '⏳ Mengunggah Berkas PDF...';
+                btn.innerHTML = 'Mengunggah Berkas PDF...';
                 var pdfStatus = document.getElementById('pdf-upload-status');
-                var pdfUrl = await uploadFileToServer(pdfInput.files[0], 'pdf', pdfStatus, 'Mengunggah file PDF (' + (pdfInput.files[0].size / (1024 * 1024)).toFixed(2) + ' MB) ke server...', token);
+                var pdfUrl = await uploadFileToServer(pdfInput.files[0], 'pdf', pdfStatus, 'Mengunggahberkas PDF (' + (pdfInput.files[0].size / (1024 * 1024)).toFixed(2) + ' MB)...', token);
                 document.getElementById('pdf-url-input').value = pdfUrl;
             }
 
             // C. Kirim Data Buku (JSON) ke Database
-            btn.innerHTML = '⏳ Menyimpan Data ke Database...';
+            btn.innerHTML = 'Menyimpan ke Database...';
             var data = {
                 judul: form.judul.value,
                 slug: form.slug.value,
@@ -494,7 +553,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 halaman: form.halaman.value,
                 isbn: form.isbn.value,
                 cover: document.getElementById('cover-url-input').value,
-                file_path: form.file_path.value,
+                file_path: document.getElementById('pdf-url-input').value,
                 sinopsis: form.sinopsis.value
             };
 
@@ -511,7 +570,14 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 var errorText = await res.text();
                 try {
                     var errJson = JSON.parse(errorText);
-                    throw new Error(errJson.error || res.statusText);
+                    var errMsg = errJson.error || res.statusText;
+                    
+                    // Pemetaan validasi dari Server-Side ke Client Input Merah
+                    if (errMsg.toLowerCase().includes('judul')) highlightErrorField('judul', true);
+                    if (errMsg.toLowerCase().includes('sinopsis')) highlightErrorField('sinopsis', true);
+                    if (errMsg.toLowerCase().includes('tahun')) highlightErrorField('tahun', true);
+
+                    throw new Error(errMsg);
                 } catch (e) {
                     if (e.message && !errorText.startsWith('<') && !errorText.includes('<b>')) {
                         throw e;
@@ -526,27 +592,26 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
             btn.innerHTML = originalText;
 
             if (jsonRes.data && (jsonRes.data.id || jsonRes.data.updated)) {
-                // Tampilkan SweetAlert2 Berhasil -> Muncul beberapa detik & Push redirect ke katalog buku
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
-                        title: isEdit ? 'Perubahan Berhasil Disimpan!' : 'Buku Berhasil Diterbitkan!',
-                        text: isEdit ? 'Data buku telah sukses diperbarui di dalam sistem.' : 'Karya baru telah ditambahkan ke dalam Katalog Buku GenBI!',
-                        timer: 2800,
+                        title: isEdit ? 'Perubahan Berhasil Disimpan' : 'Buku Berhasil Diterbitkan',
+                        text: isEdit ? 'Data buku telah sukses diperbarui di database sistem.' : 'Karya baru telah ditambahkan ke dalam Katalog Buku.',
+                        timer: 2500,
                         timerProgressBar: true,
                         showConfirmButton: true,
-                        confirmButtonColor: '#10b981',
-                        confirmButtonText: 'Ke Katalog Sekarang ➔',
+                        confirmButtonColor: '#1e293b',
+                        confirmButtonText: 'Kembali ke Katalog ➔',
                         allowOutsideClick: false
                     }).then(() => {
                         window.location.href = '/admin/buku';
                     });
                 } else {
-                    alert(isEdit ? '✅ Perubahan berhasil disimpan!' : '🎉 Buku berhasil diterbitkan!');
+                    alert(isEdit ? 'Perubahan berhasil disimpan.' : 'Buku berhasil diterbitkan.');
                     window.location.href = '/admin/buku';
                 }
             } else {
-                var errorMsg = jsonRes.error || 'Periksa kembali inputan Anda.';
+                var errorMsg = jsonRes.error || 'Periksa kembali input Anda.';
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -556,7 +621,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                         confirmButtonText: 'Tutup'
                     });
                 } else {
-                    alert('❌ Gagal menyimpan: ' + errorMsg);
+                    alert('Gagal menyimpan: ' + errorMsg);
                 }
             }
 
@@ -568,13 +633,13 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Terjadi Kesalahan Sistem',
+                    title: 'Kendala Sistem atau Validasi',
                     text: error.message || 'Silakan cek koneksi jaringan atau hubungi administrator.',
-                    confirmButtonColor: '#ef4444',
-                    confirmButtonText: 'Tutup & Coba Lagi'
+                    confirmButtonColor: '#1e293b',
+                    confirmButtonText: 'Tutup'
                 });
             } else {
-                alert('❌ Terjadi kendala: ' + error.message);
+                alert('Terjadi kendala: ' + error.message);
             }
         }
     }
