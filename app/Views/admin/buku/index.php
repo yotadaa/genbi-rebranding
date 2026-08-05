@@ -290,6 +290,9 @@ $filterParams = array_filter([
     </section>
 </section>
 
+<!-- Include SweetAlert2 Library untuk Konfirmasi Hapus Modern & Mulus -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Skrip Smooth Search (Client-Side Instant Filter) & Delete Modal -->
 <script>
     // 1. Fitur Live Smooth Search (Persis seperti Halaman Pengunjung Tanpa Reload)
@@ -336,15 +339,24 @@ $filterParams = array_filter([
         }
     })();
 
-    // 2. Fitur Hapus Buku dengan Toast Admin
+    // 2. Fitur Hapus Buku Permanen dengan Konfirmasi SweetAlert2 (Switch Alert)
     function deleteBukuItem(id, judul) {
-        if (!confirm('Apakah Anda yakin ingin menghapus buku "' + judul + '"?\nData yang dihapus tidak akan ditampilkan lagi.')) {
-            return;
-        }
+        var execDelete = function() {
+            var token = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
-        var token = document.querySelector('meta[name=csrf-token]')?.content || '';
+            // Tampilkan status loading berputar saat komunikasi ke server
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Sedang Menghapus...',
+                    text: 'Mohon tunggu sejenak, sistem sedang membersihkan data dari MySQL dan storage.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
 
-        fetch('/admin/buku/' + id + '/delete', {
+            fetch('/admin/buku/' + id + '/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -353,25 +365,76 @@ $filterParams = array_filter([
                 body: JSON.stringify({})
             })
             .then(function(res) {
-                return res.json();
+                return res.json().then(function(data) {
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Gagal menghapus dari server');
+                    }
+                    return data;
+                });
             })
             .then(function(res) {
                 if (res.data && res.data.deleted) {
-                    var toast = document.getElementById('admin-toast');
-                    if (toast) {
-                        toast.textContent = 'Buku berhasil dihapus!';
-                        toast.classList.add('is-show');
-                        setTimeout(function() {
-                            toast.classList.remove('is-show');
-                        }, 3000);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil Dihapus!',
+                            text: 'Buku "' + judul + '" beserta berkas fisiknya telah resmi dihapus permanen.',
+                            timer: 2200,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        var toast = document.getElementById('admin-toast');
+                        if (toast) {
+                            toast.textContent = 'Buku berhasil dihapus!';
+                            toast.classList.add('is-show');
+                        }
+                        window.location.reload();
                     }
-                    window.location.reload();
                 } else {
-                    alert('Gagal menghapus: ' + (res.error || 'Terjadi kesalahan'));
+                    throw new Error(res.error || 'Terjadi kesalahan sistem.');
                 }
             })
-            .catch(function() {
-                alert('Terjadi kesalahan jaringan saat menghapus data.');
+            .catch(function(error) {
+                console.error('Delete Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Menghapus',
+                        text: error.message || 'Terjadi kesalahan jaringan atau server saat menghapus data.',
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'Tutup'
+                    });
+                } else {
+                    alert('❌ Gagal menghapus: ' + (error.message || 'Terjadi kesalahan jaringan'));
+                }
             });
+        };
+
+        // Dialog Konfirmasi SweetAlert2 sebelum eksekusi penghapusan
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Hapus Buku Ini?',
+                html: 'Anda akan menghapus buku:<br><strong class="text-neutral-900 font-bold">' + judul + '</strong>.<br><span class="text-xs text-red-600 mt-2.5 inline-block font-medium bg-red-50 px-3 py-1 rounded-lg border border-red-200">⚠️ Data di MySQL & file sampul/PDF di server akan ikut terhapus!</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '🗑️ Ya, Hapus Permanen!',
+                cancelButtonText: 'Batal',
+                focusCancel: true,
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    execDelete();
+                }
+            });
+        } else {
+            if (confirm('Apakah Anda yakin ingin menghapus buku "' + judul + '" secara permanen?\nData di DB & server tidak dapat dikembalikan.')) {
+                execDelete();
+            }
+        }
     }
 </script>

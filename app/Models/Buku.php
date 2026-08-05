@@ -286,15 +286,16 @@ class Buku
     }
 
     /**
-     * Hapus lembut (Soft Delete) dari database
+     * Hapus permanen (Hard Delete) dari database
      */
     public function delete(int $id): bool
     {
         if (!$this->db) return false;
         try {
-            $stmt = $this->db->prepare("UPDATE tbl_buku SET deleted_at = NOW() WHERE buku_id = :id AND deleted_at IS NULL");
+            $stmt = $this->db->prepare("DELETE FROM tbl_buku WHERE buku_id = :id");
             return $stmt->execute([':id' => $id]);
         } catch (\Throwable $e) {
+            error_log('[Buku Delete Error] ' . $e->getMessage());
             return false;
         }
     }

@@ -79,12 +79,43 @@ class BukuAdminController
         $response->json($ok ? ['data' => ['id' => $id, 'updated' => true]] : ['error' => 'Gagal memperbarui data buku'], $ok ? 200 : 404);
     }
 
-    // Untuk menghapus data buku berdasarkan ID
+    // Untuk menghapus data buku berdasarkan ID sekaligus membersihkan file fisik di server (c-panel storage)
     public function delete(Request $request, Response $response, array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
+
+        // 1. Ambil informasi buku terlebih dahulu sebelum di-delete dari database
+        $book = $this->buku?->find($id);
+        if (!$book) {
+            $response->json(['error' => 'Data buku tidak ditemukan di dalam database'], 404);
+            return;
+        }
+
+        // 2. Lakukan penghapusan permanen dari tabel MySQL (Hard Delete)
         $ok = $this->buku?->delete($id) ?? false;
-        $response->json($ok ? ['data' => ['id' => $id, 'deleted' => true]] : ['error' => 'Gagal menghapus buku'], $ok ? 200 : 404);
+
+        if ($ok) {
+            // 3. Jika berhasil dihapus di DB, hapus juga file fisik di storage agar server tidak penuh file sampah
+            $this->cleanupPhysicalFile((string) ($book['cover'] ?? ''));
+            $this->cleanupPhysicalFile((string) ($book['file_path'] ?? ''));
+            $response->json(['data' => ['id' => $id, 'deleted' => true]], 200);
+        } else {
+            $response->json(['error' => 'Gagal menghapus data dari database server'], 500);
+        }
+    }
+
+    /**
+     * Helper untuk membersihkan file fisik dari folder public server jika file ada
+     */
+    private function cleanupPhysicalFile(string $urlPath): void
+    {
+        if (empty($urlPath) || !str_starts_with($urlPath, '/uploads/')) {
+            return; // Hanya hapus file yang disimpan di folder /uploads/
+        }
+        $physicalPath = dirname(__DIR__, 3) . '/public' . $urlPath;
+        if (is_file($physicalPath)) {
+            @unlink($physicalPath);
+        }
     }
 
     // Untuk mengunggah file gambar (cover buku)
