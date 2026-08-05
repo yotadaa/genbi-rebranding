@@ -132,10 +132,15 @@ class Buku
                 $params[':status'] = $filters['status'];
             }
 
-            // Filter pencarian kata kunci
+            // Filter pencarian kata kunci (case-insensitive, menggunakan parameter unik agar tidak PDOException)
             if (!empty($filters['q'])) {
-                $sql .= " AND (judul LIKE :q OR penulis LIKE :q OR kategori LIKE :q)";
-                $params[':q'] = "%" . trim($filters['q']) . "%";
+                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7))";
+
+                $searchTerm = "%" . trim($filters['q']) . "%";
+                // Mendaftarkan nilai ke tiap placeholder terpisah
+                for ($idx = 1; $idx <= 7; $idx++) {
+                    $params[":q{$idx}"] = $searchTerm;
+                }
             }
 
             $sql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
@@ -170,8 +175,11 @@ class Buku
                 $params[':status'] = $filters['status'];
             }
             if (!empty($filters['q'])) {
-                $sql .= " AND (judul LIKE :q OR penulis LIKE :q OR kategori LIKE :q)";
-                $params[':q'] = "%" . trim($filters['q']) . "%";
+                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7))";
+                $searchTerm = "%" . trim($filters['q']) . "%";
+                for ($idx = 1; $idx <= 7; $idx++) {
+                    $params[":q{$idx}"] = $searchTerm;
+                }
             }
 
             $stmt = $this->db->prepare($sql);

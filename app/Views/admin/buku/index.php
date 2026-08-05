@@ -47,13 +47,13 @@ $filterParams = array_filter([
             <!-- Smooth Search Box & Status Filter -->
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
                 <div class="relative flex-1 max-w-md">
-                    <input type="text" id="smooth-search-input" name="q" value="<?= $e($filters['q'] ?? '') ?>" placeholder="Ketik judul, penulis, atau kategori..." autocomplete="off" class="form-input w-full pl-10 pr-10 py-2 rounded-xl text-sm border-neutral-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all shadow-inner" />
-                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <input type="text" id="smooth-search-input" name="q" value="<?= $e($filters['q'] ?? '') ?>" placeholder="Ketik judul, penulis, ISBN, atau tahun..." autocomplete="off" class="form-input w-full pl-11 pr-11 py-2.5 rounded-xl text-sm bg-white border-2 border-neutral-300 hover:border-blue-500 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 text-neutral-800 font-semibold transition-all shadow-sm placeholder:text-neutral-400 placeholder:font-normal" />
+                    <svg class="absolute left-3.5 top-3 w-5 h-5 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
 
                     <!-- Indikator Loading saat memuat pencarian -->
-                    <div id="search-spinner" class="absolute right-3 top-2.5 hidden">
+                    <div id="search-spinner" class="absolute right-3.5 top-3 hidden">
                         <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
@@ -62,14 +62,19 @@ $filterParams = array_filter([
                 </div>
 
                 <!-- Filter Status -->
-                <select name="status" onchange="this.form.submit()" class="form-input rounded-xl text-sm border-neutral-300 py-2 px-3 focus:border-blue-600 font-medium text-neutral-700 w-auto">
+                <select name="status" onchange="this.form.submit()" class="form-input rounded-xl text-sm border-2 border-neutral-300 hover:border-blue-500 py-2.5 px-3 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 font-semibold text-neutral-700 w-auto bg-white shadow-sm transition-all">
                     <option value="">Semua Status</option>
                     <option value="published" <?= ($filters['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
                     <option value="draft" <?= ($filters['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
                 </select>
 
                 <?php if (!empty($filters['q']) || !empty($filters['status'])): ?>
-                    <a href="/admin/buku" class="inline-flex items-center text-xs font-semibold text-red-600 hover:text-red-800 self-center px-2 py-1 bg-red-50 rounded-lg transition-colors">Reset Filter</a>
+                    <a href="/admin/buku" class="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 self-center px-3 py-2.5 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 transition-colors shrink-0 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Reset Filter
+                    </a>
                 <?php endif; ?>
             </div>
 
@@ -95,13 +100,54 @@ $filterParams = array_filter([
         <!-- Tabel Responsive -->
         <div class="mt-4 overflow-x-auto">
             <?php if ($items === []): ?>
-                <div class="p-12 text-center border-2 border-dashed border-neutral-200 rounded-2xl">
-                    <svg class="mx-auto h-12 w-12 text-neutral-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
-                    <p class="text-sm font-semibold text-neutral-600">Buku Tidak Ditemukan</p>
-                    <p class="text-xs text-neutral-400 mt-1">Belum ada data atau kata kunci pencarian Anda tidak mencocokkan hasil.</p>
-                </div>
+                <?php if (!empty($filters['q']) || !empty($filters['status'])): ?>
+                    <!-- State 1: Buku Tidak Ditemukan Karena Filter/Keyword Pencarian -->
+                    <div class="p-12 text-center bg-amber-50/40 border-2 border-dashed border-amber-300/80 rounded-2xl max-w-2xl mx-auto my-6 shadow-sm">
+                        <div class="w-16 h-16 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-neutral-800">Hasil Pencarian Tidak Ditemukan</h3>
+                        <p class="text-xs text-neutral-600 mt-2 leading-relaxed">
+                            Tidak ada koleksi buku yang cocok dengan kata kunci
+                            <?php if (!empty($filters['q'])): ?>
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold rounded">"<?= $e($filters['q']) ?>"</span>
+                            <?php endif; ?>
+                            <?php if (!empty($filters['status'])): ?>
+                                pada status <span class="font-bold uppercase text-neutral-700"><?= $e($filters['status']) ?></span>
+                                <?php endif; ?>.
+                        </p>
+                        <p class="text-xs text-neutral-400 mt-1">Coba gunakan kata kunci lain (seperti judul pendek, nama penulis, ISBN, atau tahun terbit).</p>
+                        <div class="mt-6">
+                            <a href="/admin/buku" class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Reset Pencarian & Tampilkan Semua
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <!-- State 2: Katalog Buku Masih Kosong Total -->
+                    <div class="p-14 text-center border-2 border-dashed border-neutral-200 rounded-2xl bg-neutral-50/50 max-w-2xl mx-auto my-6">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <p class="text-base font-bold text-neutral-800">Katalog Buku Masih Kosong</p>
+                        <p class="text-xs text-neutral-500 mt-1 max-w-md mx-auto leading-relaxed">Belum ada koleksi literasi atau modul yang ditambahkan ke sistem Admin GenBI Jambi.</p>
+                        <div class="mt-6">
+                            <a href="/admin/buku-add" class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Tambah Buku Pertama
+                            </a>
+                        </div>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
@@ -115,9 +161,9 @@ $filterParams = array_filter([
                             <th class="p-3.5 rounded-tr-xl text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-neutral-150">
+                    <tbody id="admin-buku-tbody" class="divide-y divide-neutral-150">
                         <?php foreach ($items as $index => $item): ?>
-                            <tr class="hover:bg-blue-50/25 transition-colors">
+                            <tr class="buku-row hover:bg-blue-50/25 transition-colors" data-search="<?= strtolower($e($item['judul'] . ' ' . $item['penulis'] . ' ' . $item['kategori'] . ' ' . $item['penerbit'] . ' ' . $item['tahun'] . ' ' . $item['isbn'])) ?>">
                                 <!-- Nomor Urut (SL) -->
                                 <td class="p-3.5 text-center text-xs font-bold text-neutral-400 align-top">
                                     <?= $startItem + $index ?>
@@ -194,6 +240,20 @@ $filterParams = array_filter([
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+
+                <!-- Container Empty State saat pencarian live client-side tidak cocok -->
+                <div id="live-empty-search" class="hidden p-12 text-center bg-amber-50/40 border-2 border-dashed border-amber-300/80 rounded-2xl max-w-2xl mx-auto my-6 shadow-sm">
+                    <div class="w-16 h-16 bg-amber-100/80 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-bold text-neutral-800">Hasil Pencarian Tidak Ditemukan</h3>
+                    <p class="text-xs text-neutral-600 mt-2 leading-relaxed">
+                        Tidak ada buku pada tabel ini yang cocok dengan kata kunci <span id="live-keyword-span" class="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold rounded">""</span>.
+                    </p>
+                    <p class="text-xs text-neutral-400 mt-1">Coba gunakan kata kunci lain (seperti judul pendek atau nama penulis).</p>
+                </div>
             <?php endif; ?>
         </div>
 
@@ -230,30 +290,48 @@ $filterParams = array_filter([
     </section>
 </section>
 
-<!-- Skrip Smooth Search (Live Debounce) & Delete Modal -->
+<!-- Skrip Smooth Search (Client-Side Instant Filter) & Delete Modal -->
 <script>
-    // 1. Fitur Smooth Search (Otomatis cari tanpa tekan Enter)
+    // 1. Fitur Live Smooth Search (Persis seperti Halaman Pengunjung Tanpa Reload)
     (function() {
         var searchInput = document.getElementById('smooth-search-input');
         var searchForm = document.getElementById('buku-filter-form');
         var spinner = document.getElementById('search-spinner');
-        var debounceTimer;
+        var rows = document.querySelectorAll('.buku-row');
+        var liveEmpty = document.getElementById('live-empty-search');
+        var liveSpan = document.getElementById('live-keyword-span');
+        if (searchInput) {
+            // INSTANT CLIENT-SIDE FILTER (Mulus & Lancar Tanpa Reload)
+            searchInput.addEventListener('input', function(e) {
+                var keyword = e.target.value.toLowerCase().trim();
+                var visibleCount = 0;
+                if (rows.length > 0) {
+                    rows.forEach(function(row) {
+                        // Baca metadata data-search yang kita pasang di TR
+                        var searchData = (row.getAttribute('data-search') || row.textContent).toLowerCase();
 
-        if (searchInput && searchForm) {
-            // Arahkan kursor ke ujung teks jika sedang mencari
-            if (searchInput.value.length > 0) {
-                searchInput.focus();
-                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-            }
-
-            searchInput.addEventListener('input', function() {
-                clearTimeout(debounceTimer);
-                spinner.classList.remove('hidden'); // Tampilkan putaran loading
-
-                // Tunggu 450 milidetik setelah user selesai mengetik, lalu submit
-                debounceTimer = setTimeout(function() {
-                    searchForm.submit();
-                }, 450);
+                        // Jika keyword cocok dengan judul / penulis / lainnya
+                        if (keyword === '' || searchData.includes(keyword)) {
+                            row.style.display = ''; // Tampilkan
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none'; // Sembunyikan seketika
+                        }
+                    });
+                    // Tampilkan pesan kosong dinamis jika 0 hasil
+                    if (visibleCount === 0 && keyword !== '') {
+                        if (liveEmpty) liveEmpty.classList.remove('hidden');
+                        if (liveSpan) liveSpan.textContent = '"' + keyword + '"';
+                    } else {
+                        if (liveEmpty) liveEmpty.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        // Kalau memilih Dropdown Status atau tekan Enter, baru lakukan submission
+        if (searchForm && spinner) {
+            searchForm.addEventListener('submit', function() {
+                spinner.classList.remove('hidden');
             });
         }
     })();
