@@ -30,6 +30,7 @@ class Buku
             'judul' => (string) ($row['judul'] ?? ''),
             'slug' => (string) ($row['slug'] ?? ''),
             'file_path' => (string) ($row['file_path'] ?? ''),
+            'path_flipbook' => (string) ($row['path_flipbook'] ?? ''),
             'penulis' => (string) ($row['penulis'] ?? 'GenBI Jambi'),
             'penerbit' => (string) ($row['penerbit'] ?? 'Bank Indonesia'),
             'deskripsi' => (string) ($row['deskripsi'] ?? ''),
@@ -215,14 +216,15 @@ class Buku
         if (!$this->db) return 0;
         try {
             $stmt = $this->db->prepare("INSERT INTO tbl_buku 
-                (judul, slug, file_path, penulis, penerbit, deskripsi, sinopsis, foto_cover_buku, tahun_terbit, isbn, page_count, kategori, status, created_at) 
+                (judul, slug, file_path, path_flipbook, penulis, penerbit, deskripsi, sinopsis, foto_cover_buku, tahun_terbit, isbn, page_count, kategori, status, created_at) 
                 VALUES 
-                (:judul, :slug, :file_path, :penulis, :penerbit, :deskripsi, :sinopsis, :foto_cover, :tahun, :isbn, :page_count, :kategori, :status, NOW())");
+                (:judul, :slug, :file_path, :path_flipbook, :penulis, :penerbit, :deskripsi, :sinopsis, :foto_cover, :tahun, :isbn, :page_count, :kategori, :status, NOW())");
 
             $stmt->execute([
                 ':judul' => $data['judul'] ?? '',
                 ':slug' => $data['slug'] ?? '',
                 ':file_path' => $data['file_path'] ?? '',
+                ':path_flipbook' => $data['path_flipbook'] ?? '',
                 ':penulis' => $data['penulis'] ?? 'GenBI Jambi',
                 ':penerbit' => $data['penerbit'] ?? 'Bank Indonesia',
                 ':deskripsi' => $data['deskripsi'] ?? '',
@@ -252,6 +254,7 @@ class Buku
             'judul' => 'judul',
             'slug' => 'slug',
             'file_path' => 'file_path',
+            'path_flipbook' => 'path_flipbook',
             'penulis' => 'penulis',
             'penerbit' => 'penerbit',
             'deskripsi' => 'deskripsi',

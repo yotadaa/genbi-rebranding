@@ -398,20 +398,34 @@ $defaultGradients = [
 
                             <!-- Tombol Aksi (Baca & Unduh) -->
                             <div class="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between gap-2.5 w-full">
-                                <a href="#" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-900 hover:text-white rounded-xl transition-all duration-200 shadow-sm">
+                                <button type="button" class="btn-baca-online flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-blue-900 bg-blue-50 hover:bg-blue-900 hover:text-white rounded-xl transition-all duration-200 shadow-sm cursor-pointer"
+                                    data-file="<?= htmlspecialchars((string) ($book['file_path'] ?? '')) ?>"
+                                    data-flipbook="<?= htmlspecialchars((string) ($book['path_flipbook'] ?? '')) ?>"
+                                    data-judul="<?= htmlspecialchars((string) ($book['judul'] ?? 'Buku Tanpa Judul')) ?>"
+                                    data-penulis="<?= htmlspecialchars((string) ($book['penulis'] ?? 'GenBI Jambi')) ?>"
+                                    data-download="<?= htmlspecialchars((string) ($book['file_path'] ?? '')) ?>">
                                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                     <span>Baca Online</span>
-                                </a>
+                                </button>
 
-                                <a href="#" class="inline-flex items-center justify-center px-3.5 py-2.5 text-xs font-bold text-neutral-700 bg-neutral-100 hover:bg-emerald-600 hover:text-white rounded-xl transition-all duration-200 shadow-sm gap-1" title="Unduh PDF (<?= htmlspecialchars($book['file_size_formatted']) ?>)">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    <span class="hidden xl:inline-block"><?= htmlspecialchars($book['file_size_formatted']) ?></span>
-                                </a>
+                                <?php if (!empty($book['file_path'])): ?>
+                                    <a href="<?= htmlspecialchars((string) $book['file_path']) ?>" download target="_blank" class="inline-flex items-center justify-center px-4 py-2.5 text-xs font-bold text-neutral-700 bg-neutral-100 hover:bg-emerald-600 hover:text-white rounded-xl transition-all duration-200 shadow-sm gap-1.5" title="Unduh File Buku">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        <span>Unduh</span>
+                                    </a>
+                                <?php else: ?>
+                                    <button type="button" onclick="alert('File PDF belum tersedia untuk diunduh. Silakan hubungi pengelola GenBI.'); return false;" class="inline-flex items-center justify-center px-4 py-2.5 text-xs font-bold text-neutral-400 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-all duration-200 shadow-sm gap-1.5 cursor-not-allowed" title="Unduhan belum tersedia">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        <span>Unduh</span>
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -479,7 +493,138 @@ $defaultGradients = [
 </section>
 
 <!-- ==========================================
-     6. SCRIPT INTERAKTIF (SKELETON & LIVE FILTER)
+6. MODAL FLIPBOOK MAGAZINE READER (E-READER)
+========================================== -->
+<div id="flipbook-reader-modal" class="fixed inset-0 z-[99999] bg-slate-900/95 backdrop-blur-md hidden flex flex-col justify-between overflow-hidden opacity-0 transition-opacity duration-300">
+
+    <!-- A. TOP BAR: Judul & Tombol Tutup -->
+    <header class="h-16 bg-slate-950/80 px-4 sm:px-6 flex items-center justify-between border-b border-slate-800 shrink-0 z-20">
+        <div class="flex items-center gap-3 overflow-hidden pr-4">
+            <span class="p-2 bg-blue-600 text-white rounded-lg shadow-md shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </span>
+            <div class="truncate">
+                <h3 id="reader-title-text" class="text-sm sm:text-base font-bold text-white truncate">Memuat Buku...</h3>
+                <p id="reader-author-text" class="text-xs text-slate-400 truncate">GenBI Jambi</p>
+            </div>
+        </div>
+        <button type="button" id="btn-close-reader" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white font-semibold text-xs transition-all duration-200 flex items-center gap-2 shadow shrink-0 cursor-pointer">
+            <span>Tutup Viewer</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- B. STAGE VIEWER: Tempat Lembaran Buku Diberdayakan (Canvas) -->
+    <div id="reader-stage" class="flex-1 relative flex items-center justify-center overflow-auto p-4 sm:p-8 select-none">
+
+        <!-- Loading Indicator -->
+        <div id="reader-loading" class="flex flex-col items-center justify-center text-center p-6 bg-slate-900/90 rounded-2xl border border-slate-700 shadow-2xl z-30">
+            <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-500 mb-3 mx-auto" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm font-semibold text-white">Memuat Dokumen PDF...</p>
+            <p class="text-xs text-slate-400 mt-1">Harap tunggu sejenak sementara lembaran buku disiapkan.</p>
+        </div>
+
+        <!-- Tombol Navigasi Kiri (Prev) -->
+        <button type="button" id="btn-page-prev" class="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/60 hover:bg-blue-600 text-white flex items-center justify-center shadow-xl transition-all border border-white/15 backdrop-blur-sm disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+            <svg class="w-6 h-6 -ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <!-- Tombol Navigasi Kanan (Next) -->
+        <button type="button" id="btn-page-next" class="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/60 hover:bg-blue-600 text-white flex items-center justify-center shadow-xl transition-all border border-white/15 backdrop-blur-sm disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+            <svg class="w-6 h-6 -mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+
+        <!-- Kontainer Lembaran Buku (Spread) -->
+        <div id="book-spread" class="relative flex items-center justify-center shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] rounded-lg transition-transform duration-200 origin-center my-auto max-w-full">
+
+            <!-- Halaman Kiri (Pada desktop/mode 2 halaman) -->
+            <div id="page-wrapper-left" class="relative bg-white rounded-l-md overflow-hidden shadow-sm">
+                <canvas id="canvas-left" class="block w-full h-auto max-w-[45vw] sm:max-w-[42vw] max-h-[78vh] object-contain"></canvas>
+            </div>
+
+            <!-- Punggung Buku Tengah / Book Spine Shadow (Efek Buku Terbuka Nyata) -->
+            <div id="book-spine" class="w-[12px] self-stretch bg-gradient-to-r from-black/25 via-white/40 to-black/25 relative z-10 -mx-1 hidden md:block border-l border-r border-black/10 shadow-inner"></div>
+
+            <!-- Halaman Kanan (Halaman ke-2 saat di desktop) -->
+            <div id="page-wrapper-right" class="relative bg-white rounded-r-md overflow-hidden shadow-sm hidden md:block">
+                <canvas id="canvas-right" class="block w-full h-auto max-w-[45vw] sm:max-w-[42vw] max-h-[78vh] object-contain"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- C. BOTTOM FLOATING TOOLBAR: Pill Bar ala Unja Digital Magazine -->
+    <footer class="h-20 shrink-0 flex items-center justify-center px-4 z-20 pointer-events-none pb-4">
+        <div class="pointer-events-auto bg-white/95 backdrop-blur-md text-neutral-800 px-5 py-2 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.5)] border border-white/40 flex items-center gap-2 sm:gap-4 transition-all">
+
+            <!-- Indikator & Input Halaman -->
+            <div class="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold px-2 py-1 bg-slate-100 rounded-full border border-slate-200">
+                <span class="text-neutral-500 text-[11px] hidden sm:inline">Hal.</span>
+                <input type="number" id="input-page-jump" value="1" min="1" class="w-12 text-center font-bold bg-white text-blue-900 rounded py-0.5 px-1 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 text-xs sm:text-sm">
+                <span class="text-neutral-400">/</span>
+                <span id="text-total-pages" class="text-neutral-700">0</span>
+            </div>
+
+            <div class="h-5 w-px bg-neutral-300"></div>
+
+            <!-- Zoom Out -->
+            <button type="button" id="btn-zoom-out" title="Perkecil (-)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-neutral-700 font-bold transition-colors cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4" />
+                </svg>
+            </button>
+
+            <!-- Reset Zoom -->
+            <button type="button" id="btn-zoom-reset" title="Ukuran Pas" class="px-2.5 py-1 text-[11px] font-bold bg-blue-50 text-blue-800 rounded-full hover:bg-blue-100 transition-colors hidden sm:block cursor-pointer">
+                Fit
+            </button>
+
+            <!-- Zoom In -->
+            <button type="button" id="btn-zoom-in" title="Perbesar (+)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-neutral-700 font-bold transition-colors cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+
+            <div class="h-5 w-px bg-neutral-300"></div>
+
+            <!-- Fullscreen Toggle -->
+            <button type="button" id="btn-fullscreen" title="Layar Penuh (Fullscreen)" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-neutral-700 transition-colors cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+            </button>
+
+            <!-- Unduh File Langsung dari Reader -->
+            <a id="btn-reader-download" href="#" target="_blank" download title="Unduh Dokumen PDF" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full flex items-center gap-1.5 shadow transition-all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span class="hidden md:inline">Unduh</span>
+            </a>
+
+        </div>
+    </footer>
+
+</div>
+
+<!-- Load Library Mozilla PDF.js dari CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<!-- ==========================================
+     7. SCRIPT INTERAKTIF (SKELETON, FILTER & FLIPBOOK)
      ========================================== -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -497,12 +642,14 @@ $defaultGradients = [
 
         // 1. EFEK SKELETON AWAL
         setTimeout(() => {
-            skeletonGrid.style.display = 'none';
-            realGrid.classList.remove('hidden');
-            setTimeout(() => {
-                realGrid.classList.remove('opacity-0');
-                realGrid.classList.add('opacity-100');
-            }, 30);
+            if (skeletonGrid) skeletonGrid.style.display = 'none';
+            if (realGrid) {
+                realGrid.classList.remove('hidden');
+                setTimeout(() => {
+                    realGrid.classList.remove('opacity-0');
+                    realGrid.classList.add('opacity-100');
+                }, 30);
+            }
         }, 600);
 
         // 2. FUNGSI FILTER & SEARCH REALTIME
@@ -514,7 +661,7 @@ $defaultGradients = [
                 const judul = card.getAttribute('data-judul');
 
                 const matchCategory = (currentFilter === 'Semua') || (kategori === currentFilter);
-                const matchSearch = (currentSearch === '') || judul.includes(currentSearch);
+                const matchSearch = (currentSearch === '') || (judul && judul.includes(currentSearch));
 
                 if (matchCategory && matchSearch) {
                     card.style.display = 'flex';
@@ -525,17 +672,21 @@ $defaultGradients = [
             });
 
             if (visibleCount === 0 && bookCards.length > 0) {
-                emptySearch.classList.remove('hidden');
-                if (currentSearch !== '') {
-                    emptyMsg.textContent = `Tidak ada judul buku atau penulis dengan kata kunci "${searchInput.value}" pada kategori "${currentFilter}".`;
-                } else {
-                    emptyMsg.textContent = `Belum ada dokumen untuk kategori "${currentFilter}".`;
+                if (emptySearch) emptySearch.classList.remove('hidden');
+                if (emptyMsg) {
+                    if (currentSearch !== '') {
+                        emptyMsg.textContent = `Tidak ada judul buku atau penulis dengan kata kunci "${searchInput ? searchInput.value : ''}" pada kategori "${currentFilter}".`;
+                    } else {
+                        emptyMsg.textContent = `Belum ada dokumen untuk kategori "${currentFilter}".`;
+                    }
                 }
             } else {
-                emptySearch.classList.add('hidden');
+                if (emptySearch) emptySearch.classList.add('hidden');
             }
 
-            counterText.innerHTML = `Menampilkan <strong class="text-neutral-900">${visibleCount}</strong> buku untuk kategori <strong class="text-blue-900">${currentFilter}</strong>.`;
+            if (counterText) {
+                counterText.innerHTML = `Menampilkan <strong class="text-neutral-900">${visibleCount}</strong> buku untuk kategori <strong class="text-blue-900">${currentFilter}</strong>.`;
+            }
         }
 
         // 3. EVENT LISTENER TOMBOL KATEGORI
@@ -548,14 +699,14 @@ $defaultGradients = [
 
                 currentFilter = this.getAttribute('data-filter');
 
-                realGrid.style.opacity = '0';
-                skeletonGrid.style.display = 'grid';
-                emptySearch.classList.add('hidden');
+                if (realGrid) realGrid.style.opacity = '0';
+                if (skeletonGrid) skeletonGrid.style.display = 'grid';
+                if (emptySearch) emptySearch.classList.add('hidden');
 
                 setTimeout(() => {
                     applyFilters();
-                    skeletonGrid.style.display = 'none';
-                    realGrid.style.opacity = '1';
+                    if (skeletonGrid) skeletonGrid.style.display = 'none';
+                    if (realGrid) realGrid.style.opacity = '1';
                 }, 350);
             });
         });
@@ -567,5 +718,279 @@ $defaultGradients = [
                 applyFilters();
             });
         }
+
+        // ==========================================================
+        // 5. SISTEM FLIPBOOK E-READER INTERAKTIF (PDF.JS ENGINE)
+        // ==========================================================
+        const readerModal = document.getElementById('flipbook-reader-modal');
+        const btnCloseReader = document.getElementById('btn-close-reader');
+        const readerTitle = document.getElementById('reader-title-text');
+        const readerAuthor = document.getElementById('reader-author-text');
+        const readerLoading = document.getElementById('reader-loading');
+        const bookSpread = document.getElementById('book-spread');
+        const bookSpine = document.getElementById('book-spine');
+        const canvasLeft = document.getElementById('canvas-left');
+        const canvasRight = document.getElementById('canvas-right');
+        const pageWrapperRight = document.getElementById('page-wrapper-right');
+        const btnPrev = document.getElementById('btn-page-prev');
+        const btnNext = document.getElementById('btn-page-next');
+        const inputPageJump = document.getElementById('input-page-jump');
+        const textTotalPages = document.getElementById('text-total-pages');
+        const btnZoomIn = document.getElementById('btn-zoom-in');
+        const btnZoomOut = document.getElementById('btn-zoom-out');
+        const btnZoomReset = document.getElementById('btn-zoom-reset');
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const btnReaderDownload = document.getElementById('btn-reader-download');
+
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let zoomScale = 1.0;
+        let isRendering = false;
+
+        // Inisialisasi PDF.js Worker dari CDN
+        const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+        if (pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
+
+        // Event Tombol Baca Online -> Langsung mengarahkan ke Link Flipbook tanpa membaca file lokal server
+        const btnReadOnlineList = document.querySelectorAll('.btn-baca-online');
+        btnReadOnlineList.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const flipbookUrl = this.getAttribute('data-flipbook');
+                const filePath = this.getAttribute('data-file');
+
+                // Prioritas utama ke link flipbook, jika kosong gunakan tautan file_path jika ada
+                const targetUrl = (flipbookUrl && flipbookUrl !== '' && flipbookUrl !== '#') ? flipbookUrl : ((filePath && filePath !== '' && filePath !== '#') ? filePath : null);
+
+                if (!targetUrl) {
+                    alert('Mohon maaf, tautan baca online (flipbook) untuk publikasi ini belum tersedia. Silakan hubungi admin GenBI Jambi.');
+                    return;
+                }
+
+                // Langsung arahkan ke link flipbook di tab baru
+                window.open(targetUrl, '_blank');
+            });
+        });
+
+        function closeReaderModal() {
+            if (!readerModal) return;
+            readerModal.classList.remove('opacity-100');
+            readerModal.classList.add('opacity-0');
+            setTimeout(() => {
+                readerModal.classList.add('hidden');
+                document.body.style.overflow = '';
+                pdfDoc = null;
+                if (bookSpread) bookSpread.style.transform = 'scale(1)';
+                zoomScale = 1.0;
+            }, 300);
+        }
+
+        if (btnCloseReader) {
+            btnCloseReader.addEventListener('click', closeReaderModal);
+        }
+
+        function loadPdfDocument(url) {
+            const pdfjs = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+            if (!pdfjs) {
+                alert('Library PDF Reader (PDF.js) sedang dimuat atau gangguan koneksi. Silakan coba sesaat lagi.');
+                return;
+            }
+
+            if (readerLoading) readerLoading.style.display = 'flex';
+            if (bookSpread) bookSpread.style.opacity = '0';
+
+            const loadingTask = pdfjs.getDocument(url);
+            loadingTask.promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                totalPages = pdfDoc.numPages;
+                if (textTotalPages) textTotalPages.textContent = totalPages;
+                if (inputPageJump) inputPageJump.max = totalPages;
+                currentPage = 1;
+
+                renderCurrentSpread();
+            }).catch(function(error) {
+                console.error('Error saat membaca PDF:', error);
+                if (readerLoading) readerLoading.style.display = 'none';
+                alert('Gagal membuka dokumen PDF: ' + (error.message || 'File tidak teridentifikasi di server.'));
+                closeReaderModal();
+            });
+        }
+
+        function isDualPageMode() {
+            return window.innerWidth >= 768 && totalPages > 1;
+        }
+
+        async function renderCurrentSpread() {
+            if (!pdfDoc || isRendering) return;
+            isRendering = true;
+
+            if (readerLoading) readerLoading.style.display = 'flex';
+            if (bookSpread) {
+                bookSpread.style.opacity = '0.4';
+                bookSpread.style.transform = `scale(${zoomScale})`;
+            }
+
+            const dual = isDualPageMode();
+            const pageNumLeft = currentPage;
+            const pageNumRight = currentPage + 1;
+
+            if (inputPageJump) inputPageJump.value = pageNumLeft;
+            updateNavButtons(dual);
+
+            try {
+                await renderPageToCanvas(pageNumLeft, canvasLeft);
+
+                if (dual && pageNumRight <= totalPages) {
+                    if (pageWrapperRight) pageWrapperRight.style.display = 'block';
+                    if (bookSpine) bookSpine.style.display = 'block';
+                    await renderPageToCanvas(pageNumRight, canvasRight);
+                } else {
+                    if (pageWrapperRight) pageWrapperRight.style.display = 'none';
+                    if (bookSpine) bookSpine.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error render halaman canvas:', err);
+            } finally {
+                isRendering = false;
+                if (readerLoading) readerLoading.style.display = 'none';
+                if (bookSpread) bookSpread.style.opacity = '1';
+            }
+        }
+
+        function renderPageToCanvas(num, canvasObj) {
+            return new Promise((resolve, reject) => {
+                if (!canvasObj || !pdfDoc) return reject('Canvas atau Dokumen tidak valid.');
+                pdfDoc.getPage(num).then(function(page) {
+                    const dpr = window.devicePixelRatio || 1;
+                    const renderScale = Math.max(1.5, dpr);
+                    const viewport = page.getViewport({
+                        scale: renderScale
+                    });
+                    const context = canvasObj.getContext('2d');
+
+                    canvasObj.height = viewport.height;
+                    canvasObj.width = viewport.width;
+
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+
+                    page.render(renderContext).promise.then(resolve).catch(reject);
+                }).catch(reject);
+            });
+        }
+
+        function updateNavButtons(dual) {
+            if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+            if (btnNext) btnNext.disabled = (currentPage + (dual ? 1 : 0) >= totalPages);
+        }
+
+        if (btnNext) {
+            btnNext.addEventListener('click', function() {
+                const step = isDualPageMode() ? 2 : 1;
+                if (currentPage + (isDualPageMode() ? 1 : 0) < totalPages) {
+                    currentPage += step;
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    renderCurrentSpread();
+                }
+            });
+        }
+
+        if (btnPrev) {
+            btnPrev.addEventListener('click', function() {
+                const step = isDualPageMode() ? 2 : 1;
+                if (currentPage > 1) {
+                    currentPage -= step;
+                    if (currentPage < 1) currentPage = 1;
+                    renderCurrentSpread();
+                }
+            });
+        }
+
+        if (inputPageJump) {
+            inputPageJump.addEventListener('change', function() {
+                let val = parseInt(this.value, 10);
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > totalPages) val = totalPages;
+
+                if (isDualPageMode() && val > 1 && val % 2 === 0) {
+                    val -= 1;
+                }
+                currentPage = val;
+                this.value = currentPage;
+                renderCurrentSpread();
+            });
+        }
+
+        function applyZoom() {
+            if (!bookSpread) return;
+            bookSpread.style.transform = `scale(${zoomScale})`;
+            bookSpread.style.cursor = (zoomScale > 1.0) ? 'grab' : 'default';
+        }
+
+        if (btnZoomIn) {
+            btnZoomIn.addEventListener('click', function() {
+                if (zoomScale < 2.5) {
+                    zoomScale = parseFloat((zoomScale + 0.25).toFixed(2));
+                    applyZoom();
+                }
+            });
+        }
+
+        if (btnZoomOut) {
+            btnZoomOut.addEventListener('click', function() {
+                if (zoomScale > 0.5) {
+                    zoomScale = parseFloat((zoomScale - 0.25).toFixed(2));
+                    applyZoom();
+                }
+            });
+        }
+
+        if (btnZoomReset) {
+            btnZoomReset.addEventListener('click', function() {
+                zoomScale = 1.0;
+                applyZoom();
+            });
+        }
+
+        if (btnFullscreen) {
+            btnFullscreen.addEventListener('click', function() {
+                const elem = document.getElementById('flipbook-reader-modal');
+                if (!elem) return;
+                if (!document.fullscreenElement) {
+                    if (elem.requestFullscreen) elem.requestFullscreen();
+                    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                    else if (document.msExitFullscreen) document.msExitFullscreen();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function(evt) {
+            if (!readerModal || readerModal.classList.contains('hidden')) return;
+            if (evt.key === 'ArrowRight' && btnNext && !btnNext.disabled) {
+                btnNext.click();
+            } else if (evt.key === 'ArrowLeft' && btnPrev && !btnPrev.disabled) {
+                btnPrev.click();
+            } else if (evt.key === 'Escape') {
+                closeReaderModal();
+            }
+        });
+
+        let resizeTimer = null;
+        window.addEventListener('resize', function() {
+            if (!readerModal || readerModal.classList.contains('hidden') || !pdfDoc) return;
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                renderCurrentSpread();
+            }, 400);
+        });
     });
 </script>
