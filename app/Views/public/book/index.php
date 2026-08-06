@@ -7,6 +7,9 @@ $totalPages = $totalPages ?? 1;
 $startItem = ($page - 1) * 12 + 1;
 $endItem = min($page * 12, $total);
 
+// Daftar opsi kategori buku (sinkron dengan opsi di Admin)
+$filterCategories = ['Publikasi', 'Majalah & Buletin', 'Modul & Panduan', 'Karya Tulis', 'Jurnal & Laporan', 'Karangan & Novel', 'Lainnya'];
+
 // Warna background default acak agar selalu hidup seandainya foto cover sengaja dinonaktifkan
 $defaultGradients = [
     'from-blue-900 via-indigo-950 to-blue-800',
@@ -47,8 +50,10 @@ $defaultGradients = [
         height: 100%;
         border-radius: 3px 12px 12px 3px;
         transform-origin: left center;
-        /* Tambahkan translateZ(3px) agar selamanya berada di lapisan depan kertas dalam ruang 3D */
-        transform: translateZ(3px);
+        /* Tambahkan translateZ(6px) agar ada jarak 3D lebih aman dari lembaran putih di bawahnya (anti Z-fighting) */
+        transform: translateZ(6px);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
         /* Transisi saat kembali (menutup): sangat halus tanpa overshoot ke minus/belakang */
         transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
         z-index: 30;
@@ -57,7 +62,7 @@ $defaultGradients = [
 
     /* Saat Hover: Sampul depan berayun membuka ke sebelah kiri! */
     .book-card:hover .book-front-cover {
-        transform: rotateY(-22deg) translateZ(3px);
+        transform: rotateY(-22deg) translateZ(6px);
         box-shadow: 15px 15px 30px -5px rgba(15, 23, 42, 0.5);
         /* Saat membuka (hover), berikan efek ayunan/bounce yang estetis */
         transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease;
@@ -241,21 +246,11 @@ $defaultGradients = [
                 <button type="button" data-filter="Semua" class="filter-btn is-active px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-full bg-blue-900 text-white shadow-sm transition-all duration-200">
                     Semua (<?= $total ?>)
                 </button>
-                <button type="button" data-filter="Pedoman BI" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
-                    Pedoman BI
-                </button>
-                <button type="button" data-filter="Majalah" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
-                    Majalah
-                </button>
-                <button type="button" data-filter="Buletin" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
-                    Buletin
-                </button>
-                <button type="button" data-filter="Materi Edukasi" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
-                    Materi Edukasi
-                </button>
-                <button type="button" data-filter="Buku Saku" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
-                    Buku Saku
-                </button>
+                <?php foreach ($filterCategories as $kategoriOpsi): ?>
+                    <button type="button" data-filter="<?= htmlspecialchars($kategoriOpsi) ?>" class="filter-btn px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded-full bg-white text-neutral-700 hover:bg-neutral-200 border border-neutral-300 transition-all duration-200">
+                        <?= htmlspecialchars($kategoriOpsi) ?>
+                    </button>
+                <?php endforeach; ?>
             </div>
 
             <!-- Bar Pencarian Live -->
@@ -336,7 +331,7 @@ $defaultGradients = [
 
                                     <?php if (!empty($book['cover'])): ?>
                                         <!-- Cover Gambar dari Database / Unsplash -->
-                                        <img src="<?= htmlspecialchars($book['cover']) ?>" alt="Cover <?= htmlspecialchars($book['judul']) ?>" class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105" loading="lazy">
+                                        <img src="<?= htmlspecialchars($book['cover']) ?>" alt="Cover <?= htmlspecialchars($book['judul']) ?>" style="-webkit-backface-visibility: hidden; backface-visibility: hidden;" class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105" loading="lazy">
                                     <?php else: ?>
                                         <!-- Desain Cover CSS Default Eksklusif -->
                                         <div class="relative z-0 flex items-center justify-between text-[10px] font-bold tracking-widest text-blue-200/80 uppercase border-b border-white/15 pb-2">
