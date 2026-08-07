@@ -8,7 +8,7 @@ $startItem = ($page - 1) * 12 + 1;
 $endItem = min($page * 12, $total);
 
 // Daftar opsi kategori buku (sinkron dengan opsi di Admin)
-$filterCategories = ['Publikasi', 'Majalah & Buletin', 'Modul & Panduan', 'Karya Tulis', 'Jurnal & Laporan', 'Karangan & Novel', 'Lainnya'];
+$filterCategories = ['Fantasy', 'Cerita Anak', 'Komik', 'Fabel', 'Komedi', 'Lainnya'];
 
 // Warna background default acak agar selalu hidup seandainya foto cover sengaja dinonaktifkan
 $defaultGradients = [

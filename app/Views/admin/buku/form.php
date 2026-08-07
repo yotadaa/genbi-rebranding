@@ -111,8 +111,8 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Kategori Buku</label>
                     <select name="kategori" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-semibold text-blue-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all">
                         <?php
-                        $opts = ['Publikasi', 'Majalah & Buletin', 'Modul & Panduan', 'Karya Tulis', 'Jurnal & Laporan', 'Karangan & Novel', 'Lainnya'];
-                        $curr = $item['kategori'] ?? 'Publikasi';
+                        $opts = ['Fantasy', 'Cerita Anak', 'Komik', 'Fabel', 'Komedi', 'Lainnya'];
+                        $curr = $item['kategori'] ?? 'Fantasy';
                         foreach ($opts as $o):
                         ?>
                             <option value="<?= $e($o) ?>" <?= $curr === $o ? 'selected' : '' ?>><?= $e($o) ?></option>
