@@ -25,6 +25,18 @@ $navItems = [
   ['label' => 'Kontak', 'key' => 'contact'],
 ];
 $activeKey = $activeNav ?? '';
+if (empty($activeKey)) {
+    $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    $segments = explode('/', trim(str_replace('/index.php', '', (string)$uriPath), '/'));
+    if (in_array('team', $segments)) $activeKey = 'team';
+    elseif (in_array('news', $segments)) $activeKey = 'news';
+    elseif (in_array('about', $segments)) $activeKey = 'about';
+    elseif (in_array('prestasi', $segments)) $activeKey = 'prestasi';
+    elseif (in_array('buku', $segments)) $activeKey = 'buku';
+    elseif (in_array('event', $segments) || in_array('feature', $segments)) $activeKey = 'kegiatan';
+    elseif (in_array('contact', $segments)) $activeKey = 'contact';
+    else $activeKey = 'home';
+}
 ?>
 <div id="site-header-shell" class="site-header-shell">
   <div class="top-strip hidden md:block">

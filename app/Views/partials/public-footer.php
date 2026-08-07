@@ -18,6 +18,7 @@ $navItems = [
   ['label' => 'Tentang', 'href' => $url('about')],
   ['label' => 'Tim', 'href' => $url('team')],
   ['label' => 'Prestasi', 'href' => $url('prestasi')],
+  ['label' => 'Buku', 'href' => '/buku'],
   ['label' => 'Kegiatan', 'href' => $url('event')],
   ['label' => 'Berita', 'href' => $url('news')],
   ['label' => 'Kontak', 'href' => $url('contact')],
