@@ -6,11 +6,12 @@ use App\Core\Request;
 use App\Core\Response;
 
 /** @var \App\Core\Router $router */
+/** @var \App\Controllers\Keuangan\AuthController $keuanganAuthController */
 
-$router->get('/keuangan/akun/login', static function (Request $request, Response $response) {
-    $response->html('ini halaman login bendahra');
+$router->get('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
+    $keuanganAuthController->showLogin($request, $response);
 });
 
-$router->get('/keuangan/akun/register', static function (Request $request, Response $response) {
-    $response->html('ini halaman register bendahara');
+$router->get('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
+    $keuanganAuthController->showRegister($request, $response);
 });

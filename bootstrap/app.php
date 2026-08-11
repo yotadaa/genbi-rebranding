@@ -30,6 +30,7 @@ use App\Controllers\Public\PresensiController;
 use App\Controllers\Public\SitemapController;
 use App\Controllers\Public\EventController;
 use App\Controllers\Public\TeamController;
+use App\Controllers\Keuangan\AuthController as KeuanganAuthController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -189,6 +190,7 @@ $adminContactSettingController = new \App\Controllers\Admin\ContactSettingContro
 $adminCommentSettingController = new CommentSettingController($settingModel, $viewRenderer);
 $adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
 $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryModel);
+$keuanganAuthController = new KeuanganAuthController($viewRenderer);
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';
