@@ -32,7 +32,6 @@ use App\Controllers\Public\EventController;
 use App\Controllers\Public\TeamController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
-use App\Middleware\UangKasMiddleware;
 use App\Middleware\RoleMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 use App\Services\AuthService;
@@ -174,7 +173,6 @@ $authController = new AuthController($authService, $loginThrottle);
 $authMiddleware = new AuthMiddleware();
 $csrfMiddleware = new CsrfMiddleware();
 $roleMiddleware = new RoleMiddleware(['superadmin', 'admin']);
-$uangKasMiddleware = new UangKasMiddleware($authService);
 $adminPageController = new AdminPageController($renderer, $viewRenderer, $newsModel, $teamModel, $prestasiModel, $featureModel, $siteSettings, $presensiEventModel, $presensiSubmissionModel, $genbiPointModel, $eventModel, $categoryModel, $commentModel, $photoGalleryModel, $tokenModel, $bukuModel);
 $adminEventController = new AdminEventController($eventModel);
 $adminNewsController = new AdminNewsController($newsModel);
@@ -194,6 +192,5 @@ $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryMode
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';
-require $rootPath . '/routes/uang-kas.php';
 
 return [$router, new Request(), new Response()];
