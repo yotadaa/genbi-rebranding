@@ -192,5 +192,6 @@ $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryMode
 
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';
+require $rootPath . '/routes/keuangan.php';
 
 return [$router, new Request(), new Response()];
