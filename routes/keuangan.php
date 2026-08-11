@@ -15,3 +15,7 @@ $router->get('/keuangan/akun/login', static function (Request $request, Response
 $router->get('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->showRegister($request, $response);
 });
+
+$router->post('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
+    $keuanganAuthController->register($request, $response);
+});
