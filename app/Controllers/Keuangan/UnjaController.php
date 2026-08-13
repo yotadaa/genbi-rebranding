@@ -17,6 +17,15 @@ class UnjaController
 
     public function dashboard(Request $request, Response $response): void
     {
-        $response->html($this->view->render('keuangan/unja/dashboard.php'));
+        $response->html($this->view->render('keuangan/unja/dashboard.php', [
+            'activeMenu' => 'dashboard'
+        ]));
+    }
+
+    public function profil(Request $request, Response $response): void
+    {
+        $response->html($this->view->render('keuangan/unja/profil.php', [
+            'activeMenu' => 'profil'
+        ]));
     }
 }
