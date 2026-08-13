@@ -109,4 +109,91 @@ final class AuthController
             $response->redirect('/keuangan/akun/register');
         }
     }
+
+    public function login(Request $request, Response $response): void
+    {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $remember = isset($_POST['remember']);
+
+        if (empty($email) || empty($password)) {
+            Session::flash('swal_error', 'Email dan password harus diisi!');
+            Session::flash('old_email', $email);
+            $response->redirect('/keuangan/akun/login');
+            return;
+        }
+
+        try {
+            $db = Database::connection();
+            $stmt = $db->prepare('SELECT * FROM tbl_user WHERE email = :email LIMIT 1');
+            $stmt->execute([':email' => $email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                Session::flash('swal_error', 'Email tidak terdaftar!');
+                Session::flash('old_email', $email);
+                $response->redirect('/keuangan/akun/login');
+                return;
+            }
+
+            if ($user['status'] !== 'Active') {
+                Session::flash('swal_error', 'Akun Anda tidak aktif. Silakan hubungi admin.');
+                Session::flash('old_email', $email);
+                $response->redirect('/keuangan/akun/login');
+                return;
+            }
+
+            if (!password_verify($password, $user['password'])) {
+                Session::flash('swal_error', 'Password salah!');
+                Session::flash('old_email', $email);
+                $response->redirect('/keuangan/akun/login');
+                return;
+            }
+
+            // Login berhasil
+            Session::set('keuangan_user_id', (int) $user['id']);
+            Session::set('keuangan_role', $user['role']);
+
+            // Handle Remember Me (Token max 60 chars per user spec)
+            if ($remember) {
+                $token = bin2hex(random_bytes(30)); // 60 chars string
+                
+                // Save to DB
+                $stmtToken = $db->prepare('UPDATE tbl_user SET token = :token WHERE id = :id');
+                $stmtToken->execute([':token' => $token, ':id' => $user['id']]);
+                
+                // Set Cookie (30 days expiration)
+                setcookie('keuangan_remember_token', $token, time() + (86400 * 30), '/');
+            }
+
+            Session::flash('swal_success', 'Berhasil masuk!');
+
+            // Redirect based on role
+            if ($user['role'] === 'bendahara_wilayah') {
+                $response->redirect('/keuangan/bendahara/wilayah/dashboard');
+                return;
+            }
+            if ($user['role'] === 'bendahara_unja') {
+                $response->redirect('/keuangan/bendahara/unja/dashboard');
+                return;
+            }
+            if ($user['role'] === 'bendahara_uin') {
+                $response->redirect('/keuangan/bendahara/uin/dashboard');
+                return;
+            }
+            if ($user['role'] === 'anggota') {
+                $response->redirect('/keuangan/home');
+                return;
+            }
+
+            // Fallback (if somehow role is unhandled)
+            Session::flash('swal_error', 'Role tidak dikenali.');
+            $response->redirect('/keuangan/akun/login');
+
+        } catch (\Exception $e) {
+            Session::flash('swal_error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+            Session::flash('old_email', $email);
+            $response->redirect('/keuangan/akun/login');
+        }
+    }
 }
