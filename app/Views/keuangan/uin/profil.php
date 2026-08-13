@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Bendahara Komsat UIN - GenBI Jambi</title>
+    <title>Profil Bendahara Komsat UIN - GenBI Jambi</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,7 +181,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-bold text-slate-800 ml-2 md:ml-0">Dashboard Overview</h1>
+                <h1 class="text-xl font-bold text-slate-800 ml-2 md:ml-0">Profil Pengguna</h1>
             </div>
 
             <div class="flex items-center gap-4">
@@ -199,25 +199,71 @@
         <main class="flex-1 overflow-y-auto p-6 md:p-8">
             <div class="max-w-6xl mx-auto space-y-6">
 
-                <!-- Welcome Banner -->
-                <div class="bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-lg shadow-cyan-500/20 relative overflow-hidden">
-                    <div class="relative z-10">
-                        <h2 class="text-2xl sm:text-3xl font-bold mb-2">Selamat datang, Bendahara KOMSAT UIN! 👋</h2>
-                        <p class="text-cyan-50 max-w-xl">Pantau dan kelola pencatatan keuangan GenBI Komisariat UIN STS Jambi secara mandiri dan akurat.</p>
+                <!-- Form Profil -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-slate-800">Informasi Profil</h2>
+                        <p class="text-sm text-slate-500 mt-1">Lengkapi data diri Anda sebagai Bendahara Komsat UIN. Data ini akan digunakan untuk keperluan pencatatan dan laporan.</p>
                     </div>
-                    <!-- Decorative shapes -->
-                    <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
-                    <div class="absolute bottom-0 right-32 -mb-16 w-48 h-48 rounded-full bg-blue-600/30 blur-2xl"></div>
-                </div>
 
-                <!-- Content area placeholder for future development -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm min-h-[400px] flex items-center justify-center text-slate-400 border-dashed">
-                        Area Konten Utama (Grafik/Tabel Transaksi)
-                    </div>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm min-h-[400px] flex items-center justify-center text-slate-400 border-dashed">
-                        Area Ringkasan/Aktivitas
-                    </div>
+                    <form action="#" method="POST" class="space-y-6">
+                        <!-- Nama Bendahara -->
+                        <div>
+                            <label for="nama_bendahara" class="block text-sm font-medium text-slate-700 mb-2">Nama Lengkap</label>
+                            <input type="text" id="nama_bendahara" name="nama_bendahara" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" placeholder="Masukkan nama lengkap" required>
+                        </div>
+
+                        <!-- Periode -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="tahun_periode_awal" class="block text-sm font-medium text-slate-700 mb-2">Tahun Periode Awal</label>
+                                <input type="number" id="tahun_periode_awal" name="tahun_periode_awal" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" placeholder="Contoh: 2026" required>
+                            </div>
+                            <div>
+                                <label for="tahun_periode_akhir" class="block text-sm font-medium text-slate-700 mb-2">Tahun Periode Akhir</label>
+                                <input type="number" id="tahun_periode_akhir" name="tahun_periode_akhir" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" placeholder="Contoh: 2027" required>
+                            </div>
+                        </div>
+
+                        <!-- Tempat & Jenis Kelamin -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="tempat" class="block text-sm font-medium text-slate-700 mb-2">Jabatan / Wilayah</label>
+                                <select id="tempat" name="tempat" class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed focus:outline-none" disabled>
+                                    <option value="wilayah">Bendahara Wilayah</option>
+                                    <option value="komsat unja">Bendahara Komsat UNJA</option>
+                                    <option value="komsat uin" selected>Bendahara Komsat UIN</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="jenis_kelamin" class="block text-sm font-medium text-slate-700 mb-2">Jenis Kelamin</label>
+                                <select id="jenis_kelamin" name="jenis_kelamin" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" required>
+                                    <option value="" disabled selected>Pilih Jenis Kelamin</option>
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Program Studi & Semester -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="program_studi" class="block text-sm font-medium text-slate-700 mb-2">Program Studi</label>
+                                <input type="text" id="program_studi" name="program_studi" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" placeholder="Contoh: Sistem Informasi" required>
+                            </div>
+                            <div>
+                                <label for="semester_studi" class="block text-sm font-medium text-slate-700 mb-2">Semester Studi</label>
+                                <input type="number" id="semester_studi" name="semester_studi" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors outline-none" placeholder="Contoh: 5" required>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-700 focus:ring-4 focus:ring-cyan-500/30 transition-all active:scale-[0.98]">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
             </div>

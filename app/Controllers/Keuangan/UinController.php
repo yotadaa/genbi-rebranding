@@ -17,6 +17,15 @@ class UinController
 
     public function dashboard(Request $request, Response $response): void
     {
-        $response->html($this->view->render('keuangan/uin/dashboard.php'));
+        $response->html($this->view->render('keuangan/uin/dashboard.php', [
+            'activeMenu' => 'dashboard'
+        ]));
+    }
+
+    public function profil(Request $request, Response $response): void
+    {
+        $response->html($this->view->render('keuangan/uin/profil.php', [
+            'activeMenu' => 'profil'
+        ]));
     }
 }

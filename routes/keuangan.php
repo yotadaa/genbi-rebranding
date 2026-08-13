@@ -43,3 +43,6 @@ $router->get('/keuangan/bendahara/unja/profil', static function (Request $reques
 $router->get('/keuangan/bendahara/uin/dashboard', static function (Request $request, Response $response) use ($keuanganUinController) {
     $keuanganUinController->dashboard($request, $response);
 });
+$router->get('/keuangan/bendahara/uin/profil', static function (Request $request, Response $response) use ($keuanganUinController) {
+    $keuanganUinController->profil($request, $response);
+});
