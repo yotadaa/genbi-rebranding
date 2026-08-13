@@ -27,6 +27,9 @@ $router->post('/keuangan/akun/register', static function (Request $request, Resp
 $router->get('/keuangan/bendahara/wilayah/dashboard', static function (Request $request, Response $response) use ($keuanganWilayahController) {
     $keuanganWilayahController->dashboard($request, $response);
 });
+$router->get('/keuangan/bendahara/wilayah/profil', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+    $keuanganWilayahController->profil($request, $response);
+});
 
 // Bendahara Komsat UNJA Routes
 $router->get('/keuangan/bendahara/unja/dashboard', static function (Request $request, Response $response) use ($keuanganUnjaController) {

@@ -14,6 +14,15 @@ final class WilayahController
 
     public function dashboard(Request $request, Response $response): void
     {
-        $response->html($this->renderer->render('keuangan/wilayah/dashboard.php'));
+        $response->html($this->renderer->render('keuangan/wilayah/dashboard.php', [
+            'activeMenu' => 'dashboard'
+        ]));
+    }
+
+    public function profil(Request $request, Response $response): void
+    {
+        $response->html($this->renderer->render('keuangan/wilayah/profil.php', [
+            'activeMenu' => 'profil'
+        ]));
     }
 }
