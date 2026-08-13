@@ -7,6 +7,7 @@ use App\Core\Response;
 
 /** @var \App\Core\Router $router */
 /** @var \App\Controllers\Keuangan\AuthController $keuanganAuthController */
+/** @var \App\Controllers\Keuangan\WilayahController $keuanganWilayahController */
 
 $router->get('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->showLogin($request, $response);
@@ -18,4 +19,9 @@ $router->get('/keuangan/akun/register', static function (Request $request, Respo
 
 $router->post('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->register($request, $response);
+});
+
+// Bendahara Wilayah Routes
+$router->get('/keuangan/bendahara/wilayah/dashboard', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+    $keuanganWilayahController->dashboard($request, $response);
 });

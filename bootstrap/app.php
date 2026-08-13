@@ -31,6 +31,7 @@ use App\Controllers\Public\SitemapController;
 use App\Controllers\Public\EventController;
 use App\Controllers\Public\TeamController;
 use App\Controllers\Keuangan\AuthController as KeuanganAuthController;
+use App\Controllers\Keuangan\WilayahController as KeuanganWilayahController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -191,7 +192,7 @@ $adminCommentSettingController = new CommentSettingController($settingModel, $vi
 $adminSettingsController = new \App\Controllers\Admin\SettingsController($settingModel, $siteSettings, $viewRenderer);
 $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryModel);
 $keuanganAuthController = new KeuanganAuthController($viewRenderer);
-
+$keuanganWilayahController = new KeuanganWilayahController($viewRenderer);
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';
 require $rootPath . '/routes/keuangan.php';
