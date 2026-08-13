@@ -33,6 +33,7 @@ use App\Controllers\Public\TeamController;
 use App\Controllers\Keuangan\AuthController as KeuanganAuthController;
 use App\Controllers\Keuangan\WilayahController as KeuanganWilayahController;
 use App\Controllers\Keuangan\UnjaController as KeuanganUnjaController;
+use App\Controllers\Keuangan\UinController as KeuanganUinController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -195,6 +196,7 @@ $adminPhotoGalleryController = new AdminPhotoGalleryController($photoGalleryMode
 $keuanganAuthController = new KeuanganAuthController($viewRenderer);
 $keuanganWilayahController = new KeuanganWilayahController($viewRenderer);
 $keuanganUnjaController = new KeuanganUnjaController($viewRenderer);
+$keuanganUinController = new KeuanganUinController($viewRenderer);
 require $rootPath . '/routes/web.php';
 require $rootPath . '/routes/admin.php';
 require $rootPath . '/routes/keuangan.php';

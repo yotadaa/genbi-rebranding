@@ -9,6 +9,7 @@ use App\Core\Response;
 /** @var \App\Controllers\Keuangan\AuthController $keuanganAuthController */
 /** @var \App\Controllers\Keuangan\WilayahController $keuanganWilayahController */
 /** @var \App\Controllers\Keuangan\UnjaController $keuanganUnjaController */
+/** @var \App\Controllers\Keuangan\UinController $keuanganUinController */
 
 $router->get('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->showLogin($request, $response);
@@ -30,4 +31,9 @@ $router->get('/keuangan/bendahara/wilayah/dashboard', static function (Request $
 // Bendahara Komsat UNJA Routes
 $router->get('/keuangan/bendahara/unja/dashboard', static function (Request $request, Response $response) use ($keuanganUnjaController) {
     $keuanganUnjaController->dashboard($request, $response);
+});
+
+// Bendahara Komsat UIN Routes
+$router->get('/keuangan/bendahara/uin/dashboard', static function (Request $request, Response $response) use ($keuanganUinController) {
+    $keuanganUinController->dashboard($request, $response);
 });
