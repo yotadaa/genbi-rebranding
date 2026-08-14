@@ -42,6 +42,9 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->get('/keuangan/bendahara/wilayah/dashboard', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->dashboard($request, $response);
     });
+    $router->get('/keuangan/bendahara/wilayah/transaksi', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksi($request, $response);
+    });
     $router->get('/keuangan/bendahara/wilayah/profil', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->profil($request, $response);
     });
