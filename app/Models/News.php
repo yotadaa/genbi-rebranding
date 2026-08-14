@@ -286,6 +286,7 @@ final class News
             'title' => 'news_title',
             'news_content' => 'news_content',
             'content' => 'news_content',
+            'content_json' => 'content_json',
             'news_content_short' => 'news_content_short',
             'excerpt' => 'news_content_short',
             'news_date' => 'news_date',
