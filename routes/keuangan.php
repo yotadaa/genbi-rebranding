@@ -10,6 +10,7 @@ use App\Core\Response;
 /** @var \App\Controllers\Keuangan\WilayahController $keuanganWilayahController */
 /** @var \App\Controllers\Keuangan\UnjaController $keuanganUnjaController */
 /** @var \App\Controllers\Keuangan\UinController $keuanganUinController */
+/** @var \App\Controllers\Keuangan\AnggotaController $keuanganAnggotaController */
 
 $router->get('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->showLogin($request, $response);
@@ -25,6 +26,10 @@ $router->post('/keuangan/akun/register', static function (Request $request, Resp
 
 $router->post('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
     $keuanganAuthController->login($request, $response);
+});
+
+$router->post('/keuangan/akun/logout', static function (Request $request, Response $response) use ($keuanganAuthController) {
+    $keuanganAuthController->logout($request, $response);
 });
 
 // Authentication Middleware instance
@@ -69,9 +74,20 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
 // ---------------------------------------------------------
 // Anggota Routes
 // ---------------------------------------------------------
-$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['anggota'])], static function ($router) {
+$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['anggota'])], static function ($router) use ($keuanganAnggotaController) {
     $router->get('/keuangan/home', static function (Request $request, Response $response) {
-        // Placeholder for now
-        $response->html('<h1>Selamat datang, Anggota!</h1>');
+        $response->redirect('/keuangan/anggota/wilayah');
+    });
+    
+    $router->get('/keuangan/anggota/wilayah', static function (Request $request, Response $response) use ($keuanganAnggotaController) {
+        $keuanganAnggotaController->wilayah($request, $response);
+    });
+    
+    $router->get('/keuangan/anggota/unja', static function (Request $request, Response $response) use ($keuanganAnggotaController) {
+        $keuanganAnggotaController->unja($request, $response);
+    });
+    
+    $router->get('/keuangan/anggota/uin', static function (Request $request, Response $response) use ($keuanganAnggotaController) {
+        $keuanganAnggotaController->uin($request, $response);
     });
 });

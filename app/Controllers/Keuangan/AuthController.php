@@ -196,4 +196,14 @@ final class AuthController
             $response->redirect('/keuangan/akun/login');
         }
     }
+
+    public function logout(Request $request, Response $response): void
+    {
+        Session::remove('keuangan_user_id');
+        Session::remove('keuangan_role');
+        setcookie('keuangan_remember_token', '', time() - 3600, '/');
+        
+        Session::flash('swal_success', 'Anda telah berhasil logout.');
+        $response->redirect('/keuangan/akun/login');
+    }
 }
