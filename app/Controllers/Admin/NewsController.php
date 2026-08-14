@@ -157,12 +157,19 @@ final class NewsController
 
         try {
             $this->news->updateNews($id, $sanitized);
-            
-            // Note: content_json is sent by Editor.js but missing in updateNews.
-            // If we want to save it, we need to update News.php.
-            // For now, let's just make sure the update doesn't crash.
-            
             $response->json(['data' => ['id' => $id, 'updated' => true]]);
+        } catch (\PDOException $e) {
+            // Jika terjadi error duplicate entry (1062) khusus pada slug meskipun sudah melewati generateUniqueSlug,
+            // ini biasanya disebabkan oleh index prefix di MySQL atau perbedaan collation.
+            // Solusi: tambahkan suffix random dan coba update sekali lagi.
+            if ($e->getCode() == 23000 && strpos($e->getMessage(), 'uq_tbl_news_slug') !== false) {
+                $sanitized['slug'] = $sanitized['slug'] . '-' . rand(100, 999);
+                $this->news->updateNews($id, $sanitized);
+                $response->json(['data' => ['id' => $id, 'updated' => true]]);
+                return;
+            }
+            // Lempar error jika bukan karena slug
+            throw $e;
         } catch (\Throwable $e) {
             $response->json([
                 'error' => 'Database Error',
