@@ -133,6 +133,12 @@ final class NewsController
             return;
         }
 
+        $errors = $this->validate($body);
+        if (!empty($errors)) {
+            $response->json(['error' => 'Validasi gagal', 'details' => $errors], 422);
+            return;
+        }
+
         $sanitized = $this->sanitize($body);
 
         // Generate unique slug if title changed
@@ -146,6 +152,7 @@ final class NewsController
         $existing = $this->news->findById($id);
         if (!$existing) {
             $response->json(['error' => 'Berita tidak ditemukan'], 404);
+            return;
         }
 
         $this->news->updateNews($id, $sanitized);
