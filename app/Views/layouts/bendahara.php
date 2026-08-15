@@ -91,7 +91,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         <div class="h-[72px] flex items-center px-6 border-b border-slate-100">
             <div class="flex items-center gap-3">
                 <div class="bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                    <img src="/assets/images/logo-genbi.png" alt="GenBI" class="h-6 w-auto object-contain">
+                    <img src="/assets/images/genbi-logo-with-text.png" alt="GenBI" class="h-6 w-auto object-contain">
                 </div>
                 <div>
                     <div class="text-sm font-bold text-slate-900 leading-tight tracking-tight">GenBI CMS</div>
@@ -174,7 +174,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                 </form>
 
                 <div class="w-10 h-10 bg-white rounded-full border border-slate-200 p-1.5 shadow-sm flex items-center justify-center ml-2">
-                    <img src="/assets/images/logo-genbi.png" alt="GenBI" class="w-full h-full object-contain">
+                    <img src="/assets/images/genbi-logo-with-text.png" alt="GenBI" class="w-full h-full object-contain">
                 </div>
             </div>
         </header>
