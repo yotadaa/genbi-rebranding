@@ -14,10 +14,38 @@ final class WilayahController
 
     public function dashboard(Request $request, Response $response): void
     {
-        $dummyData = $this->getDummyData();
+        $db = \App\Core\Database::connection();
+        
+        $sql = "
+            SELECT 
+                t.id, 
+                t.tanggal_transaksi as date, 
+                t.keterangan_transaksi as `desc`, 
+                COALESCE(k.divisi, 'Umum') as category, 
+                t.tipe_transaksi, 
+                t.nominal as amount 
+            FROM tbl_transaksi_wilayah t
+            LEFT JOIN tbl_kegiatan_keuangan k ON t.kegiatan_id = k.id
+            ORDER BY t.tanggal_transaksi DESC, t.id DESC
+        ";
+        
+        $stmt = $db->query($sql);
+        $data = $stmt->fetchAll();
+        
+        $mappedData = array_map(function($row) {
+            return [
+                'id' => $row['id'],
+                'date' => $row['date'],
+                'desc' => $row['desc'],
+                'category' => $row['category'] ?: 'Umum',
+                'type' => $row['tipe_transaksi'] === 'pemasukan' ? 'in' : 'out',
+                'amount' => (float) $row['amount']
+            ];
+        }, $data);
+
         $response->html($this->renderer->renderWithLayout('keuangan/bendahara/wilayah/dashboard.php', 'layouts/bendahara.php', [
             'activeMenu' => 'dashboard',
-            'dummyData' => $dummyData,
+            'dummyData' => $mappedData,
             'title' => 'Dashboard Bendahara Wilayah'
         ]));
     }

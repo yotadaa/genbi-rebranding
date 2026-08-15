@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/50 transition-colors';
                 
-                const typeColor = t.type === 'in' ? 'text-emerald-600' : 'text-red-600';
+                const typeColor = t.type === 'in' ? 'text-blue-600' : 'text-rose-600';
                 const typeSign = t.type === 'in' ? '+' : '-';
 
                 // Check if we are on Dashboard (no Edit/Delete) or Transaksi page
@@ -224,13 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Pemasukan',
                         data: dataIn,
-                        backgroundColor: '#10b981', // emerald-500
+                        backgroundColor: '#2563eb', // blue-600
                         borderRadius: 4
                     },
                     {
                         label: 'Pengeluaran',
                         data: dataOut,
-                        backgroundColor: '#ef4444', // red-500
+                        backgroundColor: '#e11d48', // rose-600
                         borderRadius: 4
                     }
                 ]
@@ -364,13 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 font-medium">Tipe Transaksi</p>
-                        <p class="text-base font-semibold inline-flex px-2.5 py-0.5 rounded-full text-sm ${t.type === 'in' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}">
+                        <p class="text-base font-semibold inline-flex px-2.5 py-0.5 rounded-full text-sm ${t.type === 'in' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">
                             ${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}
                         </p>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 font-medium">Nominal</p>
-                        <p class="text-2xl font-bold ${t.type === 'in' ? 'text-emerald-600' : 'text-red-600'}">
+                        <p class="text-2xl font-bold ${t.type === 'in' ? 'text-blue-600' : 'text-rose-600'}">
                             ${formatRupiah(t.amount)}
                         </p>
                     </div>
