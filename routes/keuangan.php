@@ -48,6 +48,26 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->get('/keuangan/bendahara/wilayah/profil', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->profil($request, $response);
     });
+    
+    // Kegiatan
+    $router->get('/keuangan/bendahara/wilayah/kegiatan', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->kegiatan($request, $response);
+    });
+    $router->get('/keuangan/bendahara/wilayah/kegiatan/tambah', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->tambahKegiatan($request, $response);
+    });
+    $router->post('/keuangan/bendahara/wilayah/kegiatan/tambah', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->storeKegiatan($request, $response);
+    });
+    $router->get('/keuangan/bendahara/wilayah/kegiatan/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->editKegiatan($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/wilayah/kegiatan/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->updateKegiatan($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/wilayah/kegiatan/hapus/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->hapusKegiatan($request, $response, $args);
+    });
 });
 
 // ---------------------------------------------------------

@@ -117,6 +117,11 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                 Transaksi
             </a>
 
+            <a href="/keuangan/bendahara/wilayah/kegiatan" class="sidebar-link <?= $activeMenu === 'kegiatan' ? 'active' : 'inactive' ?>">
+                <svg class="w-5 h-5 mr-3 <?= $activeMenu === 'kegiatan' ? 'text-white' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Kegiatan
+            </a>
+
             <div class="mt-6 mb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Akses Komsat</div>
             
             <a href="/keuangan/bendahara/wilayah/unja" class="sidebar-link <?= $activeMenu === 'komsat_unja' ? 'active' : 'inactive' ?>">
@@ -223,7 +228,30 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         });
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="/assets/js/bendahara.js"></script>
+  <script>
+    function confirmDelete(formElement) {
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data ini akan dihapus secara permanen!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            customClass: {
+                confirmButton: 'rounded-lg',
+                cancelButton: 'rounded-lg'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        })
+    }
+  </script>
   <?= $scripts ?? '' ?>
 </body>
 </html>
