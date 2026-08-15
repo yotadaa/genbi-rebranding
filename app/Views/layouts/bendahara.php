@@ -251,6 +251,32 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
             }
         })
     }
+
+    <?php if (\App\Core\Session::has('swal_success') || \App\Core\Session::has('swal_error') || isset($_SESSION['_flash']['swal_success']) || isset($_SESSION['_flash']['swal_error'])): ?>
+    document.addEventListener("DOMContentLoaded", function() {
+        <?php if ($msg = \App\Core\Session::getFlash('swal_success')): ?>
+        Swal.fire({
+            title: 'Berhasil!',
+            text: '<?= htmlspecialchars($msg) ?>',
+            icon: 'success',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Tutup',
+            customClass: { confirmButton: 'rounded-lg' }
+        });
+        <?php endif; ?>
+
+        <?php if ($msg = \App\Core\Session::getFlash('swal_error')): ?>
+        Swal.fire({
+            title: 'Gagal!',
+            text: '<?= htmlspecialchars($msg) ?>',
+            icon: 'error',
+            confirmButtonColor: '#e11d48',
+            confirmButtonText: 'Tutup',
+            customClass: { confirmButton: 'rounded-lg' }
+        });
+        <?php endif; ?>
+    });
+    <?php endif; ?>
   </script>
   <?= $scripts ?? '' ?>
 </body>

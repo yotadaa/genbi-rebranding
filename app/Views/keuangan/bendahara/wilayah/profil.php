@@ -1,49 +1,172 @@
-<div class="max-w-4xl mx-auto">
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Profil Bendahara</h1>
-        <p class="text-sm text-slate-500 mt-1">Pengaturan informasi akun dan profil Anda.</p>
+<?php
+
+/**
+ * @var array $user
+ * @var array $profil
+ */
+
+use App\Core\Session;
+
+$errors = Session::getFlash('errors') ?? [];
+$old = Session::getFlash('old') ?? [];
+
+// Helper untuk mengisi value
+$val = function ($field, $isUserTable = false) use ($old, $profil, $user) {
+    if (isset($old[$field])) {
+        return htmlspecialchars((string)$old[$field]);
+    }
+    if ($isUserTable) {
+        return htmlspecialchars((string)($user[$field] ?? ''));
+    }
+    return htmlspecialchars((string)($profil[$field] ?? ''));
+};
+
+$hasError = function ($field) use ($errors) {
+    return isset($errors[$field]);
+};
+
+$errorClass = 'border-red-500 focus:ring-red-500 focus:border-red-500';
+$normalClass = 'border-slate-200 focus:ring-blue-500 focus:border-blue-500';
+?>
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Profil Bendahara Wilayah</h1>
+            <p class="text-sm text-slate-500 mt-1">Lengkapi data diri Anda untuk keperluan transaksi keuangan.</p>
+        </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="h-32 bg-gradient-to-r from-blue-600 to-blue-400"></div>
-        <div class="px-6 sm:px-10 pb-10 relative">
-            <div class="-mt-16 mb-6 flex items-end justify-between">
-                <div class="w-32 h-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-300">
-                    <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5.33 0-10 2.67-10 8v2h20v-2c0-5.33-4.67-8-10-8z"/></svg>
-                </div>
-                <button type="button" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">Edit Profil</button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900 mb-4">Informasi Akun</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-sm font-medium text-slate-500">Nama Lengkap</p>
-                            <p class="text-base text-slate-900 mt-1 font-semibold">Bendahara Wilayah GenBI Jambi</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-slate-500">Jabatan / Role</p>
-                            <p class="text-base text-slate-900 mt-1"><span class="inline-flex px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">Bendahara Wilayah</span></p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-slate-500">Email</p>
-                            <p class="text-base text-slate-900 mt-1">bendahara.wilayah@genbijambi.com</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900 mb-4">Keamanan</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <p class="text-sm font-medium text-slate-500">Kata Sandi</p>
-                            <p class="text-base text-slate-900 mt-1">••••••••</p>
-                            <button type="button" class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium">Ubah Kata Sandi</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Error Alert Global -->
+    <?php if ($globalError = Session::getFlash('error')): ?>
+        <div class="bg-red-50 text-red-700 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+            <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <p class="text-sm font-medium"><?= htmlspecialchars($globalError) ?></p>
         </div>
+    <?php endif; ?>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+            <h2 class="text-lg font-semibold text-slate-800">Informasi Pribadi</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Informasi di bawah ini digunakan pada sistem laporan dan pencatatan transaksi.</p>
+        </div>
+
+        <form action="/keuangan/bendahara/wilayah/profil" method="POST" class="p-6 space-y-6">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Nama Lengkap -->
+                <div class="md:col-span-2">
+                    <label for="nama_bendahara" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
+                    <input type="text" id="nama_bendahara" name="nama_bendahara" value="<?= $val('nama_bendahara') ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('nama_bendahara') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: John Doe">
+                    <?php if ($hasError('nama_bendahara')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['nama_bendahara']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Email -->
+                <div class="md:col-span-2">
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="email" name="email" value="<?= $val('email', true) ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('email') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: johndoe@example.com">
+                    <?php if ($hasError('email')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['email']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Tahun Periode Awal -->
+                <div>
+                    <label for="tahun_periode_awal" class="block text-sm font-medium text-slate-700 mb-1">Tahun Periode Awal <span class="text-red-500">*</span></label>
+                    <input type="number" id="tahun_periode_awal" name="tahun_periode_awal" value="<?= $val('tahun_periode_awal') ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('tahun_periode_awal') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: 2023">
+                    <?php if ($hasError('tahun_periode_awal')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['tahun_periode_awal']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Tahun Periode Akhir -->
+                <div>
+                    <label for="tahun_periode_akhir" class="block text-sm font-medium text-slate-700 mb-1">Tahun Periode Akhir <span class="text-red-500">*</span></label>
+                    <input type="number" id="tahun_periode_akhir" name="tahun_periode_akhir" value="<?= $val('tahun_periode_akhir') ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('tahun_periode_akhir') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: 2024">
+                    <?php if ($hasError('tahun_periode_akhir')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['tahun_periode_akhir']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Jenis Kelamin -->
+                <div>
+                    <label for="jenis_kelamin" class="block text-sm font-medium text-slate-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+                    <select id="jenis_kelamin" name="jenis_kelamin" class="w-full px-4 py-2 bg-white border <?= $hasError('jenis_kelamin') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all">
+                        <option value="" disabled <?= $val('jenis_kelamin') === '' ? 'selected' : '' ?>>Pilih Jenis Kelamin</option>
+                        <option value="Laki-laki" <?= $val('jenis_kelamin') === 'Laki-laki' ? 'selected' : '' ?>>Laki-laki</option>
+                        <option value="Perempuan" <?= $val('jenis_kelamin') === 'Perempuan' ? 'selected' : '' ?>>Perempuan</option>
+                    </select>
+                    <?php if ($hasError('jenis_kelamin')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['jenis_kelamin']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Universitas -->
+                <div>
+                    <label for="universitas" class="block text-sm font-medium text-slate-700 mb-1">Asal Universitas <span class="text-red-500">*</span></label>
+                    <select id="universitas" name="universitas" class="w-full px-4 py-2 bg-white border <?= $hasError('universitas') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all">
+                        <option value="" disabled <?= $val('universitas') === '' ? 'selected' : '' ?>>Pilih Universitas</option>
+                        <option value="UNJA" <?= $val('universitas') === 'UNJA' ? 'selected' : '' ?>>Universitas Jambi (UNJA)</option>
+                        <option value="UIN STS" <?= $val('universitas') === 'UIN STS' ? 'selected' : '' ?>>UIN Sulthan Thaha Saifuddin (UIN STS)</option>
+                        <option value="Lainnya" <?= $val('universitas') === 'Lainnya' ? 'selected' : '' ?>>Lainnya</option>
+                    </select>
+                    <?php if ($hasError('universitas')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['universitas']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Program Studi -->
+                <div>
+                    <label for="program_studi" class="block text-sm font-medium text-slate-700 mb-1">Program Studi <span class="text-red-500">*</span></label>
+                    <input type="text" id="program_studi" name="program_studi" value="<?= $val('program_studi') ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('program_studi') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: Sistem Informasi">
+                    <?php if ($hasError('program_studi')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['program_studi']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Semester Studi -->
+                <div>
+                    <label for="semester_studi" class="block text-sm font-medium text-slate-700 mb-1">Semester Studi <span class="text-red-500">*</span></label>
+                    <input type="number" id="semester_studi" name="semester_studi" value="<?= $val('semester_studi') ?>"
+                        class="w-full px-4 py-2 bg-white border <?= $hasError('semester_studi') ? $errorClass : $normalClass ?> rounded-xl outline-none transition-all placeholder-slate-400"
+                        placeholder="Contoh: 5">
+                    <?php if ($hasError('semester_studi')): ?>
+                        <p class="mt-1 text-sm text-red-500"><?= htmlspecialchars($errors['semester_studi']) ?></p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Tempat (Disabled) -->
+                <div class="md:col-span-2">
+                    <label for="tempat" class="block text-sm font-medium text-slate-700 mb-1">Tingkat Penugasan</label>
+                    <input type="text" id="tempat" value="Wilayah" disabled
+                        class="w-full px-4 py-2 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl outline-none cursor-not-allowed">
+                    <p class="mt-1 text-xs text-slate-500">Nilai ini tidak dapat diubah karena terikat dengan hak akses Anda sebagai Bendahara Wilayah.</p>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm shadow-blue-200 transition-all focus:ring-4 focus:ring-blue-100 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                    </svg>
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
     </div>
 </div>

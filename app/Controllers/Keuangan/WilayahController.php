@@ -64,10 +64,102 @@ final class WilayahController
 
     public function profil(Request $request, Response $response): void
     {
+        $userId = Session::get('keuangan_user_id');
+        $db = Database::connection();
+
+        // Ambil data user untuk email
+        $stmtUser = $db->prepare("SELECT email FROM tbl_user WHERE id = ?");
+        $stmtUser->execute([$userId]);
+        $user = $stmtUser->fetch();
+
+        // Ambil profil bendahara
+        $stmtProfil = $db->prepare("SELECT * FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'wilayah'");
+        $stmtProfil->execute([$userId]);
+        $profil = $stmtProfil->fetch() ?: [];
+
         $response->html($this->renderer->renderWithLayout('keuangan/bendahara/wilayah/profil.php', 'layouts/bendahara.php', [
             'activeMenu' => 'profil',
-            'title' => 'Profil Bendahara Wilayah'
+            'title' => 'Profil Bendahara Wilayah',
+            'user' => $user,
+            'profil' => $profil
         ]));
+    }
+
+    public function updateProfil(Request $request, Response $response): void
+    {
+        $userId = Session::get('keuangan_user_id');
+        
+        $nama_bendahara = trim((string) ($_POST['nama_bendahara'] ?? ''));
+        $tahun_periode_awal = trim((string) ($_POST['tahun_periode_awal'] ?? ''));
+        $tahun_periode_akhir = trim((string) ($_POST['tahun_periode_akhir'] ?? ''));
+        $jenis_kelamin = trim((string) ($_POST['jenis_kelamin'] ?? ''));
+        $universitas = trim((string) ($_POST['universitas'] ?? ''));
+        $program_studi = trim((string) ($_POST['program_studi'] ?? ''));
+        $semester_studi = trim((string) ($_POST['semester_studi'] ?? ''));
+        $email = trim((string) ($_POST['email'] ?? ''));
+
+        $errors = [];
+        if ($nama_bendahara === '') $errors['nama_bendahara'] = 'Nama bendahara harus diisi.';
+        if ($tahun_periode_awal === '') $errors['tahun_periode_awal'] = 'Tahun periode awal harus diisi.';
+        if ($tahun_periode_akhir === '') $errors['tahun_periode_akhir'] = 'Tahun periode akhir harus diisi.';
+        if ($jenis_kelamin === '') $errors['jenis_kelamin'] = 'Jenis kelamin harus diisi.';
+        if ($universitas === '') $errors['universitas'] = 'Universitas harus diisi.';
+        if ($program_studi === '') $errors['program_studi'] = 'Program studi harus diisi.';
+        if ($semester_studi === '') $errors['semester_studi'] = 'Semester studi harus diisi.';
+        if ($email === '') $errors['email'] = 'Email harus diisi.';
+        else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Format email tidak valid.';
+
+        if (!empty($errors)) {
+            Session::flash('errors', $errors);
+            Session::flash('old', $_POST);
+            $response->redirect('/keuangan/bendahara/wilayah/profil');
+            return;
+        }
+
+        $db = Database::connection();
+        
+        try {
+            $db->beginTransaction();
+            
+            // Update email di tbl_user
+            $stmtUser = $db->prepare("UPDATE tbl_user SET email = ? WHERE id = ?");
+            $stmtUser->execute([$email, $userId]);
+            
+            // Cek apakah profil sudah ada
+            $stmtCek = $db->prepare("SELECT id FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'wilayah'");
+            $stmtCek->execute([$userId]);
+            $profilAda = $stmtCek->fetch();
+            
+            if ($profilAda) {
+                // Update
+                $stmtUpdate = $db->prepare("
+                    UPDATE tbl_profil_bendahara 
+                    SET nama_bendahara = ?, tahun_periode_awal = ?, tahun_periode_akhir = ?, jenis_kelamin = ?, universitas = ?, program_studi = ?, semester_studi = ?
+                    WHERE user_id = ? AND tempat = 'wilayah'
+                ");
+                $stmtUpdate->execute([
+                    $nama_bendahara, $tahun_periode_awal, $tahun_periode_akhir, $jenis_kelamin, $universitas, $program_studi, (int)$semester_studi, $userId
+                ]);
+            } else {
+                // Insert
+                $stmtInsert = $db->prepare("
+                    INSERT INTO tbl_profil_bendahara 
+                    (user_id, nama_bendahara, tahun_periode_awal, tahun_periode_akhir, tempat, jenis_kelamin, universitas, program_studi, semester_studi)
+                    VALUES (?, ?, ?, ?, 'wilayah', ?, ?, ?, ?)
+                ");
+                $stmtInsert->execute([
+                    $userId, $nama_bendahara, $tahun_periode_awal, $tahun_periode_akhir, $jenis_kelamin, $universitas, $program_studi, (int)$semester_studi
+                ]);
+            }
+            
+            $db->commit();
+            Session::flash('swal_success', 'Profil berhasil diperbarui!');
+        } catch (\Exception $e) {
+            $db->rollBack();
+            Session::flash('swal_error', 'Gagal memperbarui profil: ' . $e->getMessage());
+        }
+
+        $response->redirect('/keuangan/bendahara/wilayah/profil');
     }
 
     public function kegiatan(Request $request, Response $response): void
@@ -142,7 +234,7 @@ final class WilayahController
             $keterangan_kegiatan ?: null
         ]);
 
-        Session::flash('success', 'Kegiatan berhasil ditambahkan!');
+        Session::flash('swal_success', 'Kegiatan berhasil ditambahkan!');
         $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
     }
 
@@ -155,7 +247,7 @@ final class WilayahController
         $kegiatan = $stmt->fetch();
 
         if (!$kegiatan) {
-            Session::flash('error', 'Kegiatan tidak ditemukan atau bukan tingkat wilayah.');
+            Session::flash('swal_error', 'Kegiatan tidak ditemukan atau bukan tingkat wilayah.');
             $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
             return;
         }
@@ -177,7 +269,7 @@ final class WilayahController
         $stmt = $db->prepare("SELECT id FROM tbl_kegiatan_keuangan WHERE id = ? AND tingkat = 'wilayah'");
         $stmt->execute([$id]);
         if (!$stmt->fetch()) {
-            Session::flash('error', 'Kegiatan tidak valid.');
+            Session::flash('swal_error', 'Kegiatan tidak valid.');
             $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
             return;
         }
@@ -222,7 +314,7 @@ final class WilayahController
             $id
         ]);
 
-        Session::flash('success', 'Kegiatan berhasil diperbarui!');
+        Session::flash('swal_success', 'Kegiatan berhasil diperbarui!');
         $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
     }
 
@@ -235,9 +327,9 @@ final class WilayahController
         $stmt->execute([$id]);
 
         if ($stmt->rowCount() > 0) {
-            Session::flash('success', 'Kegiatan berhasil dihapus.');
+            Session::flash('swal_success', 'Kegiatan berhasil dihapus.');
         } else {
-            Session::flash('error', 'Gagal menghapus kegiatan.');
+            Session::flash('swal_error', 'Gagal menghapus kegiatan.');
         }
 
         $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
