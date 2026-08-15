@@ -107,6 +107,7 @@ $formatRupiah = function (float $angka): string {
                 // Populate modal data
                 document.getElementById('m-nama-kegiatan').textContent = this.dataset.kegiatan || '-';
                 document.getElementById('m-divisi').textContent = this.dataset.divisi || '-';
+                document.getElementById('m-alokasi').textContent = this.dataset.alokasi || '-';
                 document.getElementById('m-tipe').textContent = this.dataset.tipe.toUpperCase();
                 document.getElementById('m-nominal').textContent = this.dataset.nominal;
                 document.getElementById('m-tanggal').textContent = this.dataset.tanggal;
@@ -275,6 +276,7 @@ $formatRupiah = function (float $angka): string {
                                         class="btn-detail inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-medium transition-colors"
                                         data-kegiatan="<?= htmlspecialchars($t['nama_kegiatan'] ?? '') ?>"
                                         data-divisi="<?= htmlspecialchars($t['divisi'] ?? '') ?>"
+                                        data-alokasi="<?= htmlspecialchars($t['alokasi_dana'] ?? '') ?>"
                                         data-tipe="<?= htmlspecialchars($t['tipe_transaksi']) ?>"
                                         data-nominal="<?= $formatRupiah((float) $t['nominal']) ?>"
                                         data-tanggal="<?= date('d M Y', strtotime($t['tanggal_transaksi'])) ?>"
@@ -325,6 +327,11 @@ $formatRupiah = function (float $angka): string {
                 <div>
                     <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Divisi</div>
                     <div id="m-divisi" class="text-sm font-medium text-slate-900"></div>
+                </div>
+
+                <div>
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Alokasi Dana</div>
+                    <div id="m-alokasi" class="text-sm font-medium text-slate-900"></div>
                 </div>
 
                 <div>
