@@ -88,7 +88,7 @@ final class WilayahController
     public function updateProfil(Request $request, Response $response): void
     {
         $userId = Session::get('keuangan_user_id');
-        
+
         $nama_bendahara = trim((string) ($_POST['nama_bendahara'] ?? ''));
         $tahun_periode_awal = trim((string) ($_POST['tahun_periode_awal'] ?? ''));
         $tahun_periode_akhir = trim((string) ($_POST['tahun_periode_akhir'] ?? ''));
@@ -117,19 +117,19 @@ final class WilayahController
         }
 
         $db = Database::connection();
-        
+
         try {
             $db->beginTransaction();
-            
+
             // Update email di tbl_user
             $stmtUser = $db->prepare("UPDATE tbl_user SET email = ? WHERE id = ?");
             $stmtUser->execute([$email, $userId]);
-            
+
             // Cek apakah profil sudah ada
             $stmtCek = $db->prepare("SELECT id FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'wilayah'");
             $stmtCek->execute([$userId]);
             $profilAda = $stmtCek->fetch();
-            
+
             if ($profilAda) {
                 // Update
                 $stmtUpdate = $db->prepare("
@@ -138,7 +138,14 @@ final class WilayahController
                     WHERE user_id = ? AND tempat = 'wilayah'
                 ");
                 $stmtUpdate->execute([
-                    $nama_bendahara, $tahun_periode_awal, $tahun_periode_akhir, $jenis_kelamin, $universitas, $program_studi, (int)$semester_studi, $userId
+                    $nama_bendahara,
+                    $tahun_periode_awal,
+                    $tahun_periode_akhir,
+                    $jenis_kelamin,
+                    $universitas,
+                    $program_studi,
+                    (int)$semester_studi,
+                    $userId
                 ]);
             } else {
                 // Insert
@@ -148,10 +155,17 @@ final class WilayahController
                     VALUES (?, ?, ?, ?, 'wilayah', ?, ?, ?, ?)
                 ");
                 $stmtInsert->execute([
-                    $userId, $nama_bendahara, $tahun_periode_awal, $tahun_periode_akhir, $jenis_kelamin, $universitas, $program_studi, (int)$semester_studi
+                    $userId,
+                    $nama_bendahara,
+                    $tahun_periode_awal,
+                    $tahun_periode_akhir,
+                    $jenis_kelamin,
+                    $universitas,
+                    $program_studi,
+                    (int)$semester_studi
                 ]);
             }
-            
+
             $db->commit();
             Session::flash('swal_success', 'Profil berhasil diperbarui!');
         } catch (\Exception $e) {
@@ -199,7 +213,7 @@ final class WilayahController
         $errors = [];
         if ($nama_kegiatan === '') $errors['nama_kegiatan'] = 'Nama kegiatan harus diisi.';
         if ($tanggal_mulai === '') $errors['tanggal_mulai'] = 'Tanggal mulai harus diisi.';
-        
+
         if ($tanggal_selesai !== '' && $tanggal_mulai !== '' && strtotime($tanggal_selesai) < strtotime($tanggal_mulai)) {
             $errors['tanggal_selesai'] = 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
         }
@@ -333,6 +347,106 @@ final class WilayahController
         }
 
         $response->redirect('/keuangan/bendahara/wilayah/kegiatan');
+    }
+
+    public function unja(Request $request, Response $response): void
+    {
+        $this->renderKomsatView($request, $response, 'unja');
+    }
+
+    public function uin(Request $request, Response $response): void
+    {
+        $this->renderKomsatView($request, $response, 'uin');
+    }
+
+    private function renderKomsatView(Request $request, Response $response, string $komsat): void
+    {
+        $db = Database::connection();
+        $divisiFilter = $_GET['divisi'] ?? 'Semua Divisi';
+
+        $tableName = $komsat === 'unja' ? 'tbl_transaksi_unja' : 'tbl_transaksi_uin';
+        $komsatName = $komsat === 'unja' ? 'Komsat UNJA' : 'Komsat UIN';
+        $bpiName = $komsat === 'unja' ? 'BPI UNJA' : 'BPI UIN';
+
+        $divisions = [
+            'Semua Divisi',
+            'Kewirausahaan',
+            'Lingkungan Hidup',
+            'Pendidikan dan Kebudayaan',
+            'Pengabdian Masyarakat',
+            'Pengembangan Sumber Daya Manusia',
+            'Publikasi dan Sosial',
+            $bpiName
+        ];
+
+        // Base Query
+        $sql = "
+            SELECT t.*, k.nama_kegiatan, k.divisi
+            FROM {$tableName} t
+            LEFT JOIN tbl_kegiatan_keuangan k ON t.kegiatan_id = k.id
+            WHERE 1=1
+        ";
+        $params = [];
+
+        if ($divisiFilter !== 'Semua Divisi') {
+            $sql .= " AND k.divisi = ?";
+            $params[] = $divisiFilter;
+        }
+
+        $sql .= " ORDER BY t.tanggal_transaksi DESC, t.id DESC";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $transaksiList = $stmt->fetchAll();
+
+        // Calculate Totals
+        $totalPemasukan = 0;
+        $totalPengeluaran = 0;
+        foreach ($transaksiList as $t) {
+            if ($t['tipe_transaksi'] === 'pemasukan') {
+                $totalPemasukan += (float) $t['nominal'];
+            } else {
+                $totalPengeluaran += (float) $t['nominal'];
+            }
+        }
+        $saldo = $totalPemasukan - $totalPengeluaran;
+
+        // Group data for Chart (Monthly totals)
+        $chartData = [];
+        foreach ($transaksiList as $t) {
+            $month = date('M Y', strtotime($t['tanggal_transaksi']));
+            if (!isset($chartData[$month])) {
+                $chartData[$month] = ['pemasukan' => 0, 'pengeluaran' => 0];
+            }
+            if ($t['tipe_transaksi'] === 'pemasukan') {
+                $chartData[$month]['pemasukan'] += (float) $t['nominal'];
+            } else {
+                $chartData[$month]['pengeluaran'] += (float) $t['nominal'];
+            }
+        }
+
+        // Sort chart data chronologically
+        uksort($chartData, function ($a, $b) {
+            return strtotime($a) - strtotime($b);
+        });
+
+        $chartLabels = array_keys($chartData);
+        $chartPemasukan = array_column($chartData, 'pemasukan');
+        $chartPengeluaran = array_column($chartData, 'pengeluaran');
+
+        $response->html($this->renderer->renderWithLayout("keuangan/bendahara/wilayah/komsat-{$komsat}.php", 'layouts/bendahara.php', [
+            'activeMenu' => "komsat_{$komsat}",
+            'title' => "Data Transaksi {$komsatName}",
+            'komsatName' => $komsatName,
+            'divisions' => $divisions,
+            'selectedDivisi' => $divisiFilter,
+            'transaksiList' => $transaksiList,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPengeluaran' => $totalPengeluaran,
+            'saldo' => $saldo,
+            'chartLabels' => json_encode($chartLabels),
+            'chartPemasukan' => json_encode($chartPemasukan),
+            'chartPengeluaran' => json_encode($chartPengeluaran),
+        ]));
     }
 
     private function getDummyData(): array

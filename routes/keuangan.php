@@ -71,6 +71,14 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->post('/keuangan/bendahara/wilayah/kegiatan/hapus/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
         $keuanganWilayahController->hapusKegiatan($request, $response, $args);
     });
+
+    // Komsat Read-Only Views
+    $router->get('/keuangan/bendahara/wilayah/unja', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->unja($request, $response);
+    });
+    $router->get('/keuangan/bendahara/wilayah/uin', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->uin($request, $response);
+    });
 });
 
 // ---------------------------------------------------------
