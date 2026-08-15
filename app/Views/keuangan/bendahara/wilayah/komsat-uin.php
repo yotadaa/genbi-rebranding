@@ -80,62 +80,60 @@ $formatRupiah = function (float $angka): string {
         }
 
         // Filter onChange submit
-    const filterSelect = document.getElementById('divisiFilter');
-    if (filterSelect) {
-        filterSelect.addEventListener('change', function() {
-            this.form.submit();
+        const filterSelect = document.getElementById('divisiFilter');
+        if (filterSelect) {
+            filterSelect.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('detailModal');
+        const btnClose = document.getElementById('closeModal');
+
+        // Close modal function
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        };
+
+        btnClose.addEventListener('click', closeModal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
         });
-    }
 
-    // Modal Logic
-    const modal = document.getElementById('detailModal');
-    const btnClose = document.getElementById('closeModal');
-    
-    // Close modal function
-    const closeModal = () => {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    };
+        document.querySelectorAll('.btn-detail').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Populate modal data
+                document.getElementById('m-nama-kegiatan').textContent = this.dataset.kegiatan || '-';
+                document.getElementById('m-divisi').textContent = this.dataset.divisi || '-';
+                document.getElementById('m-tipe').textContent = this.dataset.tipe.toUpperCase();
+                document.getElementById('m-nominal').textContent = this.dataset.nominal;
+                document.getElementById('m-tanggal').textContent = this.dataset.tanggal;
+                document.getElementById('m-sumber-dana').textContent = this.dataset.sumberdana || '-';
+                document.getElementById('m-keterangan').textContent = this.dataset.keterangan || '-';
+                document.getElementById('m-dicatat').textContent = this.dataset.dicatat || '-';
+                document.getElementById('m-periode').textContent = this.dataset.periode || '-';
 
-    btnClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
+                // Bukti Transaksi
+                const imgBukti = document.getElementById('m-bukti-img');
+                const noBukti = document.getElementById('m-no-bukti');
+                if (this.dataset.bukti && this.dataset.bukti !== '-') {
+                    imgBukti.src = '/uploads/keuangan/' + this.dataset.bukti;
+                    imgBukti.classList.remove('hidden');
+                    noBukti.classList.add('hidden');
+                } else {
+                    imgBukti.src = '';
+                    imgBukti.classList.add('hidden');
+                    noBukti.classList.remove('hidden');
+                }
 
-    document.querySelectorAll('.btn-detail').forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Populate modal data
-            document.getElementById('m-nama-kegiatan').textContent = this.dataset.kegiatan || '-';
-            document.getElementById('m-divisi').textContent = this.dataset.divisi || '-';
-            document.getElementById('m-tipe').textContent = this.dataset.tipe.toUpperCase();
-            document.getElementById('m-nominal').textContent = this.dataset.nominal;
-            document.getElementById('m-tanggal').textContent = this.dataset.tanggal;
-            document.getElementById('m-alokasi').textContent = this.dataset.alokasi || '-';
-            document.getElementById('m-sumber-dana').textContent = this.dataset.sumberdana || '-';
-            document.getElementById('m-sumber-penerima').textContent = this.dataset.sumberpenerima || '-';
-            document.getElementById('m-keterangan').textContent = this.dataset.keterangan || '-';
-            document.getElementById('m-dicatat').textContent = this.dataset.dicatat || '-';
-            document.getElementById('m-periode').textContent = this.dataset.periode || '-';
-            
-            // Bukti Transaksi
-            const imgBukti = document.getElementById('m-bukti-img');
-            const noBukti = document.getElementById('m-no-bukti');
-            if (this.dataset.bukti && this.dataset.bukti !== '-') {
-                imgBukti.src = '/uploads/keuangan/' + this.dataset.bukti;
-                imgBukti.classList.remove('hidden');
-                noBukti.classList.add('hidden');
-            } else {
-                imgBukti.src = '';
-                imgBukti.classList.add('hidden');
-                noBukti.classList.remove('hidden');
-            }
-            
-            // Show modal
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+                // Show modal
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
         });
     });
-});
 </script>
 
 <div class="max-w-7xl mx-auto relative">
@@ -230,8 +228,8 @@ $formatRupiah = function (float $angka): string {
                     <tr>
                         <th class="px-6 py-4 font-semibold">Nama Kegiatan</th>
                         <th class="px-6 py-4 font-semibold">Tipe</th>
-                        <th class="px-6 py-4 font-semibold">Alokasi Dana</th>
-                        <th class="px-6 py-4 font-semibold">Sumber Penerima</th>
+                        <th class="px-6 py-4 font-semibold">Keterangan Transaksi</th>
+                        <th class="px-6 py-4 font-semibold">Sumber Dana</th>
                         <th class="px-6 py-4 font-semibold text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -266,29 +264,29 @@ $formatRupiah = function (float $angka): string {
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="<?= htmlspecialchars($t['alokasi_dana'] ?? '') ?>">
-                                    <?= htmlspecialchars($t['alokasi_dana'] ?? '-') ?>
+                                <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="<?= htmlspecialchars($t['keterangan_transaksi'] ?? '') ?>">
+                                    <?= htmlspecialchars($t['keterangan_transaksi'] ?? '-') ?>
                                 </td>
-                                <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="<?= htmlspecialchars($t['sumber_penerima_dana'] ?? '') ?>">
-                                    <?= htmlspecialchars($t['sumber_penerima_dana'] ?? '-') ?>
+                                <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="<?= htmlspecialchars($t['sumber_dana'] ?? '') ?>">
+                                    <?= htmlspecialchars($t['sumber_dana'] ?? '-') ?>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <button type="button" 
+                                    <button type="button"
                                         class="btn-detail inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-medium transition-colors"
                                         data-kegiatan="<?= htmlspecialchars($t['nama_kegiatan'] ?? '') ?>"
                                         data-divisi="<?= htmlspecialchars($t['divisi'] ?? '') ?>"
                                         data-tipe="<?= htmlspecialchars($t['tipe_transaksi']) ?>"
                                         data-nominal="<?= $formatRupiah((float) $t['nominal']) ?>"
                                         data-tanggal="<?= date('d M Y', strtotime($t['tanggal_transaksi'])) ?>"
-                                        data-alokasi="<?= htmlspecialchars($t['alokasi_dana'] ?? '') ?>"
                                         data-sumberdana="<?= htmlspecialchars($t['sumber_dana'] ?? '') ?>"
-                                        data-sumberpenerima="<?= htmlspecialchars($t['sumber_penerima_dana'] ?? '') ?>"
                                         data-keterangan="<?= htmlspecialchars($t['keterangan_transaksi'] ?? '') ?>"
                                         data-dicatat="<?= htmlspecialchars($t['dicatat_oleh'] ?? '') ?>"
                                         data-periode="<?= htmlspecialchars($t['periode_kepengurusan'] ?? '') ?>"
-                                        data-bukti="<?= htmlspecialchars($t['bukti_transaksi'] ?? '') ?>"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        data-bukti="<?= htmlspecialchars($t['bukti_transaksi'] ?? '') ?>">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
                                         Detail
                                     </button>
                                 </td>
@@ -304,24 +302,26 @@ $formatRupiah = function (float $angka): string {
 <!-- Modal Detail -->
 <div id="detailModal" class="fixed inset-0 z-[100] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
+
         <!-- Modal Header -->
         <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
             <h3 class="text-lg font-bold text-slate-800">Detail Transaksi</h3>
             <button type="button" id="closeModal" class="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1.5 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
         </div>
 
         <!-- Modal Body -->
         <div class="p-6 overflow-y-auto flex-1">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
-                
+
                 <div>
                     <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Kegiatan</div>
                     <div id="m-nama-kegiatan" class="text-sm font-medium text-slate-900"></div>
                 </div>
-                
+
                 <div>
                     <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Divisi</div>
                     <div id="m-divisi" class="text-sm font-medium text-slate-900"></div>
@@ -347,16 +347,6 @@ $formatRupiah = function (float $angka): string {
                     <div id="m-sumber-dana" class="text-sm font-medium text-slate-900"></div>
                 </div>
 
-                <div>
-                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Alokasi Dana</div>
-                    <div id="m-alokasi" class="text-sm font-medium text-slate-900"></div>
-                </div>
-
-                <div>
-                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sumber Penerima Dana</div>
-                    <div id="m-sumber-penerima" class="text-sm font-medium text-slate-900"></div>
-                </div>
-
                 <div class="sm:col-span-2">
                     <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Keterangan Transaksi</div>
                     <div id="m-keterangan" class="text-sm text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100"></div>
@@ -367,7 +357,9 @@ $formatRupiah = function (float $angka): string {
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 flex items-center justify-center min-h-[150px]">
                         <img id="m-bukti-img" src="" alt="Bukti Transaksi" class="max-h-[300px] object-contain rounded-lg hidden shadow-sm">
                         <div id="m-no-bukti" class="text-slate-400 text-sm flex flex-col items-center gap-2">
-                            <svg class="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <svg class="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
                             Tidak ada foto bukti
                         </div>
                     </div>
