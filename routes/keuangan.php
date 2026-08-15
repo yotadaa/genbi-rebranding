@@ -45,6 +45,21 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->get('/keuangan/bendahara/wilayah/transaksi', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->transaksi($request, $response);
     });
+    $router->get('/keuangan/bendahara/wilayah/transaksi/create', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksiCreate($request, $response);
+    });
+    $router->post('/keuangan/bendahara/wilayah/transaksi/store', static function (Request $request, Response $response) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksiStore($request, $response);
+    });
+    $router->get('/keuangan/bendahara/wilayah/transaksi/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksiEdit($request, $response, $args['id'] ?? null);
+    });
+    $router->post('/keuangan/bendahara/wilayah/transaksi/update/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksiUpdate($request, $response, $args['id'] ?? null);
+    });
+    $router->post('/keuangan/bendahara/wilayah/transaksi/delete/{id}', static function (Request $request, Response $response, array $args) use ($keuanganWilayahController) {
+        $keuanganWilayahController->transaksiDestroy($request, $response, $args['id'] ?? null);
+    });
     $router->get('/keuangan/bendahara/wilayah/profil', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->profil($request, $response);
     });

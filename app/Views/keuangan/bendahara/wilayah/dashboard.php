@@ -92,6 +92,7 @@ function formatRp($num) {
                         <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
                             <th class="px-6 py-3 font-semibold">Tanggal</th>
                             <th class="px-6 py-3 font-semibold">Keterangan</th>
+                            <th class="px-6 py-3 font-semibold">Alokasi Dana</th>
                             <th class="px-6 py-3 font-semibold text-right">Nominal</th>
                             <th class="px-6 py-3 font-semibold text-center">Aksi</th>
                         </tr>

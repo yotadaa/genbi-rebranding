@@ -257,7 +257,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         <?php if ($msg = \App\Core\Session::getFlash('swal_success')): ?>
         Swal.fire({
             title: 'Berhasil!',
-            text: '<?= htmlspecialchars($msg) ?>',
+            html: <?= json_encode($msg) ?>,
             icon: 'success',
             confirmButtonColor: '#2563eb',
             confirmButtonText: 'Tutup',
@@ -268,7 +268,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         <?php if ($msg = \App\Core\Session::getFlash('swal_error')): ?>
         Swal.fire({
             title: 'Gagal!',
-            text: '<?= htmlspecialchars($msg) ?>',
+            html: <?= json_encode($msg) ?>,
             icon: 'error',
             confirmButtonColor: '#e11d48',
             confirmButtonText: 'Tutup',
