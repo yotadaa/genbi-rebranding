@@ -15,6 +15,28 @@ class UnjaController
         $this->view = $view;
     }
 
+    private function checkProfileComplete(int $userId): bool
+    {
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT * FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'unja'");
+        $stmt->execute([$userId]);
+        $profil = $stmt->fetch();
+        if (!$profil) return false;
+
+        $requiredFields = ['nama_bendahara', 'tahun_periode_awal', 'tahun_periode_akhir', 'jenis_kelamin', 'universitas', 'program_studi', 'semester_studi'];
+        foreach ($requiredFields as $field) {
+            if (empty($profil[$field])) return false;
+        }
+        return true;
+    }
+
+    private function getKegiatanList(): array
+    {
+        $db = \App\Core\Database::connection();
+        $stmt = $db->query("SELECT id, nama_kegiatan, divisi FROM tbl_kegiatan_keuangan WHERE tingkat = 'unja' ORDER BY id DESC");
+        return $stmt->fetchAll() ?: [];
+    }
+
     public function dashboard(Request $request, Response $response): void
     {
         $db = \App\Core\Database::connection();
@@ -335,5 +357,322 @@ class UnjaController
         }
 
         $response->redirect('/keuangan/bendahara/unja/kegiatan');
+    }
+
+    public function transaksi(Request $request, Response $response): void
+    {
+        $db = \App\Core\Database::connection();
+        $sql = "
+            SELECT t.*, k.nama_kegiatan, k.divisi 
+            FROM tbl_transaksi_unja t
+            LEFT JOIN tbl_kegiatan_keuangan k ON t.kegiatan_id = k.id
+            ORDER BY t.tanggal_transaksi DESC, t.id DESC
+        ";
+        $stmt = $db->query($sql);
+        $data = $stmt->fetchAll() ?: [];
+
+        $mappedData = array_map(function ($row) {
+            return [
+                'id' => $row['id'],
+                'date' => $row['tanggal_transaksi'],
+                'desc' => $row['keterangan_transaksi'],
+                'category' => $row['alokasi_dana'] ?: 'Umum',
+                'type' => $row['tipe_transaksi'] === 'pemasukan' ? 'in' : 'out',
+                'amount' => (float) $row['nominal']
+            ];
+        }, $data);
+
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/unja/transaksi/index.php', 'layouts/bendaharaKomsatUnja.php', [
+            'activeMenu' => 'transaksi',
+            'dummyData' => $mappedData,
+            'title' => 'Transaksi Keuangan Komsat UNJA'
+        ]));
+    }
+
+    public function transaksiCreate(Request $request, Response $response): void
+    {
+        $userId = \App\Core\Session::get('keuangan_user_id');
+
+        if (!$this->checkProfileComplete($userId)) {
+            \App\Core\Session::flash('swal_error', 'Harap lengkapi profil bendahara Anda terlebih dahulu sebelum menambah transaksi.');
+            $response->redirect('/keuangan/bendahara/unja/profil');
+            return;
+        }
+
+        $kegiatanList = $this->getKegiatanList();
+        if (empty($kegiatanList)) {
+            \App\Core\Session::flash('swal_error', 'Belum ada data kegiatan. Harap tambahkan kegiatan terlebih dahulu.');
+            $response->redirect('/keuangan/bendahara/unja/kegiatan');
+            return;
+        }
+
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/unja/transaksi/form.php', 'layouts/bendaharaKomsatUnja.php', [
+            'activeMenu' => 'transaksi',
+            'title' => 'Tambah Transaksi UNJA',
+            'kegiatanList' => $kegiatanList,
+            'isEdit' => false,
+            'trx' => []
+        ]));
+    }
+
+    public function transaksiStore(Request $request, Response $response): void
+    {
+        $userId = \App\Core\Session::get('keuangan_user_id');
+        if (!$this->checkProfileComplete($userId)) {
+            $response->redirect('/keuangan/bendahara/unja/profil');
+            return;
+        }
+
+        $db = \App\Core\Database::connection();
+        $stmtProf = $db->prepare("SELECT nama_bendahara, tahun_periode_awal, tahun_periode_akhir FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'unja'");
+        $stmtProf->execute([$userId]);
+        $profil = $stmtProf->fetch();
+        $dicatatOleh = $profil['nama_bendahara'] ?? '';
+        $periode = ($profil['tahun_periode_awal'] ?? '') . '/' . ($profil['tahun_periode_akhir'] ?? '');
+
+        $kegiatan_id = $_POST['kegiatan_id'] ?? '';
+        $tipe_transaksi = $_POST['tipe_transaksi'] ?? '';
+        $nominal = $_POST['nominal'] ?? '';
+        $tanggal_transaksi = $_POST['tanggal_transaksi'] ?? '';
+        $keterangan_transaksi = trim((string)($_POST['keterangan_transaksi'] ?? ''));
+        $alokasi_dana = trim((string)($_POST['alokasi_dana'] ?? ''));
+        $sumber_dana = trim((string)($_POST['sumber_dana'] ?? ''));
+        $input_mode = $_POST['input_mode'] ?? 'file'; 
+        $bukti_link = trim((string)($_POST['bukti_link'] ?? ''));
+
+        $errors = [];
+        $error_fields = [];
+        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
+        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
+        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
+        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
+        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi.'; $error_fields[] = 'alokasi_dana'; }
+
+        $bukti_transaksi = null;
+
+        if (empty($errors)) {
+            if ($input_mode === 'link') {
+                if (empty($bukti_link) || !filter_var($bukti_link, FILTER_VALIDATE_URL)) {
+                    $errors[] = 'Link Google Drive tidak valid.';
+                    $error_fields[] = 'bukti_link';
+                } else {
+                    $bukti_transaksi = $bukti_link;
+                }
+            } else {
+                if (isset($_FILES['bukti_file']) && $_FILES['bukti_file']['error'] === UPLOAD_ERR_OK) {
+                    $fileTmp = $_FILES['bukti_file']['tmp_name'];
+                    $fileName = $_FILES['bukti_file']['name'];
+                    $fileSize = $_FILES['bukti_file']['size'];
+                    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                    $isPdf = $fileExt === 'pdf';
+                    $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
+
+                    if (!$isPdf && !$isImg) {
+                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                        $error_fields[] = 'bukti_file';
+                    } else {
+                        if ($isPdf && $fileSize > 10 * 1024 * 1024) {
+                            $errors[] = 'Ukuran PDF maksimal 10 MB.';
+                            $error_fields[] = 'bukti_file';
+                        } elseif ($isImg && $fileSize > 5 * 1024 * 1024) {
+                            $errors[] = 'Ukuran gambar maksimal 5 MB.';
+                            $error_fields[] = 'bukti_file';
+                        } else {
+                            $uploadDir = dirname(__DIR__, 3) . '/public/uploads/keuangan/';
+                            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                            $newFileName = 'trx_unja_' . time() . '_' . uniqid() . '.' . $fileExt;
+                            if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
+                                $bukti_transaksi = $newFileName;
+                            } else {
+                                $errors[] = 'Gagal mengupload file bukti.';
+                                $error_fields[] = 'bukti_file';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($errors)) {
+            \App\Core\Session::flash('swal_error', implode("<br>", $errors));
+            \App\Core\Session::flash('error_fields', $error_fields);
+            \App\Core\Session::flash('old', $_POST);
+            $response->redirect('/keuangan/bendahara/unja/transaksi/tambah');
+            return;
+        }
+
+        try {
+            $stmt = $db->prepare("INSERT INTO tbl_transaksi_unja 
+                (user_id, kegiatan_id, dicatat_oleh, periode_kepengurusan, tipe_transaksi, nominal, tanggal_transaksi, keterangan_transaksi, alokasi_dana, sumber_dana, bukti_transaksi) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $userId, $kegiatan_id, $dicatatOleh, $periode, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi
+            ]);
+            \App\Core\Session::flash('swal_success', 'Transaksi berhasil ditambahkan.');
+            $response->redirect('/keuangan/bendahara/unja/transaksi');
+        } catch (\PDOException $e) {
+            \App\Core\Session::flash('swal_error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
+            $response->redirect('/keuangan/bendahara/unja/transaksi/tambah');
+        }
+    }
+
+    public function transaksiEdit(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+        $userId = \App\Core\Session::get('keuangan_user_id');
+        if (!$this->checkProfileComplete($userId)) {
+            \App\Core\Session::flash('swal_error', 'Harap lengkapi profil bendahara Anda.');
+            $response->redirect('/keuangan/bendahara/unja/profil');
+            return;
+        }
+
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT * FROM tbl_transaksi_unja WHERE id = ?");
+        $stmt->execute([$id]);
+        $trx = $stmt->fetch();
+
+        if (!$trx) {
+            \App\Core\Session::flash('swal_error', 'Transaksi tidak ditemukan.');
+            $response->redirect('/keuangan/bendahara/unja/transaksi');
+            return;
+        }
+
+        $kegiatanList = $this->getKegiatanList();
+
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/unja/transaksi/form.php', 'layouts/bendaharaKomsatUnja.php', [
+            'activeMenu' => 'transaksi',
+            'title' => 'Edit Transaksi UNJA',
+            'kegiatanList' => $kegiatanList,
+            'isEdit' => true,
+            'trx' => $trx
+        ]));
+    }
+
+    public function transaksiUpdate(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+        $userId = \App\Core\Session::get('keuangan_user_id');
+        if (!$this->checkProfileComplete($userId)) {
+            $response->redirect('/keuangan/bendahara/unja/profil');
+            return;
+        }
+
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT * FROM tbl_transaksi_unja WHERE id = ?");
+        $stmt->execute([$id]);
+        $trx = $stmt->fetch();
+
+        if (!$trx) {
+            \App\Core\Session::flash('swal_error', 'Transaksi tidak ditemukan.');
+            $response->redirect('/keuangan/bendahara/unja/transaksi');
+            return;
+        }
+
+        $kegiatan_id = $_POST['kegiatan_id'] ?? '';
+        $tipe_transaksi = $_POST['tipe_transaksi'] ?? '';
+        $nominal = $_POST['nominal'] ?? '';
+        $tanggal_transaksi = $_POST['tanggal_transaksi'] ?? '';
+        $keterangan_transaksi = trim((string)($_POST['keterangan_transaksi'] ?? ''));
+        $alokasi_dana = trim((string)($_POST['alokasi_dana'] ?? ''));
+        $sumber_dana = trim((string)($_POST['sumber_dana'] ?? ''));
+        $input_mode = $_POST['input_mode'] ?? 'file'; 
+        $bukti_link = trim((string)($_POST['bukti_link'] ?? ''));
+
+        $errors = [];
+        $error_fields = [];
+        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
+        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
+        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
+        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
+        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi.'; $error_fields[] = 'alokasi_dana'; }
+
+        $bukti_transaksi = $trx['bukti_transaksi'];
+
+        if (empty($errors)) {
+            if ($input_mode === 'link') {
+                if (!empty($bukti_link) && filter_var($bukti_link, FILTER_VALIDATE_URL)) {
+                    $bukti_transaksi = $bukti_link;
+                }
+            } else {
+                if (isset($_FILES['bukti_file']) && $_FILES['bukti_file']['error'] === UPLOAD_ERR_OK) {
+                    $fileTmp = $_FILES['bukti_file']['tmp_name'];
+                    $fileName = $_FILES['bukti_file']['name'];
+                    $fileSize = $_FILES['bukti_file']['size'];
+                    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                    $isPdf = $fileExt === 'pdf';
+                    $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
+
+                    if (!$isPdf && !$isImg) {
+                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                        $error_fields[] = 'bukti_file';
+                    } else {
+                        if ($isPdf && $fileSize > 10 * 1024 * 1024) {
+                            $errors[] = 'Ukuran PDF maksimal 10 MB.';
+                            $error_fields[] = 'bukti_file';
+                        } elseif ($isImg && $fileSize > 5 * 1024 * 1024) {
+                            $errors[] = 'Ukuran gambar maksimal 5 MB.';
+                            $error_fields[] = 'bukti_file';
+                        } else {
+                            $uploadDir = dirname(__DIR__, 3) . '/public/uploads/keuangan/';
+                            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                            $newFileName = 'trx_unja_' . time() . '_' . uniqid() . '.' . $fileExt;
+                            if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
+                                $bukti_transaksi = $newFileName;
+                            } else {
+                                $errors[] = 'Gagal mengupload file bukti.';
+                                $error_fields[] = 'bukti_file';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($errors)) {
+            \App\Core\Session::flash('swal_error', implode("<br>", $errors));
+            \App\Core\Session::flash('error_fields', $error_fields);
+            \App\Core\Session::flash('old', $_POST);
+            $response->redirect('/keuangan/bendahara/unja/transaksi/edit/' . $id);
+            return;
+        }
+
+        try {
+            $updateStmt = $db->prepare("
+                UPDATE tbl_transaksi_unja 
+                SET kegiatan_id = ?, tipe_transaksi = ?, nominal = ?, tanggal_transaksi = ?, keterangan_transaksi = ?, alokasi_dana = ?, sumber_dana = ?, bukti_transaksi = ?
+                WHERE id = ?
+            ");
+            $updateStmt->execute([
+                $kegiatan_id, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi, $id
+            ]);
+
+            \App\Core\Session::flash('swal_success', 'Transaksi berhasil diperbarui.');
+            $response->redirect('/keuangan/bendahara/unja/transaksi');
+        } catch (\PDOException $e) {
+            \App\Core\Session::flash('swal_error', 'Gagal mengupdate transaksi: ' . $e->getMessage());
+            $response->redirect('/keuangan/bendahara/unja/transaksi/edit/' . $id);
+        }
+    }
+
+    public function transaksiHapus(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("DELETE FROM tbl_transaksi_unja WHERE id = ?");
+        $stmt->execute([$id]);
+
+        if ($stmt->rowCount() > 0) {
+            \App\Core\Session::flash('swal_success', 'Transaksi berhasil dihapus.');
+        } else {
+            \App\Core\Session::flash('swal_error', 'Gagal menghapus transaksi.');
+        }
+
+        $response->redirect('/keuangan/bendahara/unja/transaksi');
     }
 }
