@@ -108,7 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/50 transition-colors';
                 
-                const typeColor = t.type === 'in' ? 'text-blue-600' : 'text-rose-600';
+                const isUnja = window.location.pathname.includes('unja');
+                const typeColorIn = isUnja ? 'text-orange-600' : 'text-blue-600';
+                const typeColor = t.type === 'in' ? typeColorIn : 'text-rose-600';
                 const typeSign = t.type === 'in' ? '+' : '-';
 
                 // Check if we are on Dashboard (no Edit/Delete) or Transaksi page
@@ -217,11 +219,15 @@ document.addEventListener('DOMContentLoaded', () => {
             chartInstance.destroy();
         }
 
+        const isUnja = window.location.pathname.includes('unja');
+        const colorInHex = isUnja ? 'rgba(234, 88, 12, 1)' : 'rgba(37, 99, 235, 1)'; // orange-600 / blue-600
+        const colorInFade = isUnja ? 'rgba(249, 115, 22, 0.1)' : 'rgba(59, 130, 246, 0.1)'; // orange-500 fade / blue-500 fade
+
         const ctx = chartCanvas.getContext('2d');
         
         const gradientIn = ctx.createLinearGradient(0, 0, 0, 300);
-        gradientIn.addColorStop(0, 'rgba(37, 99, 235, 1)');
-        gradientIn.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+        gradientIn.addColorStop(0, colorInHex);
+        gradientIn.addColorStop(1, colorInFade);
         
         const gradientOut = ctx.createLinearGradient(0, 0, 0, 300);
         gradientOut.addColorStop(0, 'rgba(225, 29, 72, 1)');
@@ -336,10 +342,12 @@ document.addEventListener('DOMContentLoaded', () => {
         filterContainer.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 activeCategory = e.target.dataset.cat;
+                const isUnja = window.location.pathname.includes('unja');
+                const bgActive = isUnja ? 'bg-orange-600' : 'bg-[#3b5998]';
                 // Update active state
                 filterContainer.querySelectorAll('button').forEach(btn => {
                     if (btn.dataset.cat === activeCategory) {
-                        btn.className = 'category-btn px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all bg-[#3b5998] text-white shadow-md';
+                        btn.className = `category-btn px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${bgActive} text-white shadow-md`;
                     } else {
                         btn.className = 'category-btn px-5 py-2.5 rounded-xl text-[13px] font-medium transition-all bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100';
                     }
@@ -406,6 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const t = transactions.find(x => x.id === id);
         if (!t) return;
         
+        const isUnja = window.location.pathname.includes('unja');
+        const colorTextIn = isUnja ? 'text-orange-600' : 'text-blue-600';
+        const colorBadgeIn = isUnja ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700';
+
         const html = `
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -429,13 +441,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 font-medium">Tipe Transaksi</p>
-                        <p class="text-base font-semibold inline-flex px-2.5 py-0.5 rounded-full text-sm ${t.type === 'in' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'}">
+                        <p class="text-base font-semibold inline-flex px-2.5 py-0.5 rounded-full text-sm ${t.type === 'in' ? colorBadgeIn : 'bg-rose-50 text-rose-700'}">
                             ${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}
                         </p>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 font-medium">Nominal</p>
-                        <p class="text-2xl font-bold ${t.type === 'in' ? 'text-blue-600' : 'text-rose-600'}">
+                        <p class="text-2xl font-bold ${t.type === 'in' ? colorTextIn : 'text-rose-600'}">
                             ${formatRupiah(t.amount)}
                         </p>
                     </div>
