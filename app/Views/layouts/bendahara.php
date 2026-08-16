@@ -192,7 +192,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                     </form>
 
                     <div class="w-10 h-10 bg-white rounded-full border border-slate-200 p-1.5 shadow-sm flex items-center justify-center ml-2">
-                        <img src="<?= rtrim(\App\Core\Env::get('APP_URL') ?? '', '/') ?>/assets/images/genbi-logo-with-text.png" alt="GenBI" class="w-full h-full object-contain">
+                        <img src="https://genbijambi.com/public/uploads/logo.png" alt="GenBI" class="w-full h-full object-contain">
                     </div>
                 </div>
             </header>

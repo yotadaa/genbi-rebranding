@@ -69,7 +69,7 @@
                 <!-- Logo & Header -->
                 <div class="flex items-center gap-4 mb-10">
                     <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-center">
-                        <img src="<?= rtrim(\App\Core\Env::get('APP_URL') ?? '', '/') ?>/assets/images/genbi-logo-with-text.png" alt="GenBI Logo" class="h-8 w-auto object-contain">
+                        <img src="https://genbijambi.com/public/uploads/logo.png" alt="GenBI Logo" class="h-8 w-auto object-contain">
                     </div>
                     <div class="h-10 w-px bg-slate-200"></div>
                     <div>
