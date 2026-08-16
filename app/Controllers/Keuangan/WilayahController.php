@@ -755,7 +755,7 @@ final class WilayahController
 
         $tableName = $komsat === 'unja' ? 'tbl_transaksi_unja' : 'tbl_transaksi_uin';
         $komsatName = $komsat === 'unja' ? 'Komsat UNJA' : 'Komsat UIN';
-        $bpiName = $komsat === 'unja' ? 'BPI UNJA' : 'BPI UIN';
+        $bpiName = $komsat === 'unja' ? 'BPI Komsat UNJA' : 'BPI Komsat UIN';
 
         $divisions = [
             'Semua Divisi',
@@ -778,7 +778,7 @@ final class WilayahController
         $params = [];
 
         if ($divisiFilter !== 'Semua Divisi') {
-            $sql .= " AND k.divisi = ?";
+            $sql .= " AND t.alokasi_dana = ?";
             $params[] = $divisiFilter;
         }
 
