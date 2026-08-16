@@ -52,14 +52,15 @@ final class WilayahController
             'title' => 'Dashboard Bendahara Wilayah'
         ]));
     }
-private function checkProfileComplete(int $userId): bool
+
+    private function checkProfileComplete(int $userId): bool
     {
         $db = \App\Core\Database::connection();
         $stmt = $db->prepare("SELECT * FROM tbl_profil_bendahara WHERE user_id = ? AND tempat = 'wilayah'");
         $stmt->execute([$userId]);
         $profil = $stmt->fetch();
         if (!$profil) return false;
-        
+
         $requiredFields = ['nama_bendahara', 'tahun_periode_awal', 'tahun_periode_akhir', 'jenis_kelamin', 'universitas', 'program_studi', 'semester_studi'];
         foreach ($requiredFields as $field) {
             if (empty($profil[$field])) return false;
@@ -110,7 +111,7 @@ private function checkProfileComplete(int $userId): bool
     public function transaksiCreate(Request $request, Response $response): void
     {
         $userId = \App\Core\Session::get('keuangan_user_id');
-        
+
         if (!$this->checkProfileComplete($userId)) {
             \App\Core\Session::flash('swal_error', 'Harap lengkapi profil bendahara Anda terlebih dahulu sebelum menambah transaksi.');
             $response->redirect('/keuangan/bendahara/wilayah/profil');
@@ -160,13 +161,31 @@ private function checkProfileComplete(int $userId): bool
 
         $errors = [];
         $error_fields = [];
-        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
-        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
-        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
-        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
-        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
-        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi (pilih dari dropdown atau ketik kustom).'; $error_fields[] = 'alokasi_dana'; }
-        
+        if (empty($kegiatan_id)) {
+            $errors[] = 'Kegiatan harus dipilih.';
+            $error_fields[] = 'kegiatan_id';
+        }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) {
+            $errors[] = 'Tipe transaksi tidak valid.';
+            $error_fields[] = 'tipe_transaksi';
+        }
+        if (!is_numeric($nominal) || $nominal <= 0) {
+            $errors[] = 'Nominal harus berupa angka lebih dari 0.';
+            $error_fields[] = 'nominal';
+        }
+        if (empty($tanggal_transaksi)) {
+            $errors[] = 'Tanggal transaksi harus diisi.';
+            $error_fields[] = 'tanggal_transaksi';
+        }
+        if (empty($keterangan_transaksi)) {
+            $errors[] = 'Keterangan transaksi harus diisi.';
+            $error_fields[] = 'keterangan_transaksi';
+        }
+        if (empty($alokasi_dana)) {
+            $errors[] = 'Alokasi dana harus diisi (pilih dari dropdown atau ketik kustom).';
+            $error_fields[] = 'alokasi_dana';
+        }
+
         $bukti_transaksi = null;
 
         if (empty($errors)) {
@@ -184,7 +203,7 @@ private function checkProfileComplete(int $userId): bool
                     $fileName = $_FILES['bukti_file']['name'];
                     $fileSize = $_FILES['bukti_file']['size'];
                     $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                    
+
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
@@ -201,7 +220,7 @@ private function checkProfileComplete(int $userId): bool
                         } else {
                             $uploadDir = dirname(__DIR__, 3) . '/public/uploads/keuangan/';
                             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                            
+
                             $newFileName = 'trx_wilayah_' . time() . '_' . uniqid() . '.' . $fileExt;
                             if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
                                 $bukti_transaksi = $newFileName;
@@ -228,7 +247,17 @@ private function checkProfileComplete(int $userId): bool
                 (user_id, kegiatan_id, dicatat_oleh, periode_kepengurusan, tipe_transaksi, nominal, tanggal_transaksi, keterangan_transaksi, alokasi_dana, sumber_dana, bukti_transaksi) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $userId, $kegiatan_id, $dicatatOleh, $periode, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi
+                $userId,
+                $kegiatan_id,
+                $dicatatOleh,
+                $periode,
+                $tipe_transaksi,
+                $nominal,
+                $tanggal_transaksi,
+                $keterangan_transaksi,
+                $alokasi_dana,
+                $sumber_dana,
+                $bukti_transaksi
             ]);
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil ditambahkan.');
             $response->redirect('/keuangan/bendahara/wilayah/transaksi');
@@ -297,13 +326,31 @@ private function checkProfileComplete(int $userId): bool
 
         $errors = [];
         $error_fields = [];
-        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
-        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
-        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
-        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
-        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
-        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi (pilih dari dropdown atau ketik kustom).'; $error_fields[] = 'alokasi_dana'; }
-        
+        if (empty($kegiatan_id)) {
+            $errors[] = 'Kegiatan harus dipilih.';
+            $error_fields[] = 'kegiatan_id';
+        }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) {
+            $errors[] = 'Tipe transaksi tidak valid.';
+            $error_fields[] = 'tipe_transaksi';
+        }
+        if (!is_numeric($nominal) || $nominal <= 0) {
+            $errors[] = 'Nominal harus berupa angka lebih dari 0.';
+            $error_fields[] = 'nominal';
+        }
+        if (empty($tanggal_transaksi)) {
+            $errors[] = 'Tanggal transaksi harus diisi.';
+            $error_fields[] = 'tanggal_transaksi';
+        }
+        if (empty($keterangan_transaksi)) {
+            $errors[] = 'Keterangan transaksi harus diisi.';
+            $error_fields[] = 'keterangan_transaksi';
+        }
+        if (empty($alokasi_dana)) {
+            $errors[] = 'Alokasi dana harus diisi (pilih dari dropdown atau ketik kustom).';
+            $error_fields[] = 'alokasi_dana';
+        }
+
         $bukti_transaksi = $trx['bukti_transaksi']; // default keep old
 
         if (empty($errors)) {
@@ -320,7 +367,7 @@ private function checkProfileComplete(int $userId): bool
                     $fileName = $_FILES['bukti_file']['name'];
                     $fileSize = $_FILES['bukti_file']['size'];
                     $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                    
+
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
@@ -337,7 +384,7 @@ private function checkProfileComplete(int $userId): bool
                         } else {
                             $uploadDir = dirname(__DIR__, 3) . '/public/uploads/keuangan/';
                             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                            
+
                             $newFileName = 'trx_wilayah_' . time() . '_' . uniqid() . '.' . $fileExt;
                             if (move_uploaded_file($fileTmp, $uploadDir . $newFileName)) {
                                 $bukti_transaksi = $newFileName;
@@ -367,7 +414,15 @@ private function checkProfileComplete(int $userId): bool
                 SET kegiatan_id = ?, tipe_transaksi = ?, nominal = ?, tanggal_transaksi = ?, keterangan_transaksi = ?, alokasi_dana = ?, sumber_dana = ?, bukti_transaksi = ? 
                 WHERE id = ?");
             $stmtUpdate->execute([
-                $kegiatan_id, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi, $id
+                $kegiatan_id,
+                $tipe_transaksi,
+                $nominal,
+                $tanggal_transaksi,
+                $keterangan_transaksi,
+                $alokasi_dana,
+                $sumber_dana,
+                $bukti_transaksi,
+                $id
             ]);
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil diperbarui.');
             $response->redirect('/keuangan/bendahara/wilayah/transaksi');

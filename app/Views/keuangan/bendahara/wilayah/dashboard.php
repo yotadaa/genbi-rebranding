@@ -1,4 +1,5 @@
 <?php
+
 /** @var array $dummyData */
 /** @var callable $e */
 
@@ -14,15 +15,17 @@ foreach ($dummyData as $t) {
 }
 $saldo = $masuk - $keluar;
 
-function formatRp($num) {
+function formatRp($num)
+{
     return 'Rp ' . number_format($num, 0, ',', '.');
 }
 ?>
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Selamat Datang, Bendahara Wilayah!</h1>
-        <p class="text-sm text-slate-500 mt-1">Berikut adalah ringkasan keuangan GenBI Provinsi Jambi saat ini.</p>
+    <div class="mb-10 md:mb-14">
+        <div class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">BENDAHARA OVERVIEW</div>
+        <h1 class="text-4xl md:text-[2.75rem] font-serif-title font-medium text-slate-900 tracking-tight leading-tight">Dashboard keuangan GenBI.</h1>
+        <p class="text-[15px] text-slate-500 mt-4 max-w-2xl leading-relaxed">Ringkasan arus kas keuangan GenBI Provinsi Jambi saat ini. Pantau seluruh transaksi masuk dan keluar dari satu tempat tanpa hambatan.</p>
     </div>
 
     <!-- Hidden Data for Chart/Preview -->
@@ -30,74 +33,54 @@ function formatRp($num) {
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Uang Masuk</p>
-                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="summary-masuk"><?= formatRp($masuk) ?></h3>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Uang Keluar</p>
-                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="summary-keluar"><?= formatRp($keluar) ?></h3>
-                </div>
-            </div>
+        <div class="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all flex flex-col">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">TOTAL PEMASUKAN</div>
+            <h3 class="text-3xl lg:text-[2rem] font-serif-title font-medium text-slate-800 mb-6 truncate" id="summary-masuk"><?= formatRp($masuk) ?></h3>
+            <a href="/keuangan/bendahara/wilayah/transaksi?type=in" class="mt-auto text-[13px] font-semibold text-blue-700 hover:text-blue-900 inline-flex items-center group">Buka Transaksi Masuk <span class="ml-1.5 group-hover:translate-x-1 transition-transform">&rarr;</span></a>
         </div>
 
-        <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-md shadow-blue-200 text-white relative overflow-hidden">
-            <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-            <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-            <div class="relative flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 backdrop-blur-sm">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                </div>
-                <div>
-                    <p class="text-blue-100 text-sm font-medium">Saldo Terkini</p>
-                    <h3 class="text-2xl font-bold mt-1" id="summary-saldo"><?= formatRp($saldo) ?></h3>
-                </div>
-            </div>
+        <div class="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all flex flex-col">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">TOTAL PENGELUARAN</div>
+            <h3 class="text-3xl lg:text-[2rem] font-serif-title font-medium text-slate-800 mb-6 truncate" id="summary-keluar"><?= formatRp($keluar) ?></h3>
+            <a href="/keuangan/bendahara/wilayah/transaksi?type=out" class="mt-auto text-[13px] font-semibold text-blue-700 hover:text-blue-900 inline-flex items-center group">Buka Transaksi Keluar <span class="ml-1.5 group-hover:translate-x-1 transition-transform">&rarr;</span></a>
+        </div>
+
+        <div class="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all flex flex-col">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">SALDO TERKINI</div>
+            <h3 class="text-3xl lg:text-[2rem] font-serif-title font-medium text-slate-800 mb-6 truncate" id="summary-saldo"><?= formatRp($saldo) ?></h3>
+            <span class="mt-auto text-[13px] font-semibold text-slate-400 inline-flex items-center">Total Keseluruhan Kas</span>
         </div>
     </div>
 
     <!-- Chart & Table Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        
+
         <!-- Chart -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
-            <h3 class="text-base font-bold text-slate-900 mb-4">Grafik Arus Kas</h3>
+        <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 p-8 flex flex-col">
+            <h3 class="text-[1.35rem] font-serif-title font-medium text-slate-800 mb-6">Grafik Arus Kas</h3>
             <div class="flex-1 w-full min-h-[300px] relative">
                 <canvas id="cashflowChart"></canvas>
             </div>
         </div>
 
         <!-- Preview Table -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="text-base font-bold text-slate-900">5 Transaksi Terakhir</h3>
-                <a href="/keuangan/bendahara/wilayah/transaksi" class="text-sm font-medium text-blue-600 hover:text-blue-800">Lihat Semua &rarr;</a>
+        <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 flex flex-col overflow-hidden p-8">
+            <div class="mb-6 flex items-center justify-between">
+                <h3 class="text-[1.35rem] font-serif-title font-medium text-slate-800">5 Transaksi Terakhir</h3>
+                <a href="/keuangan/bendahara/wilayah/transaksi" class="text-[13px] font-semibold text-blue-700 hover:text-blue-900 group">Lihat Semua <span class="inline-block ml-1 group-hover:translate-x-1 transition-transform">&rarr;</span></a>
             </div>
             <div class="overflow-x-auto flex-1">
-                <table class="w-full text-left">
+                <table class="w-full text-left whitespace-nowrap">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                            <th class="px-6 py-3 font-semibold">Tanggal</th>
-                            <th class="px-6 py-3 font-semibold">Keterangan</th>
-                            <th class="px-6 py-3 font-semibold">Alokasi Dana</th>
-                            <th class="px-6 py-3 font-semibold text-right">Nominal</th>
-                            <th class="px-6 py-3 font-semibold text-center">Aksi</th>
+                        <tr class="text-slate-400 text-[10px] font-bold uppercase tracking-widest border-b border-slate-100/80">
+                            <th class="pb-4 pr-6 font-bold">Tanggal</th>
+                            <th class="pb-4 pr-6 font-bold">Keterangan</th>
+                            <th class="pb-4 pr-6 font-bold">Alokasi Dana</th>
+                            <th class="pb-4 pr-6 font-bold text-right">Nominal</th>
+                            <th class="pb-4 font-bold text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100" id="table-body">
+                    <tbody class="divide-y divide-slate-50 text-[13px]" id="table-body">
                         <!-- JS will populate top 5 here -->
                     </tbody>
                 </table>

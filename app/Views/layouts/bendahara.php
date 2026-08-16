@@ -42,7 +42,20 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f4f7fb;
+        }
+
+        #sidebar-menu {
+            background: linear-gradient(180deg, #f6fbff 0%, #eaf4ff 52%, #dfeefc 100%);
+            border-right: 1px solid #c9dff3;
+            box-shadow: 14px 0 34px rgb(36 106 167 / 0.08);
+        }
+
+        #topbar-header {
+            background: rgba(242, 248, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(201, 223, 243, 0.5);
+            box-shadow: 0 10px 30px rgb(36 106 167 / 0.07);
         }
 
         .font-serif-title {
@@ -58,21 +71,26 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
             font-size: 0.875rem;
             font-weight: 600;
             transition: all 0.2s ease-in-out;
+            margin-bottom: 0.25rem;
         }
 
         .sidebar-link.active {
-            background-color: #3b82f6;
+            background-color: #3b5998;
             color: #ffffff;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(59, 89, 152, 0.3);
         }
 
         .sidebar-link.inactive {
-            color: #475569;
+            color: #193b5d;
         }
 
         .sidebar-link.inactive:hover {
-            background-color: #f1f5f9;
-            color: #0f172a;
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #0c3572;
+        }
+
+        .sidebar-section-title {
+            color: #64748b;
         }
     </style>
 </head>
@@ -85,16 +103,16 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden md:hidden"></div>
 
         <!-- Sidebar -->
-        <aside id="sidebar-menu" class="fixed md:static inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-50 transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out shrink-0 shadow-xl md:shadow-none">
+        <aside id="sidebar-menu" class="fixed md:static inset-y-0 left-0 w-64 flex flex-col z-50 transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out shrink-0 shadow-xl md:shadow-none">
 
             <!-- Sidebar Header (Logo) -->
             <div class="h-[72px] flex items-center px-6 border-b border-slate-100">
                 <div class="flex items-center gap-3">
                     <div class="bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                        <img src="<?= rtrim(\App\Core\Env::get('APP_URL') ?? '', '/') ?>/assets/images/genbi-logo-with-text.png" alt="GenBI" class="h-6 w-auto object-contain">
+                        <img src="https://genbijambi.com/public/uploads/logo.png" alt="GenBI" class="h-6 w-auto object-contain">
                     </div>
                     <div>
-                        <div class="text-sm font-bold text-slate-900 leading-tight tracking-tight">GenBI CMS</div>
+                        <div class="text-sm font-bold text-slate-900 leading-tight tracking-tight">GenBI </div>
                         <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Keuangan Panel</div>
                     </div>
                 </div>
@@ -161,7 +179,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
         <div class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
 
             <!-- Top Navbar -->
-            <header class="h-[72px] bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
+            <header id="topbar-header" class="h-[72px] flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
                 <!-- Left Side: Title & Menu Trigger -->
                 <div class="flex items-center gap-4">
                     <button type="button" id="btn-toggle-sidebar" class="flex items-center justify-center w-10 h-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 focus:outline-none transition-colors">
@@ -171,7 +189,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                     </button>
                     <div>
                         <div class="text-[10px] font-bold text-blue-600 uppercase tracking-widest leading-none mb-1">Keuangan Panel</div>
-                        <div class="text-lg font-bold text-slate-800 leading-none"><?= $e($pageTitle) ?></div>
+                        <div class="text-xl font-bold text-slate-800 leading-none"><?= $e($pageTitle) ?></div>
                     </div>
                 </div>
 

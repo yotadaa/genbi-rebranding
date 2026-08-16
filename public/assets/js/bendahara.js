@@ -218,6 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const ctx = chartCanvas.getContext('2d');
+        
+        const gradientIn = ctx.createLinearGradient(0, 0, 0, 300);
+        gradientIn.addColorStop(0, 'rgba(37, 99, 235, 1)');
+        gradientIn.addColorStop(1, 'rgba(59, 130, 246, 0.1)');
+        
+        const gradientOut = ctx.createLinearGradient(0, 0, 0, 300);
+        gradientOut.addColorStop(0, 'rgba(225, 29, 72, 1)');
+        gradientOut.addColorStop(1, 'rgba(244, 63, 94, 0.1)');
+
         chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -226,33 +235,84 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Pemasukan',
                         data: dataIn,
-                        backgroundColor: '#2563eb', // blue-600
-                        borderRadius: 4
+                        backgroundColor: gradientIn,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barThickness: 16
                     },
                     {
                         label: 'Pengeluaran',
                         data: dataOut,
-                        backgroundColor: '#e11d48', // rose-600
-                        borderRadius: 4
+                        backgroundColor: gradientOut,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barThickness: 16
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: { family: "'Inter', sans-serif", size: 12 },
+                            color: '#64748b'
+                        }
+                    },
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: 'rgba(226, 232, 240, 0.8)',
+                            borderDash: [4, 4],
+                            drawBorder: false
+                        },
+                        border: { display: false },
                         ticks: {
+                            font: { family: "'Inter', sans-serif", size: 12 },
+                            color: '#94a3b8',
+                            padding: 10,
                             callback: function(value) {
-                                return 'Rp ' + (value / 1000000) + 'Jt';
+                                if (value >= 1000000) {
+                                    return 'Rp ' + (value / 1000000) + 'Jt';
+                                }
+                                if (value >= 1000) {
+                                    return 'Rp ' + (value / 1000) + 'K';
+                                }
+                                return 'Rp ' + value;
                             }
                         }
                     }
                 },
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: { 
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            font: { family: "'Inter', sans-serif", size: 12, weight: '500' },
+                            color: '#475569',
+                            padding: 20
+                        }
+                    },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleFont: { family: "'Inter', sans-serif", size: 13, weight: '600' },
+                        bodyFont: { family: "'Inter', sans-serif", size: 13 },
+                        padding: 12,
+                        cornerRadius: 12,
+                        usePointStyle: true,
+                        boxPadding: 6,
                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
