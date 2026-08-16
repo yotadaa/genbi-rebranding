@@ -112,7 +112,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                         <img src="https://genbijambi.com/public/uploads/logo.png" alt="GenBI" class="h-6 w-auto object-contain">
                     </div>
                     <div>
-                        <div class="text-sm font-bold text-slate-900 leading-tight tracking-tight">GenBI </div>
+                        <div class="text-sm font-bold text-slate-900 leading-tight tracking-tight">GenBI Wilayah </div>
                         <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Keuangan Panel</div>
                     </div>
                 </div>

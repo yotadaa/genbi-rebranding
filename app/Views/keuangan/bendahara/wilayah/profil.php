@@ -60,10 +60,11 @@ $normalClass = 'border-slate-200/60 focus:bg-white focus:border-slate-900 focus:
             <p class="text-[13px] text-slate-500 mt-2">Informasi di bawah ini digunakan pada sistem laporan dan pencatatan transaksi.</p>
         </div>
 
-        <form action="/keuangan/bendahara/wilayah/profil" method="POST" class="p-8 space-y-8">
+        <form action="/keuangan/bendahara/wilayah/profil" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div class="p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <!-- Nama Lengkap -->
                 <div class="md:col-span-2">
                     <label for="nama_bendahara" class="block text-[13px] font-bold text-slate-700 mb-2">Nama Lengkap <span class="text-rose-500">*</span></label>
@@ -173,6 +174,7 @@ $normalClass = 'border-slate-200/60 focus:bg-white focus:border-slate-900 focus:
                     </svg>
                     Simpan Perubahan
                 </button>
+            </div>
             </div>
         </form>
     </div>
