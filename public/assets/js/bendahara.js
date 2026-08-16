@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update active state
                 filterContainer.querySelectorAll('button').forEach(btn => {
                     if (btn.dataset.cat === activeCategory) {
-                        btn.className = 'category-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-md shadow-blue-200';
+                        btn.className = 'category-btn px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all bg-[#3b5998] text-white shadow-md';
                     } else {
-                        btn.className = 'category-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-50 text-blue-700 hover:bg-blue-100';
+                        btn.className = 'category-btn px-5 py-2.5 rounded-xl text-[13px] font-medium transition-all bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100';
                     }
                 });
                 currentPage = 1;
