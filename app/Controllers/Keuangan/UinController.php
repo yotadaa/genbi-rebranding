@@ -181,4 +181,176 @@ class UinController
 
         $response->redirect('/keuangan/bendahara/uin/profil');
     }
+
+public function kegiatan(Request $request, Response $response): void
+    {
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT * FROM tbl_kegiatan_keuangan WHERE tingkat = 'uin' ORDER BY created_at DESC");
+        $stmt->execute();
+        $kegiatan = $stmt->fetchAll();
+
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/uin/kegiatan/index.php', 'layouts/bendaharaKomsatUIN.php', [
+            'activeMenu' => 'kegiatan',
+            'kegiatan' => $kegiatan,
+            'title' => 'Kegiatan Komsat UIN'
+        ]));
+    }
+
+    public function tambahKegiatan(Request $request, Response $response): void
+    {
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/uin/kegiatan/form.php', 'layouts/bendaharaKomsatUIN.php', [
+            'activeMenu' => 'kegiatan',
+            'isEdit' => false,
+            'kegiatan' => [],
+            'title' => 'Tambah Kegiatan Komsat UIN'
+        ]));
+    }
+
+    public function storeKegiatan(Request $request, Response $response): void
+    {
+        $nama_kegiatan = trim((string) ($_POST['nama_kegiatan'] ?? ''));
+        $divisi = trim((string) ($_POST['divisi'] ?? ''));
+        $tanggal_mulai = trim((string) ($_POST['tanggal_mulai'] ?? ''));
+        $tanggal_selesai = trim((string) ($_POST['tanggal_selesai'] ?? ''));
+        $keterangan_kegiatan = trim((string) ($_POST['keterangan_kegiatan'] ?? ''));
+        $tingkat = trim((string) ($_POST['tingkat'] ?? 'uin'));
+
+        $errors = [];
+        if ($nama_kegiatan === '') $errors['nama_kegiatan'] = 'Nama kegiatan harus diisi.';
+        if ($tanggal_mulai === '') $errors['tanggal_mulai'] = 'Tanggal mulai harus diisi.';
+
+        if ($tanggal_selesai !== '' && $tanggal_mulai !== '' && strtotime($tanggal_selesai) < strtotime($tanggal_mulai)) {
+            $errors['tanggal_selesai'] = 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
+        }
+
+        if ($tingkat !== 'uin') {
+            $errors['tingkat'] = 'Akses ditolak: Anda hanya dapat menambahkan kegiatan untuk tingkat Komsat UIN.';
+        }
+
+        if (!empty($errors)) {
+            \App\Core\Session::flash('errors', $errors);
+            \App\Core\Session::flash('old', $_POST);
+            $response->redirect('/keuangan/bendahara/uin/kegiatan/tambah');
+            return;
+        }
+
+        $userId = \App\Core\Session::get('keuangan_user_id');
+
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("
+            INSERT INTO tbl_kegiatan_keuangan 
+            (user_id, nama_kegiatan, tingkat, divisi, tanggal_mulai, tanggal_selesai, keterangan_kegiatan)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $userId,
+            $nama_kegiatan,
+            'uin',
+            $divisi ?: null,
+            $tanggal_mulai ?: null,
+            $tanggal_selesai ?: null,
+            $keterangan_kegiatan ?: null
+        ]);
+
+        \App\Core\Session::flash('swal_success', 'Kegiatan berhasil ditambahkan!');
+        $response->redirect('/keuangan/bendahara/uin/kegiatan');
+    }
+
+    public function editKegiatan(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT * FROM tbl_kegiatan_keuangan WHERE id = ? AND tingkat = 'uin'");
+        $stmt->execute([$id]);
+        $kegiatan = $stmt->fetch();
+
+        if (!$kegiatan) {
+            \App\Core\Session::flash('swal_error', 'Kegiatan tidak ditemukan atau bukan tingkat UIN.');
+            $response->redirect('/keuangan/bendahara/uin/kegiatan');
+            return;
+        }
+
+        $response->html($this->view->renderWithLayout('keuangan/bendahara/uin/kegiatan/form.php', 'layouts/bendaharaKomsatUIN.php', [
+            'activeMenu' => 'kegiatan',
+            'isEdit' => true,
+            'kegiatan' => $kegiatan,
+            'title' => 'Edit Kegiatan Komsat UIN'
+        ]));
+    }
+
+    public function updateKegiatan(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("SELECT id FROM tbl_kegiatan_keuangan WHERE id = ? AND tingkat = 'uin'");
+        $stmt->execute([$id]);
+        if (!$stmt->fetch()) {
+            \App\Core\Session::flash('swal_error', 'Kegiatan tidak valid.');
+            $response->redirect('/keuangan/bendahara/uin/kegiatan');
+            return;
+        }
+
+        $nama_kegiatan = trim((string) ($_POST['nama_kegiatan'] ?? ''));
+        $divisi = trim((string) ($_POST['divisi'] ?? ''));
+        $tanggal_mulai = trim((string) ($_POST['tanggal_mulai'] ?? ''));
+        $tanggal_selesai = trim((string) ($_POST['tanggal_selesai'] ?? ''));
+        $keterangan_kegiatan = trim((string) ($_POST['keterangan_kegiatan'] ?? ''));
+        $tingkat = trim((string) ($_POST['tingkat'] ?? 'uin'));
+
+        $errors = [];
+        if ($nama_kegiatan === '') $errors['nama_kegiatan'] = 'Nama kegiatan harus diisi.';
+        if ($tanggal_mulai === '') $errors['tanggal_mulai'] = 'Tanggal mulai harus diisi.';
+
+        if ($tanggal_selesai !== '' && $tanggal_mulai !== '' && strtotime($tanggal_selesai) < strtotime($tanggal_mulai)) {
+            $errors['tanggal_selesai'] = 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
+        }
+
+        if ($tingkat !== 'uin') {
+            $errors['tingkat'] = 'Akses ditolak: Anda hanya dapat mengubah kegiatan untuk tingkat Komsat UIN.';
+        }
+
+        if (!empty($errors)) {
+            \App\Core\Session::flash('errors', $errors);
+            \App\Core\Session::flash('old', $_POST);
+            $response->redirect('/keuangan/bendahara/uin/kegiatan/edit/' . $id);
+            return;
+        }
+
+        $updateStmt = $db->prepare("
+            UPDATE tbl_kegiatan_keuangan 
+            SET nama_kegiatan = ?, divisi = ?, tanggal_mulai = ?, tanggal_selesai = ?, keterangan_kegiatan = ?
+            WHERE id = ? AND tingkat = 'uin'
+        ");
+        $updateStmt->execute([
+            $nama_kegiatan,
+            $divisi ?: null,
+            $tanggal_mulai ?: null,
+            $tanggal_selesai ?: null,
+            $keterangan_kegiatan ?: null,
+            $id
+        ]);
+
+        \App\Core\Session::flash('swal_success', 'Kegiatan berhasil diperbarui!');
+        $response->redirect('/keuangan/bendahara/uin/kegiatan');
+    }
+
+    public function hapusKegiatan(Request $request, Response $response, array $args): void
+    {
+        $id = $args['id'] ?? null;
+
+        $db = \App\Core\Database::connection();
+        $stmt = $db->prepare("DELETE FROM tbl_kegiatan_keuangan WHERE id = ? AND tingkat = 'uin'");
+        $stmt->execute([$id]);
+
+        if ($stmt->rowCount() > 0) {
+            \App\Core\Session::flash('swal_success', 'Kegiatan berhasil dihapus.');
+        } else {
+            \App\Core\Session::flash('swal_error', 'Gagal menghapus kegiatan.');
+        }
+
+        $response->redirect('/keuangan/bendahara/uin/kegiatan');
+    }
+
+    
 }

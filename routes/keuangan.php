@@ -160,6 +160,26 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->post('/keuangan/bendahara/uin/profil', static function (Request $request, Response $response) use ($keuanganUinController) {
         $keuanganUinController->updateProfil($request, $response);
     });
+
+    // Kegiatan Komsat UIN
+    $router->get('/keuangan/bendahara/uin/kegiatan', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->kegiatan($request, $response);
+    });
+    $router->get('/keuangan/bendahara/uin/kegiatan/tambah', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->tambahKegiatan($request, $response);
+    });
+    $router->post('/keuangan/bendahara/uin/kegiatan/tambah', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->storeKegiatan($request, $response);
+    });
+    $router->get('/keuangan/bendahara/uin/kegiatan/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->editKegiatan($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/uin/kegiatan/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->updateKegiatan($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/uin/kegiatan/hapus/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->hapusKegiatan($request, $response, $args);
+    });
 });
 
 // ---------------------------------------------------------
