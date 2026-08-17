@@ -157,6 +157,9 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->get('/keuangan/bendahara/uin/profil', static function (Request $request, Response $response) use ($keuanganUinController) {
         $keuanganUinController->profil($request, $response);
     });
+    $router->post('/keuangan/bendahara/uin/profil', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->updateProfil($request, $response);
+    });
 });
 
 // ---------------------------------------------------------
