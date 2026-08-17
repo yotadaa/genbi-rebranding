@@ -180,6 +180,26 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
     $router->post('/keuangan/bendahara/uin/kegiatan/hapus/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
         $keuanganUinController->hapusKegiatan($request, $response, $args);
     });
+
+    // Transaksi Komsat UIN
+    $router->get('/keuangan/bendahara/uin/transaksi', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->transaksi($request, $response);
+    });
+    $router->get('/keuangan/bendahara/uin/transaksi/tambah', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->transaksiCreate($request, $response);
+    });
+    $router->post('/keuangan/bendahara/uin/transaksi/tambah', static function (Request $request, Response $response) use ($keuanganUinController) {
+        $keuanganUinController->transaksiStore($request, $response);
+    });
+    $router->get('/keuangan/bendahara/uin/transaksi/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->transaksiEdit($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/uin/transaksi/edit/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->transaksiUpdate($request, $response, $args);
+    });
+    $router->post('/keuangan/bendahara/uin/transaksi/hapus/{id}', static function (Request $request, Response $response, array $args) use ($keuanganUinController) {
+        $keuanganUinController->transaksiHapus($request, $response, $args);
+    });
 });
 
 // ---------------------------------------------------------

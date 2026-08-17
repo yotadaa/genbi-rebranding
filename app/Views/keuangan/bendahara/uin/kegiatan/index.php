@@ -40,7 +40,7 @@ $error = Session::getFlash('error');
             <p class="text-[15px] text-slate-500 mt-4 max-w-2xl leading-relaxed">Kelola data kegiatan keuangan tingkat Komsat UIN GenBI Provinsi Jambi.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="/keuangan/bendahara/uin/kegiatan/tambah" class="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#f97316] text-white rounded-xl text-[13px] font-semibold hover:bg-[#ea580c] hover:shadow-lg hover:shadow-[#f97316]/30 transition-all shadow-md">
+            <a href="/keuangan/bendahara/uin/kegiatan/tambah" class="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#0ea5e9] text-white rounded-xl text-[13px] font-semibold hover:bg-[#0284c7] hover:shadow-lg hover:shadow-[#0ea5e9]/30 transition-all shadow-md">
                 <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Kegiatan
             </a>
@@ -73,7 +73,7 @@ $error = Session::getFlash('error');
                         <?php foreach ($kegiatan as $row): ?>
                         <tr class="hover:bg-slate-50/50 transition-colors group">
                             <td class="px-6 md:px-8 py-5">
-                                <p class="text-[14px] font-bold text-slate-900 group-hover:text-[#f97316] transition-colors"><?= htmlspecialchars($row['nama_kegiatan']) ?></p>
+                                <p class="text-[14px] font-bold text-slate-900 group-hover:text-[#0ea5e9] transition-colors"><?= htmlspecialchars($row['nama_kegiatan']) ?></p>
                                 <?php if($row['keterangan_kegiatan']): ?>
                                 <p class="text-[12px] text-slate-500 mt-1.5 line-clamp-2 max-w-sm" title="<?= htmlspecialchars($row['keterangan_kegiatan']) ?>"><?= htmlspecialchars($row['keterangan_kegiatan']) ?></p>
                                 <?php endif; ?>

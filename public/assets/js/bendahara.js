@@ -109,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.className = 'hover:bg-slate-50/50 transition-colors';
                 
                 const isUnja = window.location.pathname.includes('unja');
-                const typeColorIn = isUnja ? 'text-orange-600' : 'text-blue-600';
+                const isUin = window.location.pathname.includes('uin');
+                const typeColorIn = isUnja ? 'text-orange-600' : (isUin ? 'text-sky-500' : 'text-blue-600');
                 const typeColor = t.type === 'in' ? typeColorIn : 'text-rose-600';
                 const typeSign = t.type === 'in' ? '+' : '-';
 
@@ -122,8 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 `;
 
-                const basePath = isUnja ? '/keuangan/bendahara/unja/transaksi' : '/keuangan/bendahara/wilayah/transaksi';
-                const deleteAction = isUnja ? 'hapus' : 'delete';
+                let basePath = '/keuangan/bendahara/wilayah/transaksi';
+                let deleteAction = 'delete';
+                if (isUnja) {
+                    basePath = '/keuangan/bendahara/unja/transaksi';
+                    deleteAction = 'hapus';
+                } else if (isUin) {
+                    basePath = '/keuangan/bendahara/uin/transaksi';
+                    deleteAction = 'hapus';
+                }
                 
                 if (!isDashboard) {
                     actionHtml += `
@@ -223,8 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const isUnja = window.location.pathname.includes('unja');
-        const colorInHex = isUnja ? 'rgba(234, 88, 12, 1)' : 'rgba(37, 99, 235, 1)'; // orange-600 / blue-600
-        const colorInFade = isUnja ? 'rgba(249, 115, 22, 0.1)' : 'rgba(59, 130, 246, 0.1)'; // orange-500 fade / blue-500 fade
+        const isUin = window.location.pathname.includes('uin');
+        const colorInHex = isUnja ? 'rgba(234, 88, 12, 1)' : (isUin ? 'rgba(14, 165, 233, 1)' : 'rgba(37, 99, 235, 1)');
+        const colorInFade = isUnja ? 'rgba(249, 115, 22, 0.1)' : (isUin ? 'rgba(14, 165, 233, 0.1)' : 'rgba(59, 130, 246, 0.1)');
 
         const ctx = chartCanvas.getContext('2d');
         
@@ -346,7 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.tagName === 'BUTTON') {
                 activeCategory = e.target.dataset.cat;
                 const isUnja = window.location.pathname.includes('unja');
-                const bgActive = isUnja ? 'bg-orange-600' : 'bg-[#3b5998]';
+                const isUin = window.location.pathname.includes('uin');
+                const bgActive = isUnja ? 'bg-orange-600' : (isUin ? 'bg-sky-500' : 'bg-[#3b5998]');
                 // Update active state
                 filterContainer.querySelectorAll('button').forEach(btn => {
                     if (btn.dataset.cat === activeCategory) {
@@ -418,8 +428,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!t) return;
         
         const isUnja = window.location.pathname.includes('unja');
-        const colorTextIn = isUnja ? 'text-orange-600' : 'text-blue-600';
-        const colorBadgeIn = isUnja ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700';
+        const isUin = window.location.pathname.includes('uin');
+        const colorTextIn = isUnja ? 'text-orange-600' : (isUin ? 'text-sky-500' : 'text-blue-600');
+        const colorBadgeIn = isUnja ? 'bg-orange-50 text-orange-700' : (isUin ? 'bg-sky-50 text-sky-700' : 'bg-blue-50 text-blue-700');
 
         const html = `
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">

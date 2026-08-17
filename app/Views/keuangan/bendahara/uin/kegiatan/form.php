@@ -110,7 +110,7 @@ $actionUrl = $isEdit
             </div>
 
             <div class="px-8 md:px-10 py-5 bg-slate-50/50 border-t border-slate-100/80 flex items-center justify-end">
-                <button type="submit" class="px-8 py-3 bg-[#f97316] text-white rounded-xl text-[13px] font-semibold hover:bg-[#ea580c] hover:shadow-lg hover:shadow-[#f97316]/30 transition-all shadow-md">
+                <button type="submit" class="px-8 py-3 bg-[#0ea5e9] text-white rounded-xl text-[13px] font-semibold hover:bg-[#0284c7] hover:shadow-lg hover:shadow-[#0ea5e9]/30 transition-all shadow-md">
                     <?= $isEdit ? 'Simpan Perubahan' : 'Tambahkan Kegiatan' ?>
                 </button>
             </div>
