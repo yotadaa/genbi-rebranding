@@ -24,7 +24,9 @@ $hasError = function ($field) use ($error_fields) {
     <!-- Error Messages -->
     <?php if ($msg = \App\Core\Session::getFlash('swal_error')): ?>
         <div class="mb-8 p-5 bg-rose-50/80 border border-rose-200 text-rose-700 rounded-2xl text-[13px] font-medium flex items-start gap-3">
-            <svg class="w-5 h-5 shrink-0 mt-0.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-5 h-5 shrink-0 mt-0.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
             <div><?= $msg ?></div>
         </div>
     <?php endif; ?>
@@ -35,10 +37,30 @@ $hasError = function ($field) use ($error_fields) {
             <input type="hidden" name="csrf_token" value="<?= $e(\App\Services\CsrfService::token()) ?>">
 
             <div class="p-8 md:p-10 space-y-8">
+                <!-- Jenis Pencatatan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="relative flex items-center p-4 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                        <input type="radio" name="jenis_entri" value="kegiatan" class="peer sr-only" <?= (!isset($old['jenis_entri']) || $old['jenis_entri'] === 'kegiatan') ? 'checked' : '' ?>>
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-blue-600 peer-checked:border-[6px] transition-all mr-4"></div>
+                        <div>
+                            <div class="text-[13px] font-bold text-slate-900 mb-0.5">Terkait Kegiatan</div>
+                            <div class="text-[11px] text-slate-500">Pencatatan untuk proker/kegiatan GenBI.</div>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center p-4 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                        <input type="radio" name="jenis_entri" value="invoice" class="peer sr-only" <?= (isset($old['jenis_entri']) && $old['jenis_entri'] === 'invoice') ? 'checked' : '' ?>>
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-blue-600 peer-checked:border-[6px] transition-all mr-4"></div>
+                        <div>
+                            <div class="text-[13px] font-bold text-slate-900 mb-0.5">Invoice / Operasional</div>
+                            <div class="text-[11px] text-slate-500">Pembayaran layanan, AI, domain, dll.</div>
+                        </div>
+                    </label>
+                </div>
+
                 <!-- Dropdown Kegiatan -->
-                <div>
+                <div id="kegiatan_wrapper">
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Pilih Kegiatan <span class="text-rose-500">*</span></label>
-                    <select name="kegiatan_id" required class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('kegiatan_id') ?>">
+                    <select name="kegiatan_id" id="kegiatan_id" required class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('kegiatan_id') ?>">
                         <option value="" disabled selected>-- Pilih Kegiatan --</option>
                         <?php foreach ($kegiatanList as $kegiatan): ?>
                             <option value="<?= $kegiatan['id'] ?>" <?= (isset($old['kegiatan_id']) && $old['kegiatan_id'] == $kegiatan['id']) ? 'selected' : '' ?>>
@@ -174,5 +196,24 @@ $hasError = function ($field) use ($error_fields) {
             this.value = formatRupiah(this.value);
             nominalActual.value = this.value.replace(/\./g, '');
         });
+
+        const entriRadios = document.querySelectorAll('input[name="jenis_entri"]');
+        const kegiatanWrapper = document.getElementById('kegiatan_wrapper');
+        const kegiatanSelect = document.getElementById('kegiatan_id');
+
+        const toggleKegiatan = () => {
+            const selected = document.querySelector('input[name="jenis_entri"]:checked').value;
+            if (selected === 'invoice') {
+                kegiatanWrapper.style.display = 'none';
+                kegiatanSelect.removeAttribute('required');
+                kegiatanSelect.value = '';
+            } else {
+                kegiatanWrapper.style.display = 'block';
+                kegiatanSelect.setAttribute('required', 'required');
+            }
+        };
+
+        entriRadios.forEach(r => r.addEventListener('change', toggleKegiatan));
+        toggleKegiatan(); // Run on load
     });
 </script>
