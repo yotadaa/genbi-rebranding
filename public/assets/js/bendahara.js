@@ -431,43 +431,71 @@ document.addEventListener('DOMContentLoaded', () => {
         const isUin = window.location.pathname.includes('uin');
         const colorTextIn = isUnja ? 'text-orange-600' : (isUin ? 'text-sky-500' : 'text-blue-600');
         const colorBadgeIn = isUnja ? 'bg-orange-50 text-orange-700' : (isUin ? 'bg-sky-50 text-sky-700' : 'bg-blue-50 text-blue-700');
+        const colorButton = isUnja ? 'bg-orange-600 hover:bg-orange-700 text-white' : (isUin ? 'bg-sky-500 hover:bg-sky-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white');
+
+        let buktiHtml = '<p class="text-sm italic text-slate-400 mt-2">Tidak ada bukti transaksi disertakan.</p>';
+        if (t.bukti_transaksi) {
+            let link = t.bukti_transaksi.startsWith('http') ? t.bukti_transaksi : '/uploads/keuangan/' + t.bukti_transaksi;
+            buktiHtml = `
+                <a href="${link}" target="_blank" class="inline-flex items-center justify-center w-full px-4 py-3 mt-2 ${colorButton} rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    Lihat Bukti Transaksi
+                </a>
+            `;
+        }
 
         const html = `
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-slate-900">Detail Transaksi</h3>
-                    <button class="text-slate-400 hover:text-slate-500 focus:outline-none" onclick="this.closest('#modal-detail').remove()">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-100">
+                <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 bg-slate-50/50">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 leading-tight">Detail Transaksi</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">${t.jenis_entri === 'invoice' ? 'Invoice / Tagihan' : 'Kegiatan'}</p>
+                    </div>
+                    <button class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200/50 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors" onclick="this.closest('#modal-detail').remove()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Tanggal</p>
-                        <p class="text-base font-semibold text-slate-900">${formatDate(t.date)}</p>
+                <div class="p-6 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Tanggal</p>
+                            <p class="text-sm font-semibold text-slate-900">${formatDate(t.date)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Status</p>
+                            <p class="text-xs font-bold inline-flex px-3 py-1 rounded-full ${t.type === 'in' ? colorBadgeIn : 'bg-rose-50 text-rose-700'}">
+                                ${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Keterangan Kegiatan</p>
-                        <p class="text-base font-semibold text-slate-900">${t.desc}</p>
+                    
+                    <div class="bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Keterangan Transaksi</p>
+                        <p class="text-[15px] font-semibold text-slate-900 leading-snug">${t.desc}</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Divisi / Kategori</p>
-                        <p class="text-base font-semibold text-slate-900">${t.category}</p>
+
+                    <div class="flex items-center justify-between bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                        <div>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Alokasi Dana</p>
+                            <p class="text-sm font-bold text-slate-700">${t.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total Nominal</p>
+                            <p class="text-xl font-black tracking-tight ${t.type === 'in' ? colorTextIn : 'text-rose-600'}">
+                                ${formatRupiah(t.amount)}
+                            </p>
+                        </div>
                     </div>
+
                     <div>
-                        <p class="text-sm text-slate-500 font-medium">Tipe Transaksi</p>
-                        <p class="text-base font-semibold inline-flex px-2.5 py-0.5 rounded-full text-sm ${t.type === 'in' ? colorBadgeIn : 'bg-rose-50 text-rose-700'}">
-                            ${t.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-slate-500 font-medium">Nominal</p>
-                        <p class="text-2xl font-bold ${t.type === 'in' ? colorTextIn : 'text-rose-600'}">
-                            ${formatRupiah(t.amount)}
-                        </p>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-3">Bukti Lampiran</p>
+                        <div class="bg-white rounded-2xl p-1">
+                            ${buktiHtml}
+                        </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-slate-50 text-right">
-                    <button class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition-colors" onclick="this.closest('#modal-detail').remove()">Tutup</button>
+                <div class="px-6 py-4 bg-slate-50/80 text-right border-t border-slate-50 flex justify-end gap-3">
+                    <button class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200/60 shadow-sm rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors" onclick="this.closest('#modal-detail').remove()">Tutup Detail</button>
                 </div>
             </div>
         `;

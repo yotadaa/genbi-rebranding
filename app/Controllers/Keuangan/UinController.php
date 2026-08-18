@@ -41,7 +41,9 @@ class UinController
                 t.keterangan_transaksi, 
                 t.alokasi_dana, 
                 t.tipe_transaksi, 
-                t.nominal 
+                t.nominal, 
+                t.bukti_transaksi, 
+                t.jenis_entri 
             FROM tbl_transaksi_uin t
             LEFT JOIN tbl_kegiatan_keuangan k ON t.kegiatan_id = k.id
             ORDER BY t.tanggal_transaksi DESC, t.id DESC
@@ -57,7 +59,9 @@ class UinController
                 'desc' => $row['keterangan_transaksi'],
                 'category' => $row['alokasi_dana'] ?: 'Umum',
                 'type' => $row['tipe_transaksi'] === 'pemasukan' ? 'in' : 'out',
-                'amount' => (float) $row['nominal']
+                'amount' => (float) $row['nominal'],
+                'bukti_transaksi' => $row['bukti_transaksi'] ?? null,
+                'jenis_entri' => $row['jenis_entri'] ?? 'kegiatan'
             ];
         }, $data);
 
@@ -380,7 +384,9 @@ public function transaksi(Request $request, Response $response): void
                 'desc' => $row['keterangan_transaksi'],
                 'category' => $row['alokasi_dana'] ?: 'Umum',
                 'type' => $row['tipe_transaksi'] === 'pemasukan' ? 'in' : 'out',
-                'amount' => (float) $row['nominal']
+                'amount' => (float) $row['nominal'],
+                'bukti_transaksi' => $row['bukti_transaksi'] ?? null,
+                'jenis_entri' => $row['jenis_entri'] ?? 'kegiatan'
             ];
         }, $data);
 
