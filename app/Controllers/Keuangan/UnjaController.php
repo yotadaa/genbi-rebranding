@@ -431,6 +431,7 @@ class UnjaController
         $periode = ($profil['tahun_periode_awal'] ?? '') . '/' . ($profil['tahun_periode_akhir'] ?? '');
 
         $kegiatan_id = $_POST['kegiatan_id'] ?? '';
+        $jenis_entri = $_POST['jenis_entri'] ?? 'kegiatan';
         $tipe_transaksi = $_POST['tipe_transaksi'] ?? '';
         $nominal = $_POST['nominal'] ?? '';
         $tanggal_transaksi = $_POST['tanggal_transaksi'] ?? '';
@@ -442,7 +443,7 @@ class UnjaController
 
         $errors = [];
         $error_fields = [];
-        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
+        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
         if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
         if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
         if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
@@ -506,10 +507,10 @@ class UnjaController
 
         try {
             $stmt = $db->prepare("INSERT INTO tbl_transaksi_unja 
-                (user_id, kegiatan_id, dicatat_oleh, periode_kepengurusan, tipe_transaksi, nominal, tanggal_transaksi, keterangan_transaksi, alokasi_dana, sumber_dana, bukti_transaksi) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (user_id, kegiatan_id, jenis_entri, dicatat_oleh, periode_kepengurusan, tipe_transaksi, nominal, tanggal_transaksi, keterangan_transaksi, alokasi_dana, sumber_dana, bukti_transaksi) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $userId, $kegiatan_id, $dicatatOleh, $periode, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi
+                $userId, $kegiatan_id ?: null, $jenis_entri, $dicatatOleh, $periode, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi
             ]);
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil ditambahkan.');
             $response->redirect('/keuangan/bendahara/unja/transaksi');
@@ -572,6 +573,7 @@ class UnjaController
         }
 
         $kegiatan_id = $_POST['kegiatan_id'] ?? '';
+        $jenis_entri = $_POST['jenis_entri'] ?? 'kegiatan';
         $tipe_transaksi = $_POST['tipe_transaksi'] ?? '';
         $nominal = $_POST['nominal'] ?? '';
         $tanggal_transaksi = $_POST['tanggal_transaksi'] ?? '';
@@ -583,7 +585,7 @@ class UnjaController
 
         $errors = [];
         $error_fields = [];
-        if (empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
+        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
         if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
         if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
         if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
@@ -645,11 +647,11 @@ class UnjaController
         try {
             $updateStmt = $db->prepare("
                 UPDATE tbl_transaksi_unja 
-                SET kegiatan_id = ?, tipe_transaksi = ?, nominal = ?, tanggal_transaksi = ?, keterangan_transaksi = ?, alokasi_dana = ?, sumber_dana = ?, bukti_transaksi = ?
+                SET kegiatan_id = ?, jenis_entri = ?, tipe_transaksi = ?, nominal = ?, tanggal_transaksi = ?, keterangan_transaksi = ?, alokasi_dana = ?, sumber_dana = ?, bukti_transaksi = ?
                 WHERE id = ?
             ");
             $updateStmt->execute([
-                $kegiatan_id, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi, $id
+                $kegiatan_id ?: null, $jenis_entri, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi, $id
             ]);
 
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil diperbarui.');
