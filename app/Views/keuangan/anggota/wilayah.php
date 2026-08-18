@@ -58,7 +58,7 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <!-- Chart Section -->
-        <div class="lg:col-span-2 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 p-6">
+        <div class="lg:col-span-2 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 p-6 flex flex-col">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-bold text-slate-900">Grafik Arus Kas</h3>
                 <div class="p-2 bg-slate-50 rounded-lg text-slate-500">
@@ -67,7 +67,7 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
                     </svg>
                 </div>
             </div>
-            <div class="relative w-full h-[300px]">
+            <div class="relative w-full flex-grow min-h-[300px]">
                 <canvas id="financeChart"></canvas>
             </div>
         </div>
