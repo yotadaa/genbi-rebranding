@@ -59,10 +59,30 @@ if (isset($old['input_mode'])) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
 
             <div class="p-8 md:p-10 space-y-8">
+                <!-- Jenis Pencatatan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="relative flex items-center p-4 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                        <input type="radio" name="jenis_entri" value="kegiatan" class="peer sr-only" <?= ($val('jenis_entri') ?: 'kegiatan') === 'kegiatan' ? 'checked' : '' ?>>
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-[#0ea5e9] peer-checked:border-[6px] transition-all mr-4"></div>
+                        <div>
+                            <div class="text-[13px] font-bold text-slate-900 mb-0.5">Terkait Kegiatan</div>
+                            <div class="text-[11px] text-slate-500">Pencatatan untuk proker/kegiatan GenBI.</div>
+                        </div>
+                    </label>
+                    <label class="relative flex items-center p-4 border border-slate-200/60 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                        <input type="radio" name="jenis_entri" value="invoice" class="peer sr-only" <?= $val('jenis_entri') === 'invoice' ? 'checked' : '' ?>>
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-[#0ea5e9] peer-checked:border-[6px] transition-all mr-4"></div>
+                        <div>
+                            <div class="text-[13px] font-bold text-slate-900 mb-0.5">Invoice / Operasional</div>
+                            <div class="text-[11px] text-slate-500">Pembayaran layanan, AI, domain, dll.</div>
+                        </div>
+                    </label>
+                </div>
+
                 <!-- Dropdown Kegiatan -->
-                <div>
+                <div id="kegiatan_wrapper">
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Pilih Kegiatan <span class="text-rose-500">*</span></label>
-                    <select name="kegiatan_id" required class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('kegiatan_id') ?>">
+                    <select name="kegiatan_id" id="kegiatan_id" required class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('kegiatan_id') ?>">
                         <option value="" disabled <?= !$val('kegiatan_id') ? 'selected' : '' ?>>-- Pilih Kegiatan --</option>
                         <?php foreach ($kegiatanList as $kegiatan): ?>
                             <option value="<?= $kegiatan['id'] ?>" <?= $val('kegiatan_id') == $kegiatan['id'] ? 'selected' : '' ?>>
@@ -141,7 +161,14 @@ if (isset($old['input_mode'])) {
                     </div>
 
                     <div id="link-input-group" class="<?= $currentInputMode === 'link' ? '' : 'hidden' ?>">
-                        <input type="url" name="bukti_link" value="<?= $currentInputMode === 'link' ? htmlspecialchars($val('bukti_transaksi') ?: $val('bukti_link')) : '' ?>" placeholder="https://drive.google.com/..." class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('bukti_link') ?>">
+                        <div class="flex gap-2">
+                            <input type="url" name="bukti_link" value="<?= $currentInputMode === 'link' ? htmlspecialchars($val('bukti_transaksi') ?: $val('bukti_link')) : '' ?>" placeholder="https://drive.google.com/..." class="w-full px-5 py-3.5 bg-slate-50 border rounded-xl outline-none transition-all text-[13px] <?= $hasError('bukti_link') ?>">
+                            <?php if ($isEdit && $currentInputMode === 'link' && !empty($trx['bukti_transaksi'])): ?>
+                                <a href="<?= htmlspecialchars($trx['bukti_transaksi']) ?>" target="_blank" class="shrink-0 flex items-center justify-center px-5 py-3.5 bg-[#0ea5e9]/10 text-[#0ea5e9] font-semibold text-[13px] rounded-xl hover:bg-[#0ea5e9]/20 transition-all">
+                                    Buka Link
+                                </a>
+                            <?php endif; ?>
+                        </div>
                         <p class="text-[11px] font-medium text-slate-400 mt-2">Pastikan akses link Google Drive sudah diatur ke "Siapa saja yang memiliki link".</p>
                     </div>
                 </div>
@@ -174,6 +201,25 @@ if (isset($old['input_mode'])) {
                 }
             });
         });
+
+        const entriRadios = document.querySelectorAll('input[name="jenis_entri"]');
+        const kegiatanWrapper = document.getElementById('kegiatan_wrapper');
+        const kegiatanSelect = document.getElementById('kegiatan_id');
+
+        const toggleKegiatan = () => {
+            const selected = document.querySelector('input[name="jenis_entri"]:checked').value;
+            if (selected === 'invoice') {
+                kegiatanWrapper.style.display = 'none';
+                kegiatanSelect.removeAttribute('required');
+                kegiatanSelect.value = '';
+            } else {
+                kegiatanWrapper.style.display = 'block';
+                kegiatanSelect.setAttribute('required', 'required');
+            }
+        };
+
+        entriRadios.forEach(r => r.addEventListener('change', toggleKegiatan));
+        toggleKegiatan(); // Run on load
     });
 </script>
 <script>
