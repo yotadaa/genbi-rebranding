@@ -1667,7 +1667,8 @@
           Admin.showToast(isEdit ? 'Anggota diperbarui.' : 'Anggota ditambahkan.');
           if (!isEdit && json.data?.id) setTimeout(() => { window.location.href = `${adminUrl('team-member-edit')}?id=${json.data.id}`; }, 900);
         } else {
-          Admin.showToast(json.error || 'Gagal menyimpan anggota.');
+          const detailMsg = Array.isArray(json.details) && json.details.length > 0 ? ': ' + json.details.join(', ') : '';
+          Admin.showToast((json.error || 'Gagal menyimpan anggota.') + detailMsg);
         }
       });
       return;

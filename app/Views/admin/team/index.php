@@ -1,5 +1,9 @@
 <?php
-use App\Core\Paginator;
+
+/**
+ * @var callable $e
+ * @var callable $url
+ */
 
 $page = $page ?? 1;
 $perPage = $perPage ?? 24;
@@ -27,6 +31,9 @@ $filterParams = array_filter([
       <h1 class="section-title mt-3">View Team Members</h1>
       <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Direktori anggota GenBI. Listing beranda memakai
         periode terbaru, lalu bisa dioverride dari Team Members lewat aksi BPI Beranda.</p>
+    </div>
+    <div class="cms-actions">
+      <a href="/admin/team-member-add" class="btn btn-primary">Add Team Member</a>
     </div>
   </header>
 
@@ -183,7 +190,7 @@ $filterParams = array_filter([
       <nav class="admin-pagination mt-5" aria-label="Pagination anggota" data-ssr="true">
         <?php if ($page > 1): ?>
           <a class="pager-button"
-            href="<?= $url('admin.team') ?>?<?= $e(Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
+            href="<?= $url('admin.team') ?>?<?= $e(\App\Core\Paginator::buildQuery($page - 1, $filterParams)) ?>">Sebelumnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Sebelumnya</span>
         <?php endif; ?>
@@ -192,12 +199,12 @@ $filterParams = array_filter([
             <span class="pager-button is-active" aria-current="page"><?= $i ?></span>
           <?php else: ?>
             <a class="pager-button"
-              href="<?= $url('admin.team') ?>?<?= $e(Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
+              href="<?= $url('admin.team') ?>?<?= $e(\App\Core\Paginator::buildQuery($i, $filterParams)) ?>"><?= $i ?></a>
           <?php endif; ?>
         <?php endfor; ?>
         <?php if ($page < $totalPages): ?>
           <a class="pager-button"
-            href="<?= $url('admin.team') ?>?<?= $e(Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
+            href="<?= $url('admin.team') ?>?<?= $e(\App\Core\Paginator::buildQuery($page + 1, $filterParams)) ?>">Berikutnya</a>
         <?php else: ?>
           <span class="pager-button" aria-disabled="true">Berikutnya</span>
         <?php endif; ?>
