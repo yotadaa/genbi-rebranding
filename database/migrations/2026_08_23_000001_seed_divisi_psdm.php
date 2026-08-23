@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'up' => static function (\PDO $db): void {
-        $namaDivisi = 'Pengembangan Sumber Daya Manusia';
+        $namaDivisi = 'Divisi Pengembangan Sumber Daya Manusia';
 
         $stmt = $db->prepare('SELECT COUNT(*) FROM divisis WHERE nama = :nama');
         $stmt->execute(['nama' => $namaDivisi]);
