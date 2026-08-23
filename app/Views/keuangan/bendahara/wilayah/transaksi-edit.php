@@ -35,7 +35,7 @@ $hasError = function ($field) use ($error_fields) {
     <!-- Form -->
     <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden">
         <form action="/keuangan/bendahara/wilayah/transaksi/update/<?= $trx['id'] ?>" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?= $e(\App\Services\CsrfService::token()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= $e(\App\Services\CsrfService::token()) ?>">
 
             <div class="p-8 md:p-10 space-y-8">
                 <!-- Jenis Pencatatan -->

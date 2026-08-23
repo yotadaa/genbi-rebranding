@@ -181,7 +181,7 @@ if ($activeMenu === 'komsat_uin') $pageTitle = 'Komsat UIN';
                 <div class="flex items-center gap-3">
 
                     <form action="/keuangan/akun/logout" method="POST" class="inline">
-                        <input type="hidden" name="csrf_token" value="<?= $e(\App\Services\CsrfService::token()) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $e(\App\Services\CsrfService::token()) ?>">
                         <button type="submit" class="hidden sm:flex items-center px-4 py-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-all shadow-sm">
                             Logout
                         </button>

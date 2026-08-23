@@ -56,7 +56,7 @@ if (isset($old['input_mode'])) {
     <!-- Form -->
     <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden">
         <form action="<?= $actionUrl ?>" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
 
             <div class="p-8 md:p-10 space-y-8">
                 <!-- Jenis Pencatatan -->

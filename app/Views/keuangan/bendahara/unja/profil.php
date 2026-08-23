@@ -61,7 +61,7 @@ $normalClass = 'border-slate-200/60 focus:bg-white focus:border-orange-500 focus
         </div>
 
         <form action="/keuangan/bendahara/unja/profil" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Services\CsrfService::token()) ?>">
 
             <div class="p-8 space-y-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">

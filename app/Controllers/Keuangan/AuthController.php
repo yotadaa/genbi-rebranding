@@ -75,7 +75,7 @@ final class AuthController
                 $response->redirect('/keuangan/akun/register');
                 return;
             }
-            
+
             // Check if email already exists just in case
             $stmtCheckEmail = $db->prepare('SELECT COUNT(*) FROM tbl_user WHERE email = :email');
             $stmtCheckEmail->execute([':email' => $email]);
@@ -103,7 +103,6 @@ final class AuthController
 
             Session::flash('swal_success', 'Akun berhasil didaftarkan! Silakan masuk.');
             $response->redirect('/keuangan/akun/login');
-
         } catch (\Exception $e) {
             Session::flash('swal_error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
             $response->redirect('/keuangan/akun/register');
@@ -130,7 +129,7 @@ final class AuthController
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) {
-                Session::flash('swal_error', 'Email tidak terdaftar!');
+                Session::flash('swal_error', 'Email atau Password salah!');
                 Session::flash('old_email', $email);
                 $response->redirect('/keuangan/akun/login');
                 return;
@@ -144,7 +143,7 @@ final class AuthController
             }
 
             if (!password_verify($password, $user['password'])) {
-                Session::flash('swal_error', 'Password salah!');
+                Session::flash('swal_error', 'Email atau Password salah!');
                 Session::flash('old_email', $email);
                 $response->redirect('/keuangan/akun/login');
                 return;
@@ -157,11 +156,11 @@ final class AuthController
             // Handle Remember Me (Token max 60 chars per user spec)
             if ($remember) {
                 $token = bin2hex(random_bytes(30)); // 60 chars string
-                
+
                 // Save to DB
                 $stmtToken = $db->prepare('UPDATE tbl_user SET token = :token WHERE id = :id');
                 $stmtToken->execute([':token' => $token, ':id' => $user['id']]);
-                
+
                 // Set Cookie (30 days expiration)
                 setcookie('keuangan_remember_token', $token, time() + (86400 * 30), '/');
             }
@@ -189,7 +188,6 @@ final class AuthController
             // Fallback (if somehow role is unhandled)
             Session::flash('swal_error', 'Role tidak dikenali.');
             $response->redirect('/keuangan/akun/login');
-
         } catch (\Exception $e) {
             Session::flash('swal_error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
             Session::flash('old_email', $email);
@@ -202,7 +200,7 @@ final class AuthController
         Session::remove('keuangan_user_id');
         Session::remove('keuangan_role');
         setcookie('keuangan_remember_token', '', time() - 3600, '/');
-        
+
         Session::flash('swal_success', 'Anda telah berhasil logout.');
         $response->redirect('/keuangan/akun/login');
     }

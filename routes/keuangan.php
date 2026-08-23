@@ -20,25 +20,29 @@ $router->get('/keuangan/akun/register', static function (Request $request, Respo
     $keuanganAuthController->showRegister($request, $response);
 });
 
-$router->post('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
-    $keuanganAuthController->register($request, $response);
-});
-
-$router->post('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
-    $keuanganAuthController->login($request, $response);
-});
-
-$router->post('/keuangan/akun/logout', static function (Request $request, Response $response) use ($keuanganAuthController) {
-    $keuanganAuthController->logout($request, $response);
-});
-
-// Authentication Middleware instance
+// Middleware instances
 $authMw = new \App\Middleware\KeuanganAuthMiddleware();
+$csrfMw = new \App\Middleware\CsrfMiddleware();
+
+// Authentication POST Routes (Protected by CSRF)
+$router->group([$csrfMw], static function ($router) use ($keuanganAuthController) {
+    $router->post('/keuangan/akun/register', static function (Request $request, Response $response) use ($keuanganAuthController) {
+        $keuanganAuthController->register($request, $response);
+    });
+
+    $router->post('/keuangan/akun/login', static function (Request $request, Response $response) use ($keuanganAuthController) {
+        $keuanganAuthController->login($request, $response);
+    });
+
+    $router->post('/keuangan/akun/logout', static function (Request $request, Response $response) use ($keuanganAuthController) {
+        $keuanganAuthController->logout($request, $response);
+    });
+});
 
 // ---------------------------------------------------------
 // Bendahara Wilayah Routes
 // ---------------------------------------------------------
-$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_wilayah'])], static function ($router) use ($keuanganWilayahController) {
+$router->group([$authMw, $csrfMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_wilayah'])], static function ($router) use ($keuanganWilayahController) {
     $router->get('/keuangan/bendahara/wilayah/dashboard', static function (Request $request, Response $response) use ($keuanganWilayahController) {
         $keuanganWilayahController->dashboard($request, $response);
     });
@@ -99,7 +103,7 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
 // ---------------------------------------------------------
 // Bendahara Komsat UNJA Routes
 // ---------------------------------------------------------
-$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_unja'])], static function ($router) use ($keuanganUnjaController) {
+$router->group([$authMw, $csrfMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_unja'])], static function ($router) use ($keuanganUnjaController) {
     $router->get('/keuangan/bendahara/unja/dashboard', static function (Request $request, Response $response) use ($keuanganUnjaController) {
         $keuanganUnjaController->dashboard($request, $response);
     });
@@ -150,7 +154,7 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
 // ---------------------------------------------------------
 // Bendahara Komsat UIN Routes
 // ---------------------------------------------------------
-$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_uin'])], static function ($router) use ($keuanganUinController) {
+$router->group([$authMw, $csrfMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_uin'])], static function ($router) use ($keuanganUinController) {
     $router->get('/keuangan/bendahara/uin/dashboard', static function (Request $request, Response $response) use ($keuanganUinController) {
         $keuanganUinController->dashboard($request, $response);
     });
@@ -205,7 +209,7 @@ $router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['bendahara_
 // ---------------------------------------------------------
 // Anggota Routes
 // ---------------------------------------------------------
-$router->group([$authMw, new \App\Middleware\KeuanganRoleMiddleware(['anggota'])], static function ($router) use ($keuanganAnggotaController) {
+$router->group([$authMw, $csrfMw, new \App\Middleware\KeuanganRoleMiddleware(['anggota'])], static function ($router) use ($keuanganAnggotaController) {
     $router->get('/keuangan/home', static function (Request $request, Response $response) {
         $response->redirect('/keuangan/anggota/wilayah');
     });

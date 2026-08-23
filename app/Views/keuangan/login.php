@@ -85,6 +85,7 @@
                 </div>
 
                 <form action="/keuangan/akun/login" method="POST" class="space-y-6">
+                            <input type="hidden" name="_csrf_token" value="<?= \App\Services\CsrfService::token() ?>">
 
                     <div class="space-y-2">
                         <label for="email" class="block text-sm font-medium text-slate-700">Email bendahara</label>
