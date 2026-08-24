@@ -186,7 +186,7 @@ class UinController
         $response->redirect('/keuangan/bendahara/uin/profil');
     }
 
-public function kegiatan(Request $request, Response $response): void
+    public function kegiatan(Request $request, Response $response): void
     {
         $db = \App\Core\Database::connection();
         $stmt = $db->prepare("SELECT * FROM tbl_kegiatan_keuangan WHERE tingkat = 'uin' ORDER BY created_at DESC");
@@ -356,16 +356,16 @@ public function kegiatan(Request $request, Response $response): void
         $response->redirect('/keuangan/bendahara/uin/kegiatan');
     }
 
-    
 
-private function getKegiatanList(): array
+
+    private function getKegiatanList(): array
     {
         $db = \App\Core\Database::connection();
         $stmt = $db->query("SELECT id, nama_kegiatan, divisi FROM tbl_kegiatan_keuangan WHERE tingkat = 'uin' ORDER BY id DESC");
         return $stmt->fetchAll() ?: [];
     }
 
-public function transaksi(Request $request, Response $response): void
+    public function transaksi(Request $request, Response $response): void
     {
         $db = \App\Core\Database::connection();
         $sql = "
@@ -446,17 +446,35 @@ public function transaksi(Request $request, Response $response): void
         $keterangan_transaksi = trim((string)($_POST['keterangan_transaksi'] ?? ''));
         $alokasi_dana = trim((string)($_POST['alokasi_dana'] ?? ''));
         $sumber_dana = trim((string)($_POST['sumber_dana'] ?? ''));
-        $input_mode = $_POST['input_mode'] ?? 'file'; 
+        $input_mode = $_POST['input_mode'] ?? 'file';
         $bukti_link = trim((string)($_POST['bukti_link'] ?? ''));
 
         $errors = [];
         $error_fields = [];
-        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
-        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
-        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
-        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
-        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
-        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi.'; $error_fields[] = 'alokasi_dana'; }
+        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) {
+            $errors[] = 'Kegiatan harus dipilih.';
+            $error_fields[] = 'kegiatan_id';
+        }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) {
+            $errors[] = 'Tipe transaksi tidak valid.';
+            $error_fields[] = 'tipe_transaksi';
+        }
+        if (!is_numeric($nominal) || $nominal <= 0) {
+            $errors[] = 'Nominal harus berupa angka lebih dari 0.';
+            $error_fields[] = 'nominal';
+        }
+        if (empty($tanggal_transaksi)) {
+            $errors[] = 'Tanggal transaksi harus diisi.';
+            $error_fields[] = 'tanggal_transaksi';
+        }
+        if (empty($keterangan_transaksi)) {
+            $errors[] = 'Keterangan transaksi harus diisi.';
+            $error_fields[] = 'keterangan_transaksi';
+        }
+        if (empty($alokasi_dana)) {
+            $errors[] = 'Alokasi dana harus diisi.';
+            $error_fields[] = 'alokasi_dana';
+        }
 
         $bukti_transaksi = null;
 
@@ -478,8 +496,14 @@ public function transaksi(Request $request, Response $response): void
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
-                    if (!$isPdf && !$isImg) {
-                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                    // MIME Type Validation (SEC-K-02)
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($fileTmp);
+                    $validPdfMime = $mimeType === 'application/pdf';
+                    $validImgMimes = in_array($mimeType, ['image/jpeg', 'image/png']);
+
+                    if ((!$isPdf && !$isImg) || (!$validPdfMime && !$validImgMimes)) {
+                        $errors[] = 'Format file tidak valid atau file telah dimanipulasi (MIME tidak cocok). Hanya PDF, JPG, JPEG, dan PNG yang diizinkan.';
                         $error_fields[] = 'bukti_file';
                     } else {
                         if ($isPdf && $fileSize > 10 * 1024 * 1024) {
@@ -518,7 +542,18 @@ public function transaksi(Request $request, Response $response): void
                 (user_id, kegiatan_id, jenis_entri, dicatat_oleh, periode_kepengurusan, tipe_transaksi, nominal, tanggal_transaksi, keterangan_transaksi, alokasi_dana, sumber_dana, bukti_transaksi) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $userId, $kegiatan_id ?: null, $jenis_entri, $dicatatOleh, $periode, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi
+                $userId,
+                $kegiatan_id ?: null,
+                $jenis_entri,
+                $dicatatOleh,
+                $periode,
+                $tipe_transaksi,
+                $nominal,
+                $tanggal_transaksi,
+                $keterangan_transaksi,
+                $alokasi_dana,
+                $sumber_dana,
+                $bukti_transaksi
             ]);
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil ditambahkan.');
             $response->redirect('/keuangan/bendahara/uin/transaksi');
@@ -588,17 +623,35 @@ public function transaksi(Request $request, Response $response): void
         $keterangan_transaksi = trim((string)($_POST['keterangan_transaksi'] ?? ''));
         $alokasi_dana = trim((string)($_POST['alokasi_dana'] ?? ''));
         $sumber_dana = trim((string)($_POST['sumber_dana'] ?? ''));
-        $input_mode = $_POST['input_mode'] ?? 'file'; 
+        $input_mode = $_POST['input_mode'] ?? 'file';
         $bukti_link = trim((string)($_POST['bukti_link'] ?? ''));
 
         $errors = [];
         $error_fields = [];
-        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) { $errors[] = 'Kegiatan harus dipilih.'; $error_fields[] = 'kegiatan_id'; }
-        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) { $errors[] = 'Tipe transaksi tidak valid.'; $error_fields[] = 'tipe_transaksi'; }
-        if (!is_numeric($nominal) || $nominal <= 0) { $errors[] = 'Nominal harus berupa angka lebih dari 0.'; $error_fields[] = 'nominal'; }
-        if (empty($tanggal_transaksi)) { $errors[] = 'Tanggal transaksi harus diisi.'; $error_fields[] = 'tanggal_transaksi'; }
-        if (empty($keterangan_transaksi)) { $errors[] = 'Keterangan transaksi harus diisi.'; $error_fields[] = 'keterangan_transaksi'; }
-        if (empty($alokasi_dana)) { $errors[] = 'Alokasi dana harus diisi.'; $error_fields[] = 'alokasi_dana'; }
+        if ($jenis_entri === 'kegiatan' && empty($kegiatan_id)) {
+            $errors[] = 'Kegiatan harus dipilih.';
+            $error_fields[] = 'kegiatan_id';
+        }
+        if (!in_array($tipe_transaksi, ['pemasukan', 'pengeluaran'])) {
+            $errors[] = 'Tipe transaksi tidak valid.';
+            $error_fields[] = 'tipe_transaksi';
+        }
+        if (!is_numeric($nominal) || $nominal <= 0) {
+            $errors[] = 'Nominal harus berupa angka lebih dari 0.';
+            $error_fields[] = 'nominal';
+        }
+        if (empty($tanggal_transaksi)) {
+            $errors[] = 'Tanggal transaksi harus diisi.';
+            $error_fields[] = 'tanggal_transaksi';
+        }
+        if (empty($keterangan_transaksi)) {
+            $errors[] = 'Keterangan transaksi harus diisi.';
+            $error_fields[] = 'keterangan_transaksi';
+        }
+        if (empty($alokasi_dana)) {
+            $errors[] = 'Alokasi dana harus diisi.';
+            $error_fields[] = 'alokasi_dana';
+        }
 
         $bukti_transaksi = $trx['bukti_transaksi'];
 
@@ -617,8 +670,14 @@ public function transaksi(Request $request, Response $response): void
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
-                    if (!$isPdf && !$isImg) {
-                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                    // MIME Type Validation (SEC-K-02)
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($fileTmp);
+                    $validPdfMime = $mimeType === 'application/pdf';
+                    $validImgMimes = in_array($mimeType, ['image/jpeg', 'image/png']);
+
+                    if ((!$isPdf && !$isImg) || (!$validPdfMime && !$validImgMimes)) {
+                        $errors[] = 'Format file tidak valid atau file telah dimanipulasi (MIME tidak cocok). Hanya PDF, JPG, JPEG, dan PNG yang diizinkan.';
                         $error_fields[] = 'bukti_file';
                     } else {
                         if ($isPdf && $fileSize > 10 * 1024 * 1024) {
@@ -659,7 +718,16 @@ public function transaksi(Request $request, Response $response): void
                 WHERE id = ?
             ");
             $updateStmt->execute([
-                $kegiatan_id ?: null, $jenis_entri, $tipe_transaksi, $nominal, $tanggal_transaksi, $keterangan_transaksi, $alokasi_dana, $sumber_dana, $bukti_transaksi, $id
+                $kegiatan_id ?: null,
+                $jenis_entri,
+                $tipe_transaksi,
+                $nominal,
+                $tanggal_transaksi,
+                $keterangan_transaksi,
+                $alokasi_dana,
+                $sumber_dana,
+                $bukti_transaksi,
+                $id
             ]);
 
             \App\Core\Session::flash('swal_success', 'Transaksi berhasil diperbarui.');

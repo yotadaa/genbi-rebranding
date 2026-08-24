@@ -167,7 +167,7 @@ final class WilayahController
 
         $errors = [];
         $error_fields = [];
-        
+
         if ($jenis_entri === 'invoice') {
             $kegiatan_id = null;
         } else {
@@ -218,8 +218,14 @@ final class WilayahController
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
-                    if (!$isPdf && !$isImg) {
-                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                    // MIME Type Validation (SEC-K-02)
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($fileTmp);
+                    $validPdfMime = $mimeType === 'application/pdf';
+                    $validImgMimes = in_array($mimeType, ['image/jpeg', 'image/png']);
+
+                    if ((!$isPdf && !$isImg) || (!$validPdfMime && !$validImgMimes)) {
+                        $errors[] = 'Format file tidak valid atau file telah dimanipulasi (MIME tidak cocok). Hanya PDF, JPG, JPEG, dan PNG yang diizinkan.';
                         $error_fields[] = 'bukti_file';
                     } else {
                         if ($isPdf && $fileSize > 10 * 1024 * 1024) {
@@ -339,7 +345,7 @@ final class WilayahController
 
         $errors = [];
         $error_fields = [];
-        
+
         if ($jenis_entri === 'invoice') {
             $kegiatan_id = null;
         } else {
@@ -389,8 +395,14 @@ final class WilayahController
                     $isPdf = $fileExt === 'pdf';
                     $isImg = in_array($fileExt, ['jpg', 'jpeg', 'png']);
 
-                    if (!$isPdf && !$isImg) {
-                        $errors[] = 'Format file harus PDF, JPG, JPEG, atau PNG.';
+                    // MIME Type Validation (SEC-K-02)
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($fileTmp);
+                    $validPdfMime = $mimeType === 'application/pdf';
+                    $validImgMimes = in_array($mimeType, ['image/jpeg', 'image/png']);
+
+                    if ((!$isPdf && !$isImg) || (!$validPdfMime && !$validImgMimes)) {
+                        $errors[] = 'Format file tidak valid atau file telah dimanipulasi (MIME tidak cocok). Hanya PDF, JPG, JPEG, dan PNG yang diizinkan.';
                         $error_fields[] = 'bukti_file';
                     } else {
                         if ($isPdf && $fileSize > 10 * 1024 * 1024) {
