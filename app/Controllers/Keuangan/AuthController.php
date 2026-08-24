@@ -114,6 +114,7 @@ final class AuthController
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']);
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         if (empty($email) || empty($password)) {
             Session::flash('swal_error', 'Email dan password harus diisi!');
@@ -124,11 +125,28 @@ final class AuthController
 
         try {
             $db = Database::connection();
+            $throttleService = new \App\Services\LoginThrottleService($db);
+
+            // Cek apakah akun atau IP sudah diblokir sementara
+            if ($throttleService->isEmailBlocked($email)) {
+                Session::flash('swal_error', 'Terlalu banyak percobaan gagal untuk email ini. Silakan coba lagi setelah 10 menit.');
+                Session::flash('old_email', $email);
+                $response->redirect('/keuangan/akun/login');
+                return;
+            }
+            if ($throttleService->isBlocked($email, $ip)) {
+                Session::flash('swal_error', 'Terlalu banyak percobaan dari perangkat Anda. Silakan coba lagi setelah 10 menit.');
+                Session::flash('old_email', $email);
+                $response->redirect('/keuangan/akun/login');
+                return;
+            }
+
             $stmt = $db->prepare('SELECT * FROM tbl_user WHERE email = :email LIMIT 1');
             $stmt->execute([':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) {
+                $throttleService->recordFailure($email, $ip);
                 Session::flash('swal_error', 'Email atau Password salah!');
                 Session::flash('old_email', $email);
                 $response->redirect('/keuangan/akun/login');
@@ -143,13 +161,16 @@ final class AuthController
             }
 
             if (!password_verify($password, $user['password'])) {
+                $throttleService->recordFailure($email, $ip);
                 Session::flash('swal_error', 'Email atau Password salah!');
                 Session::flash('old_email', $email);
                 $response->redirect('/keuangan/akun/login');
                 return;
             }
 
-            // Login berhasil
+            // Login berhasil, bersihkan riwayat kegagalan
+            $throttleService->clear($email, $ip);
+
             Session::set('keuangan_user_id', (int) $user['id']);
             Session::set('keuangan_role', $user['role']);
 
