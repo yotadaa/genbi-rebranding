@@ -117,15 +117,16 @@ $formatRupiah = function (float $angka): string {
                 document.getElementById('m-periode').textContent = this.dataset.periode || '-';
 
                 // Bukti Transaksi
-                const imgBukti = document.getElementById('m-bukti-img');
+                const linkBukti = document.getElementById('m-bukti-link');
                 const noBukti = document.getElementById('m-no-bukti');
                 if (this.dataset.bukti && this.dataset.bukti !== '-') {
-                    imgBukti.src = '/uploads/keuangan/' + this.dataset.bukti;
-                    imgBukti.classList.remove('hidden');
+                    const isLink = this.dataset.bukti.startsWith('http://') || this.dataset.bukti.startsWith('https://');
+                    linkBukti.href = isLink ? this.dataset.bukti : '/uploads/keuangan/' + this.dataset.bukti;
+                    linkBukti.classList.remove('hidden'); linkBukti.classList.add('inline-flex');
                     noBukti.classList.add('hidden');
                 } else {
-                    imgBukti.src = '';
-                    imgBukti.classList.add('hidden');
+                    linkBukti.href = '#';
+                    linkBukti.classList.add('hidden'); linkBukti.classList.remove('inline-flex');
                     noBukti.classList.remove('hidden');
                 }
 
@@ -368,7 +369,13 @@ $formatRupiah = function (float $angka): string {
                 <div class="sm:col-span-2">
                     <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Bukti Transaksi</div>
                     <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-center min-h-[200px]">
-                        <img id="m-bukti-img" src="" alt="Bukti Transaksi" class="max-h-[300px] object-contain rounded-xl hidden shadow-sm">
+                        <a id="m-bukti-link" href="#" target="_blank" class="hidden items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors font-medium text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            Lihat Bukti Transaksi
+                        </a>
                         <div id="m-no-bukti" class="text-slate-400 text-[13px] flex flex-col items-center gap-3">
                             <svg class="w-10 h-10 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
