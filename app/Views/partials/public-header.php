@@ -10,7 +10,7 @@ $site = $site ?? $siteSettings?->site() ?? [];
 $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
 $email = $site['email'] ?? 'genbijambibi@gmail.com';
-$phone = $site['phone'] ?? '089627896750';
+$phone = $site['phone'] ?? '085669152702';
 $navItems = [
   ['label' => 'Beranda', 'key' => 'home'],
   ['label' => 'Tentang', 'key' => 'about'],
@@ -26,16 +26,16 @@ $navItems = [
 ];
 $activeKey = $activeNav ?? '';
 if (empty($activeKey)) {
-    $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-    $segments = explode('/', trim(str_replace('/index.php', '', (string)$uriPath), '/'));
-    if (in_array('team', $segments)) $activeKey = 'team';
-    elseif (in_array('news', $segments)) $activeKey = 'news';
-    elseif (in_array('about', $segments)) $activeKey = 'about';
-    elseif (in_array('prestasi', $segments)) $activeKey = 'prestasi';
-    elseif (in_array('buku', $segments)) $activeKey = 'buku';
-    elseif (in_array('event', $segments) || in_array('feature', $segments)) $activeKey = 'kegiatan';
-    elseif (in_array('contact', $segments)) $activeKey = 'contact';
-    else $activeKey = 'home';
+  $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+  $segments = explode('/', trim(str_replace('/index.php', '', (string)$uriPath), '/'));
+  if (in_array('team', $segments)) $activeKey = 'team';
+  elseif (in_array('news', $segments)) $activeKey = 'news';
+  elseif (in_array('about', $segments)) $activeKey = 'about';
+  elseif (in_array('prestasi', $segments)) $activeKey = 'prestasi';
+  elseif (in_array('buku', $segments)) $activeKey = 'buku';
+  elseif (in_array('event', $segments) || in_array('feature', $segments)) $activeKey = 'kegiatan';
+  elseif (in_array('contact', $segments)) $activeKey = 'contact';
+  else $activeKey = 'home';
 }
 ?>
 <div id="site-header-shell" class="site-header-shell">

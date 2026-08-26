@@ -3,7 +3,7 @@ $site = $site ?? [];
 $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
 $email = $site['email'] ?? 'genbijambibi@gmail.com';
-$phone = $site['phone'] ?? '089627896750';
+$phone = $site['phone'] ?? '085669152702';
 $socials = $site['socials'] ?? [
     ['name' => 'Instagram', 'url' => 'https://instagram.com/genbijambi', 'label' => 'Ig'],
     ['name' => 'YouTube', 'url' => 'https://youtube.com/@genbijambi', 'label' => 'Yt'],

@@ -15,8 +15,8 @@ class HomeController extends Controller
     public function index(SiteSettings $siteSettings)
     {
         $payload = collect($siteSettings->site() ?? $this->siteData());
-        
-        $bpiMembers = TeamMember::bpiCore()->get()->map(function($member) {
+
+        $bpiMembers = TeamMember::bpiCore()->get()->map(function ($member) {
             return [
                 'id' => $member->id,
                 'name' => $member->name,
@@ -30,7 +30,7 @@ class HomeController extends Controller
             $bpiMembers = $this->fallbackBpiMembers();
         }
 
-        $publicEvents = Event::published()->latestEvent()->take(4)->get()->map(function($event) {
+        $publicEvents = Event::published()->latestEvent()->take(4)->get()->map(function ($event) {
             $images = [];
             if ($event->event_banner) $images[] = \App\Services\ImageResolver::resolve($event->event_banner, '');
             return [
@@ -48,18 +48,18 @@ class HomeController extends Controller
             $publicEvents = $this->fallbackPublicEvents();
         }
 
-        $announcements = News::published()->whereHas('category', function($q) {
+        $announcements = News::published()->whereHas('category', function ($q) {
             $q->where('category_name', 'Pengumuman');
-        })->latestNews()->take(8)->get()->map(function($news) {
+        })->latestNews()->take(8)->get()->map(function ($news) {
             return $this->mapNews($news);
         });
 
-        $latestNews = News::published()->latestNews()->take(3)->get()->map(function($news) {
+        $latestNews = News::published()->latestNews()->take(3)->get()->map(function ($news) {
             return $this->mapNews($news);
         });
 
-        $programs = Feature::with('images')->homeVisible(12)->map(function($feature) {
-            $images = $feature->images->map(function($img) {
+        $programs = Feature::with('images')->homeVisible(12)->map(function ($feature) {
+            $images = $feature->images->map(function ($img) {
                 return ['url' => \App\Services\ImageResolver::resolve($img->image_path, '')];
             })->toArray();
             return [
@@ -105,7 +105,7 @@ class HomeController extends Controller
     {
         return [
             'email' => 'genbijambibi@gmail.com',
-            'phone' => '089627896750',
+            'phone' => '085669152702',
             'address' => 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
             'videoResourceUrl' => 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq',
             'heroSlides' => [

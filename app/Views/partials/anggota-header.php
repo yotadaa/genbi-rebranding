@@ -10,7 +10,7 @@ $site = $site ?? $siteSettings?->site() ?? [];
 $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
 $email = $site['email'] ?? 'genbijambibi@gmail.com';
-$phone = $site['phone'] ?? '089627896750';
+$phone = $site['phone'] ?? '085669152702';
 $navItems = [
   ['label' => 'Keuangan Wilayah', 'key' => 'wilayah', 'href' => '/keuangan/anggota/wilayah'],
   ['label' => 'Keuangan UNJA', 'key' => 'unja', 'href' => '/keuangan/anggota/unja'],

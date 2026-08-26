@@ -11,7 +11,7 @@ $logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
 $siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
 $tagline = $site['tagline'] ?? 'Bersama GenBI, Energi untuk Negeri';
 $email = $site['email'] ?? 'genbijambibi@gmail.com';
-$phone = $site['phone'] ?? '089627896750';
+$phone = $site['phone'] ?? '085669152702';
 $address = $site['address'] ?? 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361';
 $navItems = [
   ['label' => 'Beranda', 'href' => $url('home')],

@@ -44,7 +44,7 @@ return [
             ':place_name' => 'Bank Indonesia Jambi',
             ':address' => 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
             ':email' => 'genbijambibi@gmail.com',
-            ':phone' => '089627896750',
+            ':phone' => '085669152702',
             ':coordinates_label' => '9HRM+74 Telanaipura, Kota Jambi, Jambi',
             ':maps_url' => 'https://www.google.com/maps/place/Bank+Indonesia+Jambi/@-1.6092871,103.5827899,17z/data=!3m1!4b1!4m6!3m5!1s0x2e25885c04515687:0xe424228e0264e09a!8m2!3d-1.6092871!4d103.5827899!16s%2Fg%2F1pzr95__x?hl=id&entry=ttu',
             ':latitude' => '-1.609287',
@@ -55,4 +55,3 @@ return [
         ]);
     },
 ];
-

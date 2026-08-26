@@ -15,9 +15,7 @@ final class SiteSettings
     /** @var array<string, mixed>|null */
     private ?array $cache = null;
 
-    public function __construct(private ?Setting $settings = null)
-    {
-    }
+    public function __construct(private ?Setting $settings = null) {}
 
     private static function getCacheFile(): string
     {
@@ -96,7 +94,7 @@ final class SiteSettings
             'logo' => $logoUrl,
             'favicon' => $faviconUrl,
             'email' => (string) ($data['site.topbar_email'] ?? 'genbijambibi@gmail.com'),
-            'phone' => (string) ($data['site.topbar_phone'] ?? '089627896750'),
+            'phone' => (string) ($data['site.topbar_phone'] ?? '085669152702'),
             'address' => (string) ($data['site.footer_address'] ?? ''),
             'footerEmail' => (string) ($data['site.footer_email'] ?? ''),
             'footerPhone' => (string) ($data['site.footer_phone'] ?? ''),
@@ -201,12 +199,12 @@ final class SiteSettings
             'site.logo_url' => '/uploads/logo.png',
             'site.favicon_url' => '/uploads/logo.png',
             'site.topbar_email' => 'genbijambibi@gmail.com',
-            'site.topbar_phone' => '089627896750',
+            'site.topbar_phone' => '085669152702',
             'site.email_from' => 'genbijambibi@gmail.com',
             'site.email_to' => 'genbijambibi@gmail.com',
             'site.footer_copyright' => 'Copyright © 2026, GenBI Provinsi Jambi',
             'site.footer_address' => 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
-            'site.footer_phone' => 'Support: 089627896750',
+            'site.footer_phone' => 'Support: 085669152702',
             'site.footer_email' => 'genbijambibi@gmail.com',
             'site.footer_recent_news_count' => 3,
             'site.banner_headline' => 'Bersama GenBI, tumbuh dan berdampak untuk Jambi.',
@@ -237,7 +235,7 @@ final class SiteSettings
         ];
 
         try {
-            $stored = Social::query()->get()->keyBy(fn (Social $social) => strtolower((string) $social->social_name));
+            $stored = Social::query()->get()->keyBy(fn(Social $social) => strtolower((string) $social->social_name));
             foreach ($channels as $name => &$configuration) {
                 $social = $stored->get(strtolower($name));
                 if ($social) {
@@ -249,7 +247,7 @@ final class SiteSettings
             // Keep safe defaults when the legacy social table is unavailable.
         }
 
-        return collect($channels)->map(fn (array $configuration, string $name) => [
+        return collect($channels)->map(fn(array $configuration, string $name) => [
             'name' => $name,
             'url' => $configuration['url'],
             'label' => $configuration['label'],

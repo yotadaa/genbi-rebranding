@@ -5,7 +5,7 @@ const site = {
   name: 'GenBI Provinsi Jambi',
   tagline: 'Bersama GenBI, Energi untuk Negeri',
   email: 'genbijambibi@gmail.com',
-  phone: '089627896750',
+  phone: '085669152702',
   phoneAlt: '082280226716',
   address: 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
   baseUrl: 'https://genbijambi.com',

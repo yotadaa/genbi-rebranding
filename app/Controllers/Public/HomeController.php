@@ -26,8 +26,7 @@ final class HomeController
         private ?TeamMember $teamModel = null,
         private ?ViewRenderer $viewRenderer = null,
         private ?SiteSettings $siteSettings = null,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request, Response $response): void
     {
@@ -64,7 +63,7 @@ final class HomeController
     {
         return [
             'email' => 'genbijambibi@gmail.com',
-            'phone' => '089627896750',
+            'phone' => '085669152702',
             'address' => 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
             'videoResourceUrl' => 'https://www.youtube.com/embed/ashD1p7d29s?si=FFGjlxX7oNn_OWVq',
             'heroSlides' => [
