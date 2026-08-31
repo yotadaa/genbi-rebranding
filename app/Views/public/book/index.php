@@ -255,7 +255,7 @@ $defaultGradients = [
 
             <!-- Bar Pencarian Live -->
             <div class="relative w-full sm:w-80">
-                <input type="text" id="buku-search-input" placeholder="Cari judul buku atau penulis..." class="w-full pl-11 pr-4 py-2.5 text-sm bg-white border border-neutral-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition-shadow shadow-sm">
+                <input type="text" id="buku-search-input" placeholder="Cari judul, penulis, atau editor..." class="w-full pl-11 pr-4 py-2.5 text-sm bg-white border border-neutral-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition-shadow shadow-sm">
                 <svg class="w-4 h-4 text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -305,7 +305,7 @@ $defaultGradients = [
                 <?php foreach ($books as $index => $book): ?>
                     <?php $bgGradient = $defaultGradients[$index % count($defaultGradients)]; ?>
 
-                    <div class="book-card group flex flex-col items-center sm:items-start text-center sm:text-left bg-white p-6 rounded-2xl border border-neutral-200/80 hover:border-blue-300 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-kategori="<?= htmlspecialchars($book['kategori']) ?>" data-judul="<?= strtolower(htmlspecialchars($book['judul'] . ' ' . $book['penulis'])) ?>">
+                    <div class="book-card group flex flex-col items-center sm:items-start text-center sm:text-left bg-white p-6 rounded-2xl border border-neutral-200/80 hover:border-blue-300 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-kategori="<?= htmlspecialchars($book['kategori']) ?>" data-judul="<?= strtolower(htmlspecialchars($book['judul'] . ' ' . $book['penulis'] . ' ' . ($book['editor'] ?? ''))) ?>">
 
                         <!-- Ruang Perspektif 3D -->
                         <div class="book-3d-perspective w-52 sm:w-56 md:w-60 aspect-[3/4] mx-auto mb-6">
@@ -375,14 +375,21 @@ $defaultGradients = [
                                 </h3>
 
                                 <p class="mt-2 text-xs text-neutral-500 flex flex-wrap items-center justify-center sm:justify-start gap-y-1 gap-x-2.5 font-medium">
-                                    <span class="inline-flex items-center gap-1 text-neutral-600 truncate max-w-[180px]">
+                                    <span class="inline-flex items-center gap-1 text-neutral-600 truncate max-w-[150px]" title="Penulis">
                                         <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         <?= htmlspecialchars($book['penulis']) ?>
                                     </span>
                                     <span class="text-neutral-300">|</span>
-                                    <span class="inline-flex items-center gap-1">
+                                    <span class="inline-flex items-center gap-1 text-neutral-600 truncate max-w-[150px]" title="Editor">
+                                        <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                        <?= htmlspecialchars($book['editor'] ?? '-') ?>
+                                    </span>
+                                    <span class="text-neutral-300">|</span>
+                                    <span class="inline-flex items-center gap-1" title="Jumlah Halaman">
                                         <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                         </svg>
@@ -443,7 +450,7 @@ $defaultGradients = [
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <p class="text-base font-bold text-neutral-800">Buku Tidak Ditemukan</p>
-            <p class="text-xs text-neutral-500 mt-1" id="empty-search-msg">Tidak ada judul buku atau penulis yang cocok dengan pencarian Anda.</p>
+            <p class="text-xs text-neutral-500 mt-1" id="empty-search-msg">Tidak ada judul buku, penulis, atau editor yang cocok dengan pencarian Anda.</p>
         </div>
 
         <!-- 5. Navigasi Halaman (Pagination) -->
@@ -670,7 +677,7 @@ $defaultGradients = [
                 if (emptySearch) emptySearch.classList.remove('hidden');
                 if (emptyMsg) {
                     if (currentSearch !== '') {
-                        emptyMsg.textContent = `Tidak ada judul buku atau penulis dengan kata kunci "${searchInput ? searchInput.value : ''}" pada kategori "${currentFilter}".`;
+                        emptyMsg.textContent = `Tidak ada judul buku, penulis, atau editor dengan kata kunci "${searchInput ? searchInput.value : ''}" pada kategori "${currentFilter}".`;
                     } else {
                         emptyMsg.textContent = `Belum ada dokumen untuk kategori "${currentFilter}".`;
                     }

@@ -24,7 +24,7 @@ $content = $content ?? '';
   <?= $jsonld ?? '' ?>
   <?php if (!empty($sitePayload['favicon'])): ?><link rel="icon" href="<?= $e((string) $sitePayload['favicon']) ?>"><?php endif; ?>
 </head>
-<body class="<?= $e($bodyClass ?? '') ?>" data-ssr="true">
+<body class="overflow-x-hidden <?= $e($bodyClass ?? '') ?>" data-ssr="true">
   <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg">Langsung ke konten</a>
   <div id="site-header"><?php require __DIR__ . '/../partials/public-header.php'; ?></div>
   <main id="main-content">
