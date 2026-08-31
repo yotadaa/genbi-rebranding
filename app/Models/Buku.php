@@ -32,6 +32,7 @@ class Buku
             'file_path' => (string) ($row['file_path'] ?? ''),
             'path_flipbook' => (string) ($row['path_flipbook'] ?? ''),
             'penulis' => (string) ($row['penulis'] ?? 'GenBI Jambi'),
+            'editor' => (string) ($row['editor'] ?? '-'),
             'penerbit' => (string) ($row['penerbit'] ?? 'Bank Indonesia'),
             'deskripsi' => (string) ($row['deskripsi'] ?? ''),
             'sinopsis' => (string) ($row['sinopsis'] ?? 'Informasi Literasi & Karya GenBI Jambi'),
@@ -136,11 +137,11 @@ class Buku
 
             // Filter pencarian kata kunci (case-insensitive, menggunakan parameter unik agar tidak PDOException)
             if (!empty($filters['q'])) {
-                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7))";
+                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7) OR LOWER(editor) LIKE LOWER(:q8))";
 
                 $searchTerm = "%" . trim($filters['q']) . "%";
                 // Mendaftarkan nilai ke tiap placeholder terpisah
-                for ($idx = 1; $idx <= 7; $idx++) {
+                for ($idx = 1; $idx <= 8; $idx++) {
                     $params[":q{$idx}"] = $searchTerm;
                 }
             }
@@ -177,9 +178,9 @@ class Buku
                 $params[':status'] = $filters['status'];
             }
             if (!empty($filters['q'])) {
-                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7))";
+                $sql .= " AND (LOWER(judul) LIKE LOWER(:q1) OR LOWER(penulis) LIKE LOWER(:q2) OR LOWER(kategori) LIKE LOWER(:q3) OR LOWER(penerbit) LIKE LOWER(:q4) OR LOWER(tahun_terbit) LIKE LOWER(:q5) OR LOWER(isbn) LIKE LOWER(:q6) OR LOWER(sinopsis) LIKE LOWER(:q7) OR LOWER(editor) LIKE LOWER(:q8))";
                 $searchTerm = "%" . trim($filters['q']) . "%";
-                for ($idx = 1; $idx <= 7; $idx++) {
+                for ($idx = 1; $idx <= 8; $idx++) {
                     $params[":q{$idx}"] = $searchTerm;
                 }
             }
@@ -216,9 +217,9 @@ class Buku
         if (!$this->db) return 0;
         try {
             $stmt = $this->db->prepare("INSERT INTO tbl_buku 
-                (judul, slug, file_path, path_flipbook, penulis, penerbit, deskripsi, sinopsis, foto_cover_buku, tahun_terbit, isbn, page_count, kategori, status, created_at) 
+                (judul, slug, file_path, path_flipbook, penulis, editor, penerbit, deskripsi, sinopsis, foto_cover_buku, tahun_terbit, isbn, page_count, kategori, status, created_at) 
                 VALUES 
-                (:judul, :slug, :file_path, :path_flipbook, :penulis, :penerbit, :deskripsi, :sinopsis, :foto_cover, :tahun, :isbn, :page_count, :kategori, :status, NOW())");
+                (:judul, :slug, :file_path, :path_flipbook, :penulis, :editor, :penerbit, :deskripsi, :sinopsis, :foto_cover, :tahun, :isbn, :page_count, :kategori, :status, NOW())");
 
             $stmt->execute([
                 ':judul' => $data['judul'] ?? '',
@@ -226,6 +227,7 @@ class Buku
                 ':file_path' => $data['file_path'] ?? '',
                 ':path_flipbook' => $data['path_flipbook'] ?? '',
                 ':penulis' => $data['penulis'] ?? 'GenBI Jambi',
+                ':editor' => $data['editor'] ?? '-',
                 ':penerbit' => $data['penerbit'] ?? 'Bank Indonesia',
                 ':deskripsi' => $data['deskripsi'] ?? '',
                 ':sinopsis' => $data['sinopsis'] ?? '',
@@ -256,6 +258,7 @@ class Buku
             'file_path' => 'file_path',
             'path_flipbook' => 'path_flipbook',
             'penulis' => 'penulis',
+            'editor' => 'editor',
             'penerbit' => 'penerbit',
             'deskripsi' => 'deskripsi',
             'sinopsis' => 'sinopsis',

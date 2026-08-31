@@ -282,7 +282,7 @@ class BukuAdminController
     private function sanitize(array $body): array
     {
         $clean = [];
-        $fields = ['judul', 'slug', 'file_path', 'path_flipbook', 'penulis', 'penerbit', 'deskripsi', 'sinopsis', 'cover', 'tahun', 'isbn', 'halaman', 'kategori', 'status'];
+        $fields = ['judul', 'slug', 'file_path', 'path_flipbook', 'penulis', 'editor', 'penerbit', 'deskripsi', 'sinopsis', 'cover', 'tahun', 'isbn', 'halaman', 'kategori', 'status'];
 
         foreach ($fields as $field) {
             if (array_key_exists($field, $body)) {

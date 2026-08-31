@@ -47,7 +47,7 @@ $filterParams = array_filter([
             <!-- Smooth Search Box & Status Filter -->
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
                 <div class="relative flex-1 max-w-md">
-                    <input type="text" id="smooth-search-input" name="q" value="<?= $e($filters['q'] ?? '') ?>" placeholder="Ketik judul, penulis, ISBN, atau tahun..." autocomplete="off" class="form-input w-full pl-11 pr-11 py-2.5 rounded-xl text-sm bg-white border-2 border-neutral-300 hover:border-blue-500 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 text-neutral-800 font-semibold transition-all shadow-sm placeholder:text-neutral-400 placeholder:font-normal" />
+                    <input type="text" id="smooth-search-input" name="q" value="<?= $e($filters['q'] ?? '') ?>" placeholder="Cari berdasarkan ISBN, judul, atau editor atau penulis..." autocomplete="off" class="form-input w-full pl-11 pr-11 py-2.5 rounded-xl text-sm bg-white border-2 border-neutral-300 hover:border-blue-500 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 text-neutral-800 font-semibold transition-all shadow-sm placeholder:text-neutral-400 placeholder:font-normal" />
                     <svg class="absolute left-3.5 top-3 w-5 h-5 text-neutral-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -155,7 +155,7 @@ $filterParams = array_filter([
                             <th class="p-3.5 rounded-tl-xl w-14 text-center">SL</th>
                             <th class="p-3.5 w-20">Cover</th>
                             <th class="p-3.5">Detail Buku</th>
-                            <th class="p-3.5 hidden md:table-cell">Kategori & Penulis</th>
+                            <th class="p-3.5 hidden md:table-cell">Kategori, Penulis & Editor</th>
                             <th class="p-3.5 hidden lg:table-cell text-center">Statistik</th>
                             <th class="p-3.5 text-center">Status</th>
                             <th class="p-3.5 rounded-tr-xl text-right">Aksi</th>
@@ -163,7 +163,7 @@ $filterParams = array_filter([
                     </thead>
                     <tbody id="admin-buku-tbody" class="divide-y divide-neutral-150">
                         <?php foreach ($items as $index => $item): ?>
-                            <tr class="buku-row hover:bg-blue-50/25 transition-colors" data-search="<?= strtolower($e($item['judul'] . ' ' . $item['penulis'] . ' ' . $item['kategori'] . ' ' . $item['penerbit'] . ' ' . $item['tahun'] . ' ' . $item['isbn'])) ?>">
+                            <tr class="buku-row hover:bg-blue-50/25 transition-colors" data-search="<?= strtolower($e($item['judul'] . ' ' . $item['penulis'] . ' ' . ($item['editor'] ?? '') . ' ' . $item['kategori'] . ' ' . $item['penerbit'] . ' ' . $item['tahun'] . ' ' . $item['isbn'])) ?>">
                                 <!-- Nomor Urut (SL) -->
                                 <td class="p-3.5 text-center text-xs font-bold text-neutral-400 align-top">
                                     <?= $startItem + $index ?>
@@ -190,7 +190,8 @@ $filterParams = array_filter([
                                     <!-- Mobile Info -->
                                     <div class="md:hidden mt-2 pt-2 border-t border-neutral-100 text-xs text-neutral-500">
                                         Kategori: <span class="font-semibold text-blue-900"><?= $e($item['kategori']) ?></span> &bull;
-                                        Oleh: <?= $e($item['penulis']) ?>
+                                        Oleh: <?= $e($item['penulis']) ?> &bull;
+                                        Editor: <?= $e($item['editor'] ?? '-') ?>
                                     </div>
                                 </td>
                                 <!-- Kategori & Penulis (Desktop) -->
@@ -199,7 +200,8 @@ $filterParams = array_filter([
                                         <?= $e($item['kategori']) ?>
                                     </span>
                                     <p class="text-xs font-medium text-neutral-700 mt-1.5">Oleh: <?= $e($item['penulis']) ?></p>
-                                    <p class="text-[11px] text-neutral-400">Penerbit: <?= $e($item['penerbit']) ?></p>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5">Editor: <span class="font-medium text-neutral-700"><?= $e($item['editor'] ?? '-') ?></span></p>
+                                    <p class="text-[11px] text-neutral-400 mt-0.5">Penerbit: <?= $e($item['penerbit']) ?></p>
                                 </td>
                                 <!-- Statistik -->
                                 <td class="p-3.5 align-top text-center hidden lg:table-cell">
