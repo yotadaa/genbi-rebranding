@@ -122,6 +122,10 @@ class BukuAdminController
             $response->json(['error' => 'Penulis / Tim Penyusun tidak boleh kosong.', 'field' => 'penulis'], 422);
             return;
         }
+        if (array_key_exists('editor', $payload) && empty($payload['editor'])) {
+            $response->json(['error' => 'Editor tidak boleh kosong.', 'field' => 'editor'], 422);
+            return;
+        }
         if (array_key_exists('penerbit', $payload) && empty($payload['penerbit'])) {
             $response->json(['error' => 'Penerbit / Instansi tidak boleh kosong.', 'field' => 'penerbit'], 422);
             return;

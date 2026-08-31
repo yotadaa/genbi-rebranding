@@ -174,8 +174,16 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     </div>
                 </div>
 
+                <!-- Editor -->
+                <div class="sm:col-span-1 lg:col-span-2">
+                    <label class="block text-sm font-bold text-neutral-800 tracking-wide">Editor <span class="text-red-500">*</span></label>
+                    <div>
+                        <input type="text" id="editor-input" name="editor" value="<?= $e($item['editor'] ?? '') ?>" placeholder="Nama editor" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-medium text-neutral-900 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all" required />
+                    </div>
+                </div>
+
                 <!-- Nomor ISBN -->
-                <div class="sm:col-span-2 lg:col-span-5">
+                <div class="sm:col-span-1 lg:col-span-3">
                     <label class="block text-sm font-bold text-neutral-800 tracking-wide">Nomor ISBN / Kode Identitas Karya (Opsional)</label>
                     <div>
                         <input type="text" name="isbn" value="<?= $e($item['isbn'] ?? '-') ?>" placeholder="Contoh: 978-602-8519-93-9 atau biarkan berisi -" class="form-input w-full mt-2 rounded-xl border border-neutral-300 bg-white py-2.5 px-4 text-sm font-mono text-neutral-700 shadow-sm focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition-all max-w-md" />
@@ -374,7 +382,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
 
     // Helper: Reset status validasi visual
     function clearValidationErrors() {
-        var errorFields = ['judul', 'sinopsis', 'tahun', 'penulis', 'penerbit', 'halaman', 'path_flipbook'];
+        var errorFields = ['judul', 'sinopsis', 'tahun', 'penulis', 'editor', 'penerbit', 'halaman', 'path_flipbook'];
         errorFields.forEach(function(fieldName) {
             var el = getFormEl(fieldName);
             if (el && el.classList) {
@@ -522,6 +530,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
         var sinopsisVal = (form.sinopsis ? form.sinopsis.value : '').trim();
         var tahunVal = (form.tahun ? form.tahun.value : '').trim();
         var penulisVal = (form.penulis ? form.penulis.value : '').trim();
+        var editorVal = (form.editor ? form.editor.value : '').trim();
         var penerbitVal = (form.penerbit ? form.penerbit.value : '').trim();
         var halamanVal = (form.halaman ? form.halaman.value : '').trim();
         var pdfUrlVal = (document.getElementById('pdf-url-input') ? document.getElementById('pdf-url-input').value : '').trim();
@@ -677,6 +686,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                 kategori: form.kategori.value,
                 status: form.status.value,
                 penulis: form.penulis.value,
+                editor: form.editor.value,
                 penerbit: form.penerbit.value,
                 tahun: form.tahun.value,
                 halaman: form.halaman.value,
@@ -707,6 +717,7 @@ $isEdit = !empty($item && ($item['id'] ?? 0) > 0);
                     if (errMsg.toLowerCase().includes('sinopsis')) highlightErrorField('sinopsis', true);
                     if (errMsg.toLowerCase().includes('tahun')) highlightErrorField('tahun', true);
                     if (errMsg.toLowerCase().includes('penulis')) highlightErrorField('penulis', true);
+                    if (errMsg.toLowerCase().includes('editor')) highlightErrorField('editor', true);
                     if (errMsg.toLowerCase().includes('penerbit')) highlightErrorField('penerbit', true);
                     if (errMsg.toLowerCase().includes('halaman')) highlightErrorField('halaman', true);
                     if (errMsg.toLowerCase().includes('flipbook')) highlightErrorField('path_flipbook', true);
