@@ -238,13 +238,14 @@ $formatRupiah = function (float $angka): string {
                         <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Tipe</th>
                         <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Keterangan Transaksi</th>
                         <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Sumber Dana</th>
-                        <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">Aksi</th>
+                        <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Dicatat Oleh</th>
+                          <th class="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100/80">
                     <?php if (empty($transaksiList)): ?>
                         <tr>
-                            <td colspan="5" class="px-8 py-16 text-center">
+                            <td colspan="6" class="px-8 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
                                     <svg class="w-12 h-12 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -278,7 +279,11 @@ $formatRupiah = function (float $angka): string {
                                 <td class="px-8 py-5 text-[13px] font-medium text-slate-600 max-w-[150px] truncate" title="<?= htmlspecialchars($t['sumber_dana'] ?? '') ?>">
                                     <?= htmlspecialchars($t['sumber_dana'] ?? '-') ?>
                                 </td>
-                                <td class="px-8 py-5 text-center">
+                                <td class="px-8 py-5">
+                                      <div class="text-[13px] font-bold text-slate-900"><?= htmlspecialchars($t['dicatat_oleh'] ?? '-') ?></div>
+                                      <div class="text-[11px] text-slate-500 mt-1">Periode: <?= htmlspecialchars($t['periode_kepengurusan'] ?? '-') ?></div>
+                                  </td>
+                                  <td class="px-8 py-5 text-center">
                                     <button type="button"
                                         class="btn-detail inline-flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 hover:bg-[#3b5998] hover:text-white rounded-xl text-[12px] font-semibold transition-all"
                                         data-kegiatan="<?= htmlspecialchars($t['nama_kegiatan'] ?? '') ?>"
