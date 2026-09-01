@@ -35,7 +35,8 @@ final class AnggotaController
                 'proof' => $row['bukti_transaksi'],
                 'source' => $row['sumber_dana'],
                 'event' => $row['nama_kegiatan'],
-                'period' => $row['periode_kepengurusan']
+                'period' => $row['periode_kepengurusan'],
+                'recorded_by' => $row['dicatat_oleh']
             ];
         }, $data);
 
@@ -69,7 +70,8 @@ final class AnggotaController
                 'proof' => $row['bukti_transaksi'],
                 'source' => $row['sumber_dana'],
                 'event' => $row['nama_kegiatan'],
-                'period' => $row['periode_kepengurusan']
+                'period' => $row['periode_kepengurusan'],
+                'recorded_by' => $row['dicatat_oleh']
             ];
         }, $data);
 
@@ -103,7 +105,8 @@ final class AnggotaController
                 'proof' => $row['bukti_transaksi'],
                 'source' => $row['sumber_dana'],
                 'event' => $row['nama_kegiatan'],
-                'period' => $row['periode_kepengurusan']
+                'period' => $row['periode_kepengurusan'],
+                'recorded_by' => $row['dicatat_oleh']
             ];
         }, $data);
 

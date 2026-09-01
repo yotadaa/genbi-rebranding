@@ -1,7 +1,7 @@
 <?php
 // Pastikan semua string ter-encode UTF-8 agar json_encode tidak gagal
-$safeTransactions = array_map(function($t) {
-    return array_map(function($v) {
+$safeTransactions = array_map(function ($t) {
+    return array_map(function ($v) {
         return is_string($v) ? mb_convert_encoding($v, 'UTF-8', 'auto') : $v;
     }, $t);
 }, $transactions ?? []);
@@ -9,7 +9,7 @@ $safeTransactions = array_map(function($t) {
 $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
 ?>
 <script id="tx-data" type="application/json">
-<?= $transactionsJson ?>
+    <?= $transactionsJson ?>
 </script>
 
 <div class="site-container py-8">
@@ -164,21 +164,21 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
         if (txDataEl) {
             try {
                 transactions = JSON.parse(txDataEl.textContent || '[]');
-            } catch(e) {
+            } catch (e) {
                 console.error('Failed to parse transactions from JSON block', e, txDataEl.textContent);
             }
         }
 
         // Formatters
         const formatRupiah = (amount) => {
-            return new Intl.NumberFormat('id-ID', {
+            return new window.Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
                 minimumFractionDigits: 0
             }).format(amount).replace('Rp', 'Rp ');
         };
         const formatDate = (dateStr) => {
-            return new Date(dateStr).toLocaleDateString('id-ID', {
+            return new window.Date(dateStr).toLocaleDateString('id-ID', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric'
@@ -286,7 +286,7 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
 
             const sortedMonths = Object.keys(grouped).sort();
             const labels = sortedMonths.map(m => {
-                const d = new Date(m + '-01');
+                const d = new window.Date(m + '-01');
                 return d.toLocaleDateString('id-ID', {
                     month: 'short',
                     year: 'numeric'
@@ -298,7 +298,7 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
             if (chartInstance) chartInstance.destroy();
 
             const ctx = chartCanvas.getContext('2d');
-            chartInstance = new Chart(ctx, {
+            chartInstance = new window.Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
@@ -440,6 +440,14 @@ $transactionsJson = json_encode($safeTransactions, JSON_HEX_TAG | JSON_HEX_AMP |
                     <p class="text-sm font-semibold text-slate-800">${t.event}</p>
                 </div>
                 ` : ''}
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Dicatat Oleh</p>
+                    <p class="text-sm font-semibold text-slate-800">${t.recorded_by || '-'}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Periode Kepengurusan</p>
+                    <p class="text-sm font-semibold text-slate-800">${t.period || '-'}</p>
+                </div>
                 <div class="col-span-2">
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Keterangan</p>
                     <p class="text-sm font-medium text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">${t.desc}</p>
