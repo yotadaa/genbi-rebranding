@@ -44,3 +44,18 @@ $programs = is_array($programs ?? null) ? $programs : [];
     <?php endif; ?>
   </div>
 </section>
+
+
+<style>
+/* Fix icon and number color for program-slide-card in Feature page */
+.program-slide-card .slide-index,
+.program-slide-card .program-icon {
+    color: #114b9a !important;
+}
+
+/* Ensure any SVG inside program-icon inherits the color if it uses stroke or fill */
+.program-slide-card .program-icon svg,
+.program-slide-card .program-icon i {
+    color: #114b9a !important;
+}
+</style>
