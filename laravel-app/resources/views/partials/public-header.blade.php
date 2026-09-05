@@ -7,7 +7,7 @@ $phone = $site['phone'] ?? '085669152702';
 $socials = $site['socials'] ?? [
     ['name' => 'Instagram', 'url' => 'https://instagram.com/genbijambi', 'label' => 'Ig'],
     ['name' => 'YouTube', 'url' => 'https://youtube.com/@genbijambi', 'label' => 'Yt'],
-    ['name' => 'WhatsApp', 'url' => 'https://wa.me/6289627896750', 'label' => 'Wa'],
+    ['name' => 'WhatsApp', 'url' => 'https://wa.me/6285669152702', 'label' => 'Wa'],
 ];
 $socialIcon = static function (string $name, string $url = ''): string {
     $channel = strtolower(trim($name . ' ' . $url));

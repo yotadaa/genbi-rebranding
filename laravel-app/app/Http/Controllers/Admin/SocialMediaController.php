@@ -14,7 +14,7 @@ class SocialMediaController extends Controller
     private const CHANNELS = [
         'YouTube' => ['icon' => 'fa fa-youtube', 'default' => 'https://youtube.com/@genbijambi'],
         'Instagram' => ['icon' => 'fa fa-instagram', 'default' => 'https://instagram.com/genbijambi'],
-        'WhatsApp' => ['icon' => 'fa fa-whatsapp', 'default' => 'https://wa.me/6289627896750'],
+        'WhatsApp' => ['icon' => 'fa fa-whatsapp', 'default' => 'https://wa.me/6285669152702'],
     ];
 
     public function index()

@@ -53,8 +53,8 @@
   const events = [];
 
   const sliders = [
-    { id: 1, photo: 'https://genbijambi.com/public/uploads/slider-1.png', heading: 'WE ARE GENBI PROVINSI JAMBI', button1: 'Read More', url1: 'https://wa.me/6289627896750', button2: 'Contact Us', url2: 'https://wa.me/6289627896750', position: 'Left' },
-    { id: 2, photo: 'https://genbijambi.com/public/uploads/slider-4.png', heading: 'WE ARE GENBI PROVINSI JAMBI', button1: 'Read More', url1: 'https://wa.me/6289627896750', button2: 'Contact Us', url2: 'https://wa.me/6289627896750', position: 'Right' }
+    { id: 1, photo: 'https://genbijambi.com/public/uploads/slider-1.png', heading: 'WE ARE GENBI PROVINSI JAMBI', button1: 'Read More', url1: 'https://wa.me/6285669152702', button2: 'Contact Us', url2: 'https://wa.me/6285669152702', position: 'Left' },
+    { id: 2, photo: 'https://genbijambi.com/public/uploads/slider-4.png', heading: 'WE ARE GENBI PROVINSI JAMBI', button1: 'Read More', url1: 'https://wa.me/6285669152702', button2: 'Contact Us', url2: 'https://wa.me/6285669152702', position: 'Right' }
   ];
 
   const memberPhotos = [

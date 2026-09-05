@@ -231,7 +231,7 @@ final class SiteSettings
         $channels = [
             'YouTube' => ['url' => 'https://youtube.com/@genbijambi', 'label' => 'Yt'],
             'Instagram' => ['url' => 'https://instagram.com/genbijambi', 'label' => 'Ig'],
-            'WhatsApp' => ['url' => 'https://wa.me/6289627896750', 'label' => 'Wa'],
+            'WhatsApp' => ['url' => 'https://wa.me/6285669152702', 'label' => 'Wa'],
         ];
 
         try {
