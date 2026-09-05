@@ -70,7 +70,9 @@ $eventIconMarkup = static function (string $type): string {
         </div>
       </div>
     </div>
-  </section>
+  
+
+</section>
 
   <?php if ($announcements !== []): ?>
     <section class="announcement-hero-section home-section-surface py-16 md:py-24" aria-labelledby="announcement-heading">
@@ -79,10 +81,10 @@ $eventIconMarkup = static function (string $type): string {
           <p class="eyebrow"><?= $e((string) ($homeContent['announcementEyebrow'] ?? 'Pengumuman')) ?></p>
           <h2 id="announcement-heading" class="section-title mt-4"><?= $e((string) ($homeContent['announcementTitle'] ?? 'Info penting untuk anggota dan publik.')) ?></h2>
           <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['announcementDescription'] ?? 'Pembaruan resmi, agenda penting, dan kabar prioritas GenBI Jambi ditampilkan dalam format ringkas agar mudah dipantau.')) ?></p>
-          <a data-transition href="<?= $url('news') ?>?category=Pengumuman" class="btn btn-dark mt-7">Lihat semua pengumuman</a>
+          <a data-transition href="<?= $url('news') ?>?category=Pengumuman" class="btn btn-announcement mt-7">Lihat semua pengumuman</a>
         </div>
         <div class="carousel-shell fade-up" data-carousel>
-          <div class="carousel-control-row">
+          <div class="carousel-control-row relative z-10">
             <button class="carousel-nav" data-carousel-prev aria-label="Pengumuman sebelumnya">‹</button>
             <button class="carousel-nav" data-carousel-next aria-label="Pengumuman berikutnya">›</button>
           </div>
@@ -101,7 +103,7 @@ $eventIconMarkup = static function (string $type): string {
             $dateLabel = $dateTimestamp !== false ? date('d M Y', $dateTimestamp) : 'Terbaru';
             ?>
             <a data-transition href="<?= $e($href) ?>" class="announcement-card" aria-label="Baca pengumuman: <?= $e($title) ?>">
-              <span class="announcement-number"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
+              <span class="announcement-number custom-announcement-number"><?= str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) ?></span>
               <span class="announcement-date"><?= $e($dateLabel) ?></span>
               <h3><?= $e($title) ?></h3>
               <p><?= $e($excerpt) ?></p>
@@ -110,7 +112,63 @@ $eventIconMarkup = static function (string $type): string {
           </div>
         </div>
       </div>
-    </section>
+    
+
+
+<style>
+/* Button "Lihat semua pengumuman" */
+.btn-announcement {
+    background-color: #114b9a !important;
+    color: white !important;
+    border: 2px solid #114b9a !important;
+    transition: all 0.2s ease-in-out;
+}
+.btn-announcement:hover {
+    background-color: white !important;
+    color: #114b9a !important;
+    border-color: #114b9a !important;
+}
+
+/* Number Circle */
+.custom-announcement-number {
+    background-color: #114b9a !important;
+    color: white !important;
+    border: 2px solid white !important;
+}
+
+/* Carousel Arrows */
+.carousel-control-row {
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+}
+.carousel-nav {
+    background-color: #114b9a !important;
+    color: white !important;
+    border: 2px solid #114b9a !important;
+    z-index: 20;
+    transition: all 0.2s ease-in-out;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+.carousel-nav:hover {
+    background-color: white !important;
+    color: #114b9a !important;
+    border-color: #114b9a !important;
+}
+
+/* Fix transparent icon background and color for Agenda section */
+.agenda-slide-card .program-icon {
+    background-color: rgb(238, 246, 255) !important;
+    color: #114b9a !important;
+    box-shadow: inset 0 0 0 1px rgb(17 75 154 / 0.10) !important;
+}
+.agenda-slide-card .program-icon svg,
+.agenda-slide-card .program-icon i {
+    color: #114b9a !important;
+}
+</style>
+</section>
   <?php endif; ?>
 
   <section class="home-section-surface py-14">
@@ -122,7 +180,9 @@ $eventIconMarkup = static function (string $type): string {
         </div>
       <?php endforeach; ?>
     </div>
-  </section>
+  
+
+</section>
 
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
@@ -130,10 +190,10 @@ $eventIconMarkup = static function (string $type): string {
         <p class="eyebrow"><?= $e((string) ($homeContent['programEyebrow'] ?? 'Program utama')) ?></p>
         <h2 class="section-title mt-4"><?= $e((string) ($homeContent['programTitle'] ?? 'Program yang dekat dengan anggota dan masyarakat.')) ?></h2>
         <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['programDescription'] ?? 'Setiap program dirancang sebagai ruang belajar, ruang kolaborasi, dan ruang kontribusi agar anggota GenBI Jambi tumbuh sekaligus memberi manfaat.')) ?></p>
-        <a data-transition href="<?= $url('about') ?>" class="btn btn-dark mt-7">Lihat profil lengkap</a>
+        <a data-transition href="<?= $url('about') ?>" class="btn btn-brand-primary mt-7">Lihat profil lengkap</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
-        <div class="carousel-control-row">
+        <div class="carousel-control-row relative z-10">
           <button class="carousel-nav" data-carousel-prev aria-label="Program sebelumnya">‹</button>
           <button class="carousel-nav" data-carousel-next aria-label="Program berikutnya">›</button>
         </div>
@@ -166,7 +226,9 @@ $eventIconMarkup = static function (string $type): string {
         </div>
       </div>
     </div>
-  </section>
+  
+
+</section>
 
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
@@ -177,7 +239,7 @@ $eventIconMarkup = static function (string $type): string {
         <a data-transition href="<?= $url('team') ?>" class="btn btn-secondary mt-7">Lihat direktori anggota</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
-        <div class="carousel-control-row">
+        <div class="carousel-control-row relative z-10">
           <button class="carousel-nav" data-carousel-prev aria-label="Anggota sebelumnya">‹</button>
           <button class="carousel-nav" data-carousel-next aria-label="Anggota berikutnya">›</button>
         </div>
@@ -200,7 +262,9 @@ $eventIconMarkup = static function (string $type): string {
         </div>
       </div>
     </div>
-  </section>
+  
+
+</section>
 
   <section class="home-section-surface py-16 md:py-24">
     <div class="site-container">
@@ -208,10 +272,10 @@ $eventIconMarkup = static function (string $type): string {
         <p class="eyebrow"><?= $e((string) ($homeContent['eventEyebrow'] ?? 'Agenda utama')) ?></p>
         <h2 class="section-title mt-4"><?= $e((string) ($homeContent['eventTitle'] ?? 'Kegiatan yang lahir dari kebutuhan sekitar.')) ?></h2>
         <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-neutral-600"><?= $e((string) ($homeContent['eventDescription'] ?? 'Agenda GenBI Jambi tidak berhenti di seremoni. Setiap kegiatan menjadi kesempatan untuk belajar, melayani, dan membangun jejaring kebaikan.')) ?></p>
-        <a data-transition href="<?= $url('event') ?>" class="btn btn-dark mt-7">Lihat semua agenda</a>
+        <a data-transition href="<?= $url('event') ?>" class="btn btn-brand-primary mt-7">Lihat semua agenda</a>
       </div>
       <div class="carousel-shell fade-up" data-carousel>
-        <div class="carousel-control-row">
+        <div class="carousel-control-row relative z-10">
           <button class="carousel-nav" data-carousel-prev aria-label="Agenda sebelumnya">‹</button>
           <button class="carousel-nav" data-carousel-next aria-label="Agenda berikutnya">›</button>
         </div>
@@ -245,7 +309,9 @@ $eventIconMarkup = static function (string $type): string {
         </div>
       </div>
     </div>
-  </section>
+  
+
+</section>
 
   <section class="home-section-surface py-16 md:py-24">
     <div class="article-container">
@@ -274,7 +340,9 @@ $eventIconMarkup = static function (string $type): string {
         <?php endif; ?>
       </div>
     </div>
-  </section>
+  
+
+</section>
 
   <section class="home-section-surface py-14 md:py-20">
     <div class="site-container contact-prefooter fade-up" id="home-contact-card"<?= !empty($site) ? ' data-ssr="true"' : '' ?>>
@@ -293,7 +361,9 @@ $eventIconMarkup = static function (string $type): string {
         <a data-transition href="<?= $url('contact') ?>" class="btn btn-primary mt-6 w-fit">Contact Us</a>
       </div>
     </div>
-  </section>
+  
+
+</section>
 </div>
 
 <div id="video-modal" class="fixed inset-0 z-[80] hidden bg-neutral-950/70 p-4 backdrop-blur-sm">
@@ -310,3 +380,30 @@ $eventIconMarkup = static function (string $type): string {
     </div>
   </div>
 </div>
+
+<style>
+/* Button "Lihat profil lengkap" (reusing same styles as before but named generically) */
+.btn-brand-primary {
+    background-color: #114b9a !important;
+    color: white !important;
+    border: 2px solid #114b9a !important;
+    transition: all 0.2s ease-in-out;
+}
+.btn-brand-primary:hover {
+    background-color: white !important;
+    color: #114b9a !important;
+    border-color: #114b9a !important;
+}
+
+/* Icon and Number color specifically for program-slide-card */
+.program-slide-card .slide-index,
+.program-slide-card .program-icon {
+    color: #114b9a !important;
+}
+
+/* Ensure any SVG inside program-icon inherits the color if it uses stroke or fill */
+.program-slide-card .program-icon svg,
+.program-slide-card .program-icon i {
+    color: #114b9a !important;
+}
+</style>
