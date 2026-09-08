@@ -86,18 +86,27 @@ test('routeUrl resolves named public and admin routes', () => {
   assert.equal(Core.routeUrl('public.news'), '/news');
   assert.equal(Core.routeUrl('public.newsDetail', { slug: 'genbi-peka', id: 7 }), '/news/genbi-peka');
   assert.equal(Core.routeUrl('public.newsDetail', { slug: 'genbi-peka', id: 7 }, { protocol: 'file:' }), 'news-detail.html?slug=genbi-peka&id=7');
+  assert.equal(Core.routeUrl('public.eventDetail', { slug: 'seminar-genbi-12', id: 12 }), '/event/seminar-genbi-12');
   assert.equal(Core.routeUrl('public.prestasiSubmit', { token: 'abc123' }), '/prestasi/submit/abc123');
+  assert.equal(Core.routeUrl('public.presensiShow', { token: 'token-123' }), '/presensi/token-123');
+  assert.equal(Core.routeUrl('public.presensiMembers', { token: 'token-123' }), '/presensi/token-123/members');
   assert.equal(Core.routeUrl('admin.newsDelete', { id: 9 }), '/admin/news/9/delete');
+  assert.equal(Core.routeUrl('admin.categories'), '/admin/categories');
+  assert.equal(Core.routeUrl('admin.categoryUpdate', { id: 4 }), '/admin/categories/4/update');
+  assert.equal(Core.routeUrl('admin.categoryDelete', { id: 4 }), '/admin/categories/4/delete');
   assert.equal(Core.routeUrl('admin.prestasiTokenRevoke', { id: 3 }), '/admin/prestasi-tokens/3/revoke');
+  assert.equal(Core.routeUrl('admin.presensiAdd'), '/admin/presensi-add');
+  assert.equal(Core.routeUrl('admin.presensiShow', { id: 8 }), '/admin/presensi/8');
+  assert.equal(Core.routeUrl('admin.presensiApprove', { id: 14 }), '/admin/presensi/submissions/14/approve');
 });
 
-test('resolveStaticRoute maps clean routes to prototype HTML files', () => {
-  assert.equal(Core.resolveStaticRoute('/'), '/index.html');
-  assert.equal(Core.resolveStaticRoute('/news'), '/news.html');
-  assert.equal(Core.resolveStaticRoute('/news/a-first-news-1'), '/news-detail.html');
-  assert.equal(Core.resolveStaticRoute('/admin'), '/admin/dashboard.html');
-  assert.equal(Core.resolveStaticRoute('/admin/login'), '/admin/login.html');
-  assert.equal(Core.resolveStaticRoute('/admin/comment'), '/admin/comment.html');
+test('resolveStaticRoute maps clean routes to fallback HTML files', () => {
+  assert.equal(Core.resolveStaticRoute('/'), '/fallbacks/index.html');
+  assert.equal(Core.resolveStaticRoute('/news'), '/fallbacks/news.html');
+  assert.equal(Core.resolveStaticRoute('/news/a-first-news-1'), '/fallbacks/news-detail.html');
+  assert.equal(Core.resolveStaticRoute('/admin'), '/fallbacks/admin/dashboard.html');
+  assert.equal(Core.resolveStaticRoute('/admin/login'), '/fallbacks/admin/login.html');
+  assert.equal(Core.resolveStaticRoute('/admin/comment'), '/fallbacks/admin/comment.html');
   assert.equal(Core.resolveStaticRoute('/assets/js/app.js'), null);
 });
 
@@ -153,6 +162,34 @@ test('createCommentPayload trims public comment submission fields', () => {
   });
 });
 
+test('buildCommentVoteEndpoint resolves public vote route', () => {
+  assert.equal(Core.buildCommentVoteEndpoint('berita-a', 17), '/news/berita-a/comment/17/vote');
+});
+
+test('buildCommentReplyPayload trims and maps parent id', () => {
+  assert.deepEqual(Core.buildCommentReplyPayload({ parentId: '12', name: ' Rina ', email: ' rina@example.com ', comment: ' Halo ', website: ' https://example.com ' }), {
+    name: 'Rina',
+    email: 'rina@example.com',
+    comment: 'Halo',
+    parent_id: 12,
+    website: 'https://example.com',
+  });
+});
+
+test('normalizeCommentTree preserves nested comments and policy payload', () => {
+  const result = Core.normalizeCommentTree({
+    data: [{ id: 1, comment: 'Induk', up_votes: 3, down_votes: 1, score: 2, children: [{ id: 2, parent_id: 1, comment: 'Balasan', children: [] }] }],
+    policy: { voting_enabled: true, replies_enabled: true },
+    voter: { votes: { 1: 1 } },
+  });
+
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].children.length, 1);
+  assert.equal(result.data[0].score, 2);
+  assert.equal(result.policy.voting_enabled, true);
+  assert.equal(result.voter.votes[1], 1);
+});
+
 test('normalizePrestasi maps backend-shaped prestasi into frontend shape', () => {
   const item = Core.normalizePrestasi({
     prestasi_id: 5,
@@ -170,6 +207,40 @@ test('normalizePrestasi maps backend-shaped prestasi into frontend shape', () =>
   assert.equal(item.name, 'Amalia');
   assert.equal(item.campus, 'Universitas Jambi');
   assert.equal(item.category, 'Karya Tulis Ilmiah');
+  assert.deepEqual(item.images, ['https://genbijambi.com/public/uploads/slider-1.png']);
+});
+
+test('normalizePrestasi resolves documentation gallery and submission upload images', () => {
+  const item = Core.normalizePrestasi({
+    prestasi_id: 12,
+    title: 'Kaligrafi Kontemporer',
+    photo: 'https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_',
+    detail: 'Dokumentasi: https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_, https://drive.google.com/open?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR',
+    submission_payload_json: JSON.stringify({
+      photos: [
+        { url: '/uploads/prestasi/prestasi-submit-a.jpg' },
+        { url: '/uploads/prestasi/prestasi-submit-b.jpg' },
+      ],
+    }),
+  });
+
+  assert.equal(item.image, 'https://drive.google.com/thumbnail?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_&sz=w1000');
+  assert.deepEqual(item.images, [
+    'https://drive.google.com/thumbnail?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_&sz=w1000',
+    'https://drive.google.com/thumbnail?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR&sz=w1000',
+    '/uploads/prestasi/prestasi-submit-a.jpg',
+    '/uploads/prestasi/prestasi-submit-b.jpg',
+  ]);
+});
+
+test('normalizePrestasi converts /public/uploads URLs to /uploads URLs', () => {
+  const item = Core.normalizePrestasi({
+    prestasi_id: 13,
+    title: 'Juara Desain',
+    photo: 'https://genbijambi.com/public/uploads/prestasi/juara-desain.jpg',
+  });
+
+  assert.equal(item.image, 'https://genbijambi.com/uploads/prestasi/juara-desain.jpg');
 });
 
 test('createModalController locks body, traps Escape close, and restores focus', () => {
@@ -236,7 +307,7 @@ test('createCustomSelect opens one menu at a time and closes on Escape', () => {
 
 test('normalizeAdminComments maps backend comments and normalizes statuses', () => {
   const comments = Core.normalizeAdminComments({ data: [
-    { news_comment_id: 10, news_title: 'Artikel A', commentator_name: 'Rina', commentator_email: 'rina@example.com', comment: 'Perlu tampil', comment_status: 'Disetujui', created_at: '2026-05-06' },
+    { news_comment_id: 10, news_title: 'Artikel A', commentator_name: 'Rina', commentator_email: 'rina@example.com', comment: 'Perlu tampil', comment_status: 'Disetujui', created_at: '2026-05-06', parent_id: 3, parent_excerpt: 'Komentar induk', parent_name: 'Ayu' },
     { id: 11, article: 'Artikel B', name: 'Dimas', email: 'dimas@example.com', text: 'Perlu review', status: 'Menunggu' },
     { id: 12, article: 'Artikel C', name: 'Aulia', email: 'aulia@example.com', content: 'Ditolak', status: 'Rejected' },
   ] });
@@ -244,6 +315,9 @@ test('normalizeAdminComments maps backend comments and normalizes statuses', () 
   assert.deepEqual(comments.map((comment) => comment.id), [10, 11, 12]);
   assert.deepEqual(comments.map((comment) => comment.status), ['Approved', 'Pending', 'Rejected']);
   assert.equal(comments[0].article, 'Artikel A');
+  assert.equal(comments[0].parentId, 3);
+  assert.equal(comments[0].parentExcerpt, 'Komentar induk');
+  assert.equal(comments[0].parentName, 'Ayu');
   assert.equal(comments[1].text, 'Perlu review');
 });
 

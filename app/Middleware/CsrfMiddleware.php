@@ -18,15 +18,16 @@ final class CsrfMiddleware implements Middleware
             return;
         }
 
-        // Check form body or JSON body for CSRF token
-        $token = $_POST['_csrf_token'] ?? null;
+        // Prefer the AJAX header so JSON bodies are not needed for token lookup.
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+
+        // Fallback to form body or JSON body for non-AJAX submissions.
+        if ($token === null) {
+            $token = $_POST['_csrf_token'] ?? null;
+        }
         if ($token === null) {
             $json = $request->json();
             $token = $json['_csrf_token'] ?? null;
-        }
-        // Also check header (for AJAX requests)
-        if ($token === null) {
-            $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
         }
 
         if (!CsrfService::validate($token)) {

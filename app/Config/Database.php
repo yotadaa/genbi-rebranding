@@ -15,7 +15,7 @@ final class Database
         $isProduction = Env::get('APP_ENV', 'local') === 'production';
         $host = Env::get('DB_HOST', $isProduction ? null : '127.0.0.1');
         $port = Env::get('DB_PORT', '3306') ?? '3306';
-        $name = Env::get('DB_NAME', $isProduction ? null : 'genc1357_genbijambi');
+        $name = Env::get('DB_NAME', $isProduction ? null : 'genbi');
         $user = Env::get('DB_USER', $isProduction ? null : 'root');
         $pass = Env::get('DB_PASS', $isProduction ? null : '');
 

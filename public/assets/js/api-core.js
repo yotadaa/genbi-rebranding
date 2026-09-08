@@ -23,10 +23,13 @@
       news: { clean: '/news', static: 'news.html' },
       contact: { clean: '/contact', static: 'contact.html' },
       prestasiSubmit: { clean: '/prestasi/submit/{token}', static: 'prestasi-submit.html' },
+      presensiShow: { clean: '/presensi/{token}' },
+      presensiMembers: { clean: '/presensi/{token}/members' },
       newsDetail: { clean: '/news/{slug}', static: 'news-detail.html?slug={slug}&id={id}' },
       newsComments: { clean: '/news/{slug}/comments' },
       newsCommentStore: { clean: '/news/{slug}/comment' },
-      eventDetail: { clean: '/event/{id}' },
+      newsCommentVote: { clean: '/news/{slug}/comment/{id}/vote' },
+      eventDetail: { clean: '/event/{slug}' },
     },
     admin: {
       dashboard: { clean: '/admin/dashboard', static: 'admin/dashboard.html' },
@@ -35,13 +38,32 @@
       newsEdit: { clean: '/admin/news-edit', static: 'admin/news-edit.html' },
       newsList: { clean: '/admin/news/list' },
       newsCategories: { clean: '/admin/news/categories' },
+      categories: { clean: '/admin/categories' },
+      categoryStore: { clean: '/admin/categories' },
+      categoryUpdate: { clean: '/admin/categories/{id}/update' },
+      categoryDelete: { clean: '/admin/categories/{id}/delete' },
       newsComments: { clean: '/admin/news-comments' },
       newsCommentAction: { clean: '/admin/news-comments/{id}/{action}' },
+      commentSetting: { clean: '/admin/comment-setting' },
       newsShow: { clean: '/admin/news/{id}' },
       newsStore: { clean: '/admin/news' },
       newsUpdate: { clean: '/admin/news/{id}/update' },
       newsDelete: { clean: '/admin/news/{id}/delete' },
       newsUpload: { clean: '/admin/news/upload' },
+      event: { clean: '/admin/event', static: 'admin/event.html' },
+      eventAdd: { clean: '/admin/event-add', static: 'admin/event-add.html' },
+      eventEdit: { clean: '/admin/event-edit', static: 'admin/event-edit.html' },
+      events: { clean: '/admin/events' },
+      eventShow: { clean: '/admin/events/{id}' },
+      eventStore: { clean: '/admin/events' },
+      eventUpdate: { clean: '/admin/events/{id}/update' },
+      eventDelete: { clean: '/admin/events/{id}/delete' },
+      photos: { clean: '/admin/photos' },
+      photoShow: { clean: '/admin/photos/{id}' },
+      photoStore: { clean: '/admin/photos' },
+      photoUpdate: { clean: '/admin/photos/{id}/update' },
+      photoDelete: { clean: '/admin/photos/{id}/delete' },
+      photoUpload: { clean: '/admin/photos/upload' },
       prestasi: { clean: '/admin/prestasi', static: 'admin/prestasi.html' },
       prestasiAdd: { clean: '/admin/prestasi-add', static: 'admin/prestasi-add.html' },
       prestasiEdit: { clean: '/admin/prestasi-edit', static: 'admin/prestasi-edit.html' },
@@ -53,6 +75,27 @@
       prestasiUpload: { clean: '/admin/prestasi/upload' },
       prestasiTokens: { clean: '/admin/prestasi-tokens' },
       prestasiTokenRevoke: { clean: '/admin/prestasi-tokens/{id}/revoke' },
+      presensi: { clean: '/admin/presensi', static: 'admin/presensi.html' },
+      presensiAdd: { clean: '/admin/presensi-add', static: 'admin/presensi-add.html' },
+      presensiEdit: { clean: '/admin/presensi-edit', static: 'admin/presensi-edit.html' },
+      presensiList: { clean: '/admin/presensi/list' },
+      presensiShow: { clean: '/admin/presensi/{id}' },
+      presensiDetail: { clean: '/admin/presensi-detail?id={id}' },
+      presensiStore: { clean: '/admin/presensi' },
+      presensiUpdate: { clean: '/admin/presensi/{id}/update' },
+      presensiDelete: { clean: '/admin/presensi/{id}/delete' },
+      presensiSubmissions: { clean: '/admin/presensi/{id}/submissions' },
+      presensiApprove: { clean: '/admin/presensi/submissions/{id}/approve' },
+      presensiCancel: { clean: '/admin/presensi/submissions/{id}/cancel' },
+      presensiMemberApprove: { clean: '/admin/presensi/{eventId}/members/{teamId}/approve' },
+      genbiPoin: { clean: '/admin/genbi-poin' },
+      genbiPoinAdd: { clean: '/admin/genbi-poin-add' },
+      genbiPoinEdit: { clean: '/admin/genbi-poin-edit?id={id}' },
+      genbiPoinMembers: { clean: '/admin/genbi-poin/members' },
+      genbiPoinActivities: { clean: '/admin/genbi-poin/activities' },
+      genbiPoinActivityShow: { clean: '/admin/genbi-poin/activities/{id}' },
+      genbiPoinActivityStore: { clean: '/admin/genbi-poin/activities' },
+      genbiPoinActivityUpdate: { clean: '/admin/genbi-poin/activities/{id}/update' },
       teamMembers: { clean: '/admin/team-members' },
       teamMemberOptions: { clean: '/admin/team-members/options' },
       teamMembersBulk: { clean: '/admin/team-members/bulk' },
@@ -61,6 +104,21 @@
       teamMemberUpdate: { clean: '/admin/team-members/{id}/update' },
       teamMemberDelete: { clean: '/admin/team-members/{id}/delete' },
       teamMemberHome: { clean: '/admin/team-members/{id}/home' },
+      teamMemberAlumni: { clean: '/admin/team-members/{id}/alumni' },
+      feature: { clean: '/admin/feature', static: 'admin/feature.html' },
+      featureAdd: { clean: '/admin/feature-add', static: 'admin/feature-add.html' },
+      featureEdit: { clean: '/admin/feature-edit', static: 'admin/feature-edit.html' },
+      features: { clean: '/admin/features' },
+      featureShow: { clean: '/admin/features/{id}' },
+      featureStore: { clean: '/admin/features' },
+      featureUpload: { clean: '/admin/features/upload' },
+      featureUpdate: { clean: '/admin/features/{id}/update' },
+      featureDelete: { clean: '/admin/features/{id}/delete' },
+      featureImageDelete: { clean: '/admin/features/{id}/images/{imageId}/delete' },
+      featureImageReorder: { clean: '/admin/features/{id}/images/reorder' },
+      contactSetting: { clean: '/admin/contact-setting' },
+      contactSettingUpdate: { clean: '/admin/contact-setting' },
+      pageHomeUpdate: { clean: '/admin/settings/page-home' },
     },
   };
 
@@ -150,6 +208,7 @@
   function normalizeComment(comment = {}) {
     return {
       id: comment.id || comment.comment_id || comment.news_comment_id || '',
+      parentId: comment.parent_id ?? comment.parentId ?? null,
       name: comment.name || comment.commentator_name || comment.author_name || 'Pembaca',
       email: comment.email || comment.commentator_email || '',
       role: comment.role || 'Pembaca',
@@ -157,6 +216,11 @@
       text: comment.text || comment.comment || comment.content || '',
       article: comment.article || comment.news_title || '',
       date: comment.date || comment.created_at || '',
+      upVotes: Number(comment.up_votes ?? comment.upVotes ?? 0),
+      downVotes: Number(comment.down_votes ?? comment.downVotes ?? 0),
+      score: Number(comment.score ?? 0),
+      depth: Number(comment.depth ?? 0),
+      children: Array.isArray(comment.children) ? comment.children.map(normalizeComment) : [],
       raw: comment,
     };
   }
@@ -176,6 +240,9 @@
       status: normalizeCommentStatus(normalized.status),
       article: normalized.article || comment.article_title || comment.news?.title || 'Berita GenBI Jambi',
       text: normalized.text || comment.comment_text || '',
+      parentId: normalized.parentId,
+      parentExcerpt: comment.parent_excerpt || comment.parentExcerpt || '',
+      parentName: comment.parent_name || comment.parentName || '',
     };
   }
 
@@ -185,6 +252,15 @@
 
   function normalizeApprovedComments(payload) {
     return normalizeListPayload(payload).filter(isApprovedComment).map(normalizeComment);
+  }
+
+  function normalizeCommentTree(payload = {}) {
+    const items = Array.isArray(payload?.data) ? payload.data : normalizeListPayload(payload);
+    return {
+      data: items.map(normalizeComment),
+      policy: payload?.policy && typeof payload.policy === 'object' ? payload.policy : {},
+      voter: payload?.voter && typeof payload.voter === 'object' ? payload.voter : { votes: {} },
+    };
   }
 
   function getCommentModerationStats(comments = []) {
@@ -225,25 +301,61 @@
     };
   }
 
+  function buildCommentVoteEndpoint(slug, id) {
+    return routeUrl('public.newsCommentVote', { slug, id });
+  }
+
+  function buildCommentReplyPayload({ parentId, name, email, comment, website }) {
+    return {
+      ...createCommentPayload({ name, email, comment }),
+      parent_id: parentId ? Number(parentId) : 0,
+      website: String(website || '').trim(),
+    };
+  }
+
   function normalizeEvent(item = {}) {
     const title = item.event_title || item.title || 'Event GenBI Jambi';
     const id = item.event_id || item.id || 0;
+    const content = item.event_content || item.content || '';
+    const photo = item.photo || '';
+    const banner = item.banner || '';
+    const images = extractEventImages(item);
+    const slug = item.slug || (id ? `${slugify(title)}-${id}` : slugify(title));
     return {
       id,
+      slug,
       title,
-      content: item.event_content || item.content || '',
+      content,
       excerpt: item.event_content_short || item.excerpt || '',
       start_date: item.event_start_date || item.start_date || '',
       end_date: item.event_end_date || item.end_date || '',
       location: item.event_location || item.location || '',
       map: item.event_map || item.map || '',
-      image: item.photo || item.image || DEFAULT_IMAGE,
-      photo: item.photo || '',
-      banner: item.banner || '',
+      image: photo || item.image || banner || DEFAULT_IMAGE,
+      photo,
+      banner,
+      images,
       status: item.status || 'Upcoming',
       meta_title: item.meta_title || '',
       meta_description: item.meta_description || '',
     };
+  }
+
+  function extractEventImages(item = {}) {
+    const existing = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+    const inline = [];
+    const content = String(item.event_content || item.content || '');
+    const matches = content.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi);
+    for (const match of matches) {
+      const src = String(match[1] || '').trim();
+      if (src) inline.push(src);
+    }
+
+    const combined = [...existing, ...inline, item.banner || '', item.photo || '', item.image || '']
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+
+    return Array.from(new Set(combined));
   }
 
   function normalizeEventList(payload) {
@@ -253,6 +365,7 @@
   function normalizePrestasi(item = {}) {
     const title = item.judul_prestasi || item.title || 'Prestasi GenBI Jambi';
     const id = item.prestasi_id || item.id || item.slug || slugify(title);
+    const images = resolvePrestasiImages(item);
     return {
       id,
       slug: item.slug || `${slugify(title)}-${id}`,
@@ -261,7 +374,8 @@
       campus: item.komisariat || item.campus || '',
       category: item.category || item.kategori || 'Prestasi',
       year: item.tahun || item.year || '',
-      image: resolvePrestasiImage(item.foto_prestasi || item.photo || item.image || ''),
+      image: images[0] || DEFAULT_IMAGE,
+      images,
       description: item.deskripsi_singkat || item.description || '',
       detail: item.deskripsi_detail || item.detail || item.content || item.deskripsi_singkat || item.description || '',
       institution: item.institusi_penyelenggara || item.institution || '',
@@ -285,8 +399,75 @@
     const driveId = extractDriveId(text);
     if (driveId) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveId)}&sz=w1000`;
 
-    if (/^https?:\/\//i.test(text) || text.startsWith('/')) return text;
+    if (/^https?:\/\//i.test(text)) return text.replace('/public/uploads/', '/uploads/');
+    if (text.startsWith('/public/uploads/')) return text.replace('/public/uploads/', '/uploads/');
+    if (text.startsWith('/')) return text;
     return `/uploads/prestasi/${text.replace(/^\/+/, '')}`;
+  }
+
+  function resolvePrestasiImages(item = {}) {
+    const detail = String(item.deskripsi_lengkap || item.deskripsi_detail || item.detail || item.content || '');
+    const submissionPhotos = extractSubmissionPhotoUrls(item.submission_payload_json || item.payload_json || '');
+    const candidates = [
+      item.foto,
+      item.foto_prestasi,
+      item.photo,
+      item.image,
+      item.certificate_photo,
+      ...extractDocumentationImageLinks(detail),
+      ...submissionPhotos,
+    ].filter(Boolean);
+
+    const resolved = [];
+    candidates.forEach((candidate) => {
+      const url = resolvePrestasiImage(candidate);
+      if (url && !resolved.includes(url)) resolved.push(url);
+    });
+
+    return resolved.length ? resolved : [DEFAULT_IMAGE];
+  }
+
+  function extractDocumentationImageLinks(detail = '') {
+    const text = String(detail || '');
+    if (!text) return [];
+
+    const links = [];
+    const docMatch = text.match(/Dokumentasi\s*:\s*(.+)/i);
+    if (docMatch?.[1]) {
+      docMatch[1].split(/\s*,\s*/).forEach((part) => {
+        const value = String(part || '').trim();
+        if (value) links.push(value);
+      });
+    }
+
+    const urlMatches = text.match(/https?:\/\/[^\s<>"]+/gi) || [];
+    urlMatches.forEach((match) => {
+      const value = String(match || '').replace(/[.,)]$/, '');
+      if (looksLikePrestasiImageSource(value)) links.push(value);
+    });
+
+    return Array.from(new Set(links.filter(Boolean)));
+  }
+
+  function extractSubmissionPhotoUrls(payloadJson = '') {
+    const text = String(payloadJson || '').trim();
+    if (!text) return [];
+
+    try {
+      const payload = JSON.parse(text);
+      if (!Array.isArray(payload?.photos)) return [];
+      return Array.from(new Set(payload.photos.map((photo) => String(photo?.url || '').trim()).filter(Boolean)));
+    } catch {
+      return [];
+    }
+  }
+
+  function looksLikePrestasiImageSource(value = '') {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    if (extractDriveId(text)) return true;
+    if (/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(text)) return true;
+    return text.startsWith('/uploads/');
   }
 
   function normalizePrestasiList(payload) {
@@ -395,21 +576,23 @@
   function resolveStaticRoute(pathname = '/') {
     const cleanPath = String(pathname || '/').replace(/\/+$|^\s+|\s+$/g, '') || '/';
     const publicRoutes = {
-      '/': '/index.html',
-      '/about': '/about.html',
-      '/team': '/team.html',
-      '/teams': '/team.html',
-      '/event': '/event.html',
-      '/prestasi': '/prestasi.html',
-      '/news': '/news.html',
-      '/contact': '/contact.html',
+      '/': '/fallbacks/index.html',
+      '/about': '/fallbacks/about.html',
+      '/team': '/fallbacks/team.html',
+      '/teams': '/fallbacks/team.html',
+      '/event': '/fallbacks/event.html',
+      '/prestasi': '/fallbacks/prestasi.html',
+      '/news': '/fallbacks/news.html',
+      '/contact': '/fallbacks/contact.html',
     };
     if (publicRoutes[cleanPath]) return publicRoutes[cleanPath];
-    if (/^\/event\/\d+$/.test(cleanPath)) return '/event.html';
-    if (/^\/news\/[^/]+$/.test(cleanPath)) return '/news-detail.html';
-    if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/prestasi-submit.html';
-    if (cleanPath === '/admin') return '/admin/dashboard.html';
-    if (/^\/admin\/[^/]+$/.test(cleanPath)) return `/admin/${cleanPath.split('/').pop()}.html`;
+    if (/^\/event\/\d+$/.test(cleanPath)) return '/fallbacks/event.html';
+    if (/^\/news\/[^/]+$/.test(cleanPath)) return '/fallbacks/news-detail.html';
+    if (/^\/prestasi\/submit\/[^/]+$/.test(cleanPath)) return '/fallbacks/prestasi-submit.html';
+    if (cleanPath === '/admin') return '/fallbacks/admin/dashboard.html';
+    if (/^\/admin\/[^/]+$/.test(cleanPath)) return `/fallbacks/admin/${cleanPath.split('/').pop()}.html`;
+    // Legacy: support paths without /fallbacks prefix for assets
+    if (/^\/assets\//.test(cleanPath)) return null;
     return null;
   }
 
@@ -421,6 +604,8 @@
   return {
     DEFAULT_IMAGE,
     buildCommentActionEndpoint,
+    buildCommentReplyPayload,
+    buildCommentVoteEndpoint,
     buildEndpoint,
     canRequestBackend,
     createCommentPayload,
@@ -433,6 +618,7 @@
     normalizeAdminComments,
     normalizeApprovedComments,
     normalizeComment,
+    normalizeCommentTree,
     normalizeCommentStatus,
     normalizeListPayload,
     normalizeNews,

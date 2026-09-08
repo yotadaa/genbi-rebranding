@@ -11,6 +11,16 @@ final class Event
 {
     public function __construct(private ?PDO $db = null) {}
 
+    public static function makeSlug(array $row): string
+    {
+        $title = (string) ($row['event_title'] ?? $row['title'] ?? 'event');
+        $id = (int) ($row['event_id'] ?? $row['id'] ?? 0);
+        $base = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $title) ?? '', '-'));
+        $base = $base !== '' ? $base : 'event';
+
+        return $id > 0 ? $base . '-' . $id : $base;
+    }
+
     /** @param array<string, string|null> $filters @return array<int, array<string, mixed>> */
     public function paginate(array $filters = [], int $limit = 50, int $offset = 0): array
     {
@@ -19,12 +29,12 @@ final class Event
         }
 
         try {
-            $sql = 'SELECT * FROM tbl_event WHERE 1=1';
+            $sql = 'SELECT * FROM tbl_event WHERE ' . $this->buildPublicVisibilityWhere();
             $params = [];
 
             if (!empty($filters['q'])) {
                 $sql .= ' AND (event_title LIKE :q OR event_content_short LIKE :q OR event_location LIKE :q)';
-                $params['q'] = '%' . $filters['q'] . '%';
+                $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
             }
 
             $sql .= ' ORDER BY event_start_date DESC, event_id DESC LIMIT :limit OFFSET :offset';
@@ -49,12 +59,12 @@ final class Event
         }
 
         try {
-            $sql = 'SELECT COUNT(*) FROM tbl_event WHERE 1=1';
+            $sql = 'SELECT COUNT(*) FROM tbl_event WHERE ' . $this->buildPublicVisibilityWhere();
             $params = [];
 
             if (!empty($filters['q'])) {
                 $sql .= ' AND (event_title LIKE :q OR event_content_short LIKE :q OR event_location LIKE :q)';
-                $params['q'] = '%' . $filters['q'] . '%';
+                $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
             }
 
             $stmt = $this->db->prepare($sql);
@@ -82,6 +92,41 @@ final class Event
         } catch (Throwable) {
             return null;
         }
+    }
+
+    public function findPublicById(int $id): ?array
+    {
+        if (!$this->db) {
+            return null;
+        }
+
+        try {
+            $statement = $this->db->prepare('SELECT * FROM tbl_event WHERE event_id = :id AND ' . $this->buildPublicVisibilityWhere() . ' LIMIT 1');
+            $statement->bindValue(':id', $id, PDO::PARAM_INT);
+            $statement->execute();
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+            return $row ? self::mapRow($row) : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public function findPublicBySlug(string $slug): ?array
+    {
+        $slug = trim($slug);
+        if ($slug === '') {
+            return null;
+        }
+
+        if (preg_match('/-(\d+)$/', $slug, $matches) === 1) {
+            $item = $this->findPublicById((int) $matches[1]);
+            if ($item !== null && ($item['slug'] ?? '') === $slug) {
+                return $item;
+            }
+        }
+
+        return null;
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -204,21 +249,33 @@ final class Event
     {
         $title = (string) ($row['event_title'] ?? '');
         $id = (int) ($row['event_id'] ?? 0);
+        $content = (string) ($row['event_content'] ?? '');
+        $photo = self::resolveImageUrl((string) ($row['photo'] ?? ''));
+        $banner = self::resolveImageUrl((string) ($row['banner'] ?? ''));
+        $images = self::extractContentImages($content);
+
+        foreach ([$banner, $photo] as $fallbackImage) {
+            if ($fallbackImage !== '' && !in_array($fallbackImage, $images, true)) {
+                $images[] = $fallbackImage;
+            }
+        }
 
         return [
             'id' => $id,
             'event_id' => $id,
+            'slug' => self::makeSlug($row),
             'title' => $title,
             'event_title' => $title,
-            'content' => (string) ($row['event_content'] ?? ''),
+            'content' => $content,
             'excerpt' => (string) ($row['event_content_short'] ?? ''),
             'start_date' => (string) ($row['event_start_date'] ?? ''),
             'end_date' => (string) ($row['event_end_date'] ?? ''),
             'location' => (string) ($row['event_location'] ?? ''),
             'map' => (string) ($row['event_map'] ?? ''),
-            'image' => self::resolveImageUrl((string) ($row['photo'] ?? $row['banner'] ?? '')),
-            'photo' => self::resolveImageUrl((string) ($row['photo'] ?? '')),
-            'banner' => self::resolveImageUrl((string) ($row['banner'] ?? '')),
+            'image' => $photo !== '' ? $photo : ($banner !== '' ? $banner : ''),
+            'photo' => $photo,
+            'banner' => $banner,
+            'images' => $images,
             'meta_title' => (string) ($row['meta_title'] ?? ''),
             'meta_keyword' => (string) ($row['meta_keyword'] ?? ''),
             'meta_description' => (string) ($row['meta_description'] ?? ''),
@@ -250,5 +307,61 @@ final class Event
         }
 
         return $end >= strtotime('today') ? 'Upcoming' : 'Past Event';
+    }
+
+    /** @return array<int, string> */
+    private static function extractContentImages(string $html): array
+    {
+        $html = trim($html);
+        if ($html === '') {
+            return [];
+        }
+
+        preg_match_all('/<img\b[^>]*\bsrc=["\']([^"\']+)["\'][^>]*>/i', $html, $matches);
+        $sources = $matches[1] ?? [];
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn(string $source): string => self::resolveImageUrl(trim($source)),
+            $sources
+        ))));
+    }
+
+    private function buildPublicVisibilityWhere(): string
+    {
+        $conditions = ['1=1'];
+
+        // Legacy databases may still be missing publishing columns, so public
+        // visibility only depends on the constraints that exist locally.
+        if ($this->hasColumn('deleted_at')) {
+            $conditions[] = 'deleted_at IS NULL';
+        }
+        if ($this->hasColumn('status')) {
+            $conditions[] = "status = 'published'";
+        } elseif ($this->hasColumn('published')) {
+            $conditions[] = 'published = 1';
+        }
+
+        return implode(' AND ', $conditions);
+    }
+
+    private function hasColumn(string $column): bool
+    {
+        static $columns = null;
+        if ($columns === null) {
+            try {
+                $statement = $this->db?->query('DESCRIBE tbl_event');
+                $columns = $statement ? array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'Field') : [];
+            } catch (Throwable) {
+                try {
+                    $statement = $this->db?->query('PRAGMA table_info(tbl_event)');
+                    $rows = $statement ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];
+                    $columns = array_column($rows, 'name');
+                } catch (Throwable) {
+                    $columns = [];
+                }
+            }
+        }
+
+        return in_array($column, $columns, true);
     }
 }

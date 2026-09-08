@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Config\App;
 use App\Core\Slugger;
 use PDO;
 use Throwable;
 
 final class News
 {
+    private const LEGACY_IMAGE_BASE_URL = 'https://genbijambi.com';
+
     public function __construct(private PDO $db)
     {
     }
@@ -28,7 +29,7 @@ final class News
 
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         $sql .= ' ORDER BY COALESCE(n.published_at, n.news_date, n.created_at) DESC LIMIT :limit OFFSET :offset';
@@ -56,7 +57,7 @@ final class News
 
         if (!empty($filters['q'])) {
             $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
-            $params['q'] = '%' . $filters['q'] . '%';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
         }
 
         $statement = $this->db->prepare($sql);
@@ -80,6 +81,32 @@ final class News
     {
         $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.slug = :slug AND n.deleted_at IS NULL LIMIT 1');
         $statement->execute(['slug' => $slug]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? self::mapRow($row) : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPublicById(int $id): ?array
+    {
+        $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.news_id = :id AND n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status) LIMIT 1');
+        $statement->execute([
+            'id' => $id,
+            'status' => 'published',
+        ]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? self::mapRow($row) : null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPublicBySlug(string $slug): ?array
+    {
+        $statement = $this->db->prepare('SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.slug = :slug AND n.deleted_at IS NULL AND (n.status IS NULL OR n.status = :status) LIMIT 1');
+        $statement->execute([
+            'slug' => $slug,
+            'status' => 'published',
+        ]);
         $row = $statement->fetch();
 
         return is_array($row) ? self::mapRow($row) : null;
@@ -118,21 +145,49 @@ final class News
 
     // --- Admin methods ---
 
-    /** @return array<int, array<string, mixed>> */
-    public function allForAdmin(int $limit = 50, int $offset = 0, ?string $status = null): array
+    /**
+     * @param array<string, mixed> $filters Supported: 'status', 'q', 'categories' (array of category IDs)
+     * @return array<int, array<string, mixed>>
+     */
+    public function allForAdmin(int $limit = 50, int $offset = 0, array $filters = []): array
     {
         $sql = 'SELECT n.*, c.category_name FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL';
         $params = [];
 
-        if ($status !== null && $status !== '') {
+        // Status filter
+        if (!empty($filters['status'])) {
             $sql .= ' AND n.status = :status';
-            $params['status'] = $status;
+            $params['status'] = $filters['status'];
+        }
+
+        // Search filter
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
+        }
+
+        // Category filter (array of category IDs)
+        if (!empty($filters['categories']) && is_array($filters['categories'])) {
+            $categoryIds = array_filter(array_map('intval', $filters['categories']));
+            if (!empty($categoryIds)) {
+                $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+                $sql .= " AND n.category_id IN ($placeholders)";
+                foreach ($categoryIds as $catId) {
+                    $params[] = $catId;
+                }
+            }
         }
 
         $sql .= ' ORDER BY n.news_id DESC LIMIT :limit OFFSET :offset';
         $statement = $this->db->prepare($sql);
+        
+        $paramIndex = 1;
         foreach ($params as $key => $value) {
-            $statement->bindValue(':' . $key, $value);
+            if (is_string($key)) {
+                $statement->bindValue(':' . $key, $value);
+            } else {
+                $statement->bindValue($paramIndex++, $value, PDO::PARAM_INT);
+            }
         }
         $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
         $statement->bindValue(':offset', $offset, PDO::PARAM_INT);
@@ -141,18 +196,49 @@ final class News
         return array_map([self::class, 'mapRow'], $statement->fetchAll());
     }
 
-    public function countForAdmin(?string $status = null): int
+    /**
+     * @param array<string, mixed> $filters Supported: 'status', 'q', 'categories' (array of category IDs)
+     */
+    public function countForAdmin(array $filters = []): int
     {
-        $sql = 'SELECT COUNT(*) FROM tbl_news WHERE deleted_at IS NULL';
+        $sql = 'SELECT COUNT(*) FROM tbl_news n LEFT JOIN tbl_category c ON c.category_id = n.category_id WHERE n.deleted_at IS NULL';
         $params = [];
 
-        if ($status !== null && $status !== '') {
-            $sql .= ' AND status = :status';
-            $params['status'] = $status;
+        // Status filter
+        if (!empty($filters['status'])) {
+            $sql .= ' AND n.status = :status';
+            $params['status'] = $filters['status'];
+        }
+
+        // Search filter
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (n.news_title LIKE :q OR n.news_content_short LIKE :q OR n.news_content LIKE :q OR c.category_name LIKE :q)';
+            $params['q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
+        }
+
+        // Category filter (array of category IDs)
+        if (!empty($filters['categories']) && is_array($filters['categories'])) {
+            $categoryIds = array_filter(array_map('intval', $filters['categories']));
+            if (!empty($categoryIds)) {
+                $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+                $sql .= " AND n.category_id IN ($placeholders)";
+                foreach ($categoryIds as $catId) {
+                    $params[] = $catId;
+                }
+            }
         }
 
         $statement = $this->db->prepare($sql);
-        $statement->execute($params);
+        
+        $paramIndex = 1;
+        foreach ($params as $key => $value) {
+            if (is_string($key)) {
+                $statement->bindValue(':' . $key, $value);
+            } else {
+                $statement->bindValue($paramIndex++, $value, PDO::PARAM_INT);
+            }
+        }
+        $statement->execute();
         return (int) $statement->fetchColumn();
     }
 
@@ -160,7 +246,7 @@ final class News
     public function create(array $data): ?int
     {
         $statement = $this->db->prepare(
-            'INSERT INTO tbl_news (news_title, news_content, news_content_short, news_date, photo, banner, category_id, comment, meta_title, meta_keyword, meta_description, slug, status, published_at, contributor_pewarta, contributor_editor, contributor_redaksi, published) VALUES (:title, :content, :excerpt, :date, :photo, :banner, :category_id, :comment, :meta_title, :meta_keyword, :meta_description, :slug, :status, :published_at, :pewarta, :editor, :redaksi, :published)'
+            'INSERT INTO tbl_news (news_title, news_content, news_content_short, news_date, photo, banner, category_id, comment, comments_enabled, voting_enabled, replies_enabled, max_reply_depth, meta_title, meta_keyword, meta_description, slug, status, published_at, contributor_pewarta, contributor_editor, contributor_redaksi, published) VALUES (:title, :content, :excerpt, :date, :photo, :banner, :category_id, :comment, :comments_enabled, :voting_enabled, :replies_enabled, :max_reply_depth, :meta_title, :meta_keyword, :meta_description, :slug, :status, :published_at, :pewarta, :editor, :redaksi, :published)'
         );
 
         $statement->execute([
@@ -169,9 +255,13 @@ final class News
             ':excerpt' => $data['news_content_short'] ?? $data['excerpt'] ?? '',
             ':date' => $data['news_date'] ?? $data['date'] ?? date('Y-m-d'),
             ':photo' => $data['photo'] ?? '',
-            ':banner' => $data['banner'] ?? '',
+            ':banner' => $data['banner'] ?? $data['photo'] ?? '',
             ':category_id' => (int) ($data['category_id'] ?? 0),
             ':comment' => $data['comment'] ?? 'On',
+            ':comments_enabled' => $data['comments_enabled'] ?? null,
+            ':voting_enabled' => $data['voting_enabled'] ?? null,
+            ':replies_enabled' => $data['replies_enabled'] ?? null,
+            ':max_reply_depth' => $data['max_reply_depth'] ?? null,
             ':meta_title' => $data['meta_title'] ?? '',
             ':meta_keyword' => $data['meta_keyword'] ?? '',
             ':meta_description' => $data['meta_description'] ?? '',
@@ -196,6 +286,7 @@ final class News
             'title' => 'news_title',
             'news_content' => 'news_content',
             'content' => 'news_content',
+            'content_json' => 'content_json',
             'news_content_short' => 'news_content_short',
             'excerpt' => 'news_content_short',
             'news_date' => 'news_date',
@@ -204,6 +295,10 @@ final class News
             'banner' => 'banner',
             'category_id' => 'category_id',
             'comment' => 'comment',
+            'comments_enabled' => 'comments_enabled',
+            'voting_enabled' => 'voting_enabled',
+            'replies_enabled' => 'replies_enabled',
+            'max_reply_depth' => 'max_reply_depth',
             'meta_title' => 'meta_title',
             'meta_keyword' => 'meta_keyword',
             'meta_description' => 'meta_description',
@@ -338,27 +433,49 @@ final class News
             'meta_description' => (string) ($row['meta_description'] ?? ''),
             'related' => (string) ($row['related'] ?? ''),
             'status' => (string) ($row['status'] ?? 'published'),
+            'comments_enabled' => array_key_exists('comments_enabled', $row) && $row['comments_enabled'] !== null ? (int) $row['comments_enabled'] : null,
+            'voting_enabled' => array_key_exists('voting_enabled', $row) && $row['voting_enabled'] !== null ? (int) $row['voting_enabled'] : null,
+            'replies_enabled' => array_key_exists('replies_enabled', $row) && $row['replies_enabled'] !== null ? (int) $row['replies_enabled'] : null,
+            'max_reply_depth' => array_key_exists('max_reply_depth', $row) && $row['max_reply_depth'] !== null ? (int) $row['max_reply_depth'] : null,
         ];
     }
 
     private static function resolveImageUrl(string $filename): string
     {
+        $filename = trim($filename);
         if ($filename === '') {
             return '';
         }
-        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://') || str_starts_with($filename, '/')) {
+
+        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://')) {
+            $parts = parse_url($filename);
+            $host = strtolower((string) ($parts['host'] ?? ''));
+            $path = (string) ($parts['path'] ?? '');
+
+            if (in_array($host, ['127.0.0.1', 'localhost', '::1'], true) && str_starts_with($path, '/uploads/')) {
+                return self::uploadExists($path) ? $path : self::legacyImageUrl($path);
+            }
+
             return $filename;
         }
 
-        return rtrim(App::config()['url'], '/') . '/uploads/' . self::resolveUploadFilename($filename);
+        if (str_starts_with($filename, '/uploads/')) {
+            return self::uploadExists($filename) ? $filename : self::legacyImageUrl($filename);
+        }
+
+        $resolved = self::resolveUploadFilename($filename);
+        if ($resolved === null) {
+            return self::legacyImageUrl($filename);
+        }
+
+        return '/uploads/' . $resolved;
     }
 
-    private static function resolveUploadFilename(string $filename): string
+    private static function resolveUploadFilename(string $filename): ?string
     {
         $normalized = ltrim(str_replace('public/uploads/', '', $filename), '/');
-        $uploadRoot = dirname(__DIR__, 2) . '/public/uploads';
 
-        if (is_file($uploadRoot . '/' . $normalized)) {
+        if (self::uploadExists($normalized)) {
             return $normalized;
         }
 
@@ -370,11 +487,37 @@ final class News
         $base = substr($normalized, 0, -(strlen($extension) + 1));
         foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $candidateExtension) {
             $candidate = $base . '.' . $candidateExtension;
-            if (is_file($uploadRoot . '/' . $candidate)) {
+            if (self::uploadExists($candidate)) {
                 return $candidate;
             }
         }
 
-        return $normalized;
+        return null;
+    }
+
+    private static function uploadExists(string $path): bool
+    {
+        $normalized = ltrim(str_replace('public/uploads/', '', $path), '/');
+        $normalized = preg_replace('#^uploads/#', '', $normalized) ?? $normalized;
+        if ($normalized === '' || str_contains($normalized, '..')) {
+            return false;
+        }
+
+        return is_file(dirname(__DIR__, 2) . '/public/uploads/' . $normalized);
+    }
+
+    private static function legacyImageUrl(string $filename): string
+    {
+        $filename = trim($filename);
+        if ($filename === '') {
+            return '';
+        }
+
+        if (str_starts_with($filename, 'http://') || str_starts_with($filename, 'https://')) {
+            $path = (string) (parse_url($filename, PHP_URL_PATH) ?: '');
+            $filename = $path !== '' ? $path : $filename;
+        }
+
+        return self::LEGACY_IMAGE_BASE_URL . '/' . ltrim($filename, '/');
     }
 }

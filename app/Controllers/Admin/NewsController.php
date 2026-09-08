@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\News;
+use App\Services\HtmlSanitizer;
 
 final class NewsController
 {
@@ -25,19 +26,49 @@ final class NewsController
     public function index(Request $request, Response $response): void
     {
         if (!$this->news) {
-            $response->json(['data' => [], 'total' => 0]);
+            $response->json(['data' => [], 'meta' => ['total' => 0, 'page' => 1, 'per_page' => 50, 'total_pages' => 1]]);
             return;
         }
 
         $page = max(1, (int) ($request->query('page') ?? 1));
-        $status = $request->query('status');
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
+        $perPage = max(1, min(100, (int) ($request->query('per_page') ?? 50)));
+        $offset = ($page - 1) * $perPage;
 
-        $items = $this->news->allForAdmin($limit, $offset, $status);
-        $total = $this->news->countForAdmin($status);
+        // Build filters array
+        $filters = [];
+        if ($request->query('status')) {
+            $filters['status'] = $request->query('status');
+        }
+        if ($request->query('q')) {
+            $filters['q'] = $request->query('q');
+        }
+        
+        // Parse category[] query params
+        $categoryParams = $_GET['category'] ?? [];
+        if (!is_array($categoryParams)) {
+            $categoryParams = [$categoryParams];
+        }
+        $categoryIds = array_filter(array_map('intval', $categoryParams));
+        if (!empty($categoryIds)) {
+            $filters['categories'] = $categoryIds;
+        }
 
-        $response->json(['data' => $items, 'total' => $total, 'page' => $page]);
+        $items = $this->news->allForAdmin($perPage, $offset, $filters);
+        $total = $this->news->countForAdmin($filters);
+        $totalPages = (int) ceil($total / $perPage);
+
+        $response->json([
+            'data' => $items,
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+            ],
+            // Keep legacy fields for backward compatibility
+            'total' => $total,
+            'page' => $page,
+        ]);
     }
 
     public function show(Request $request, Response $response, array $params): void
@@ -102,6 +133,12 @@ final class NewsController
             return;
         }
 
+        $errors = $this->validate($body);
+        if (!empty($errors)) {
+            $response->json(['error' => 'Validasi gagal', 'details' => $errors], 422);
+            return;
+        }
+
         $sanitized = $this->sanitize($body);
 
         // Generate unique slug if title changed
@@ -112,12 +149,34 @@ final class NewsController
             }
         }
 
-        $success = $this->news->updateNews($id, $sanitized);
+        $existing = $this->news->findById($id);
+        if (!$existing) {
+            $response->json(['error' => 'Berita tidak ditemukan'], 404);
+            return;
+        }
 
-        if ($success) {
+        try {
+            $this->news->updateNews($id, $sanitized);
             $response->json(['data' => ['id' => $id, 'updated' => true]]);
-        } else {
-            $response->json(['error' => 'Gagal memperbarui atau berita tidak ditemukan'], 404);
+        } catch (\PDOException $e) {
+            // Jika terjadi error duplicate entry (1062) khusus pada slug meskipun sudah melewati generateUniqueSlug,
+            // ini biasanya disebabkan oleh index prefix di MySQL atau perbedaan collation.
+            // Solusi: tambahkan suffix random dan coba update sekali lagi.
+            if ($e->getCode() == 23000 && strpos($e->getMessage(), 'uq_tbl_news_slug') !== false) {
+                $sanitized['slug'] = $sanitized['slug'] . '-' . rand(100, 999);
+                $this->news->updateNews($id, $sanitized);
+                $response->json(['data' => ['id' => $id, 'updated' => true]]);
+                return;
+            }
+            // Lempar error jika bukan karena slug
+            throw $e;
+        } catch (\Throwable $e) {
+            $response->json([
+                'error' => 'Database Error',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
         }
     }
 
@@ -149,8 +208,8 @@ final class NewsController
         }
 
         // Validate file size
-        if ($file['size'] > self::MAX_UPLOAD_SIZE) {
-            $response->json(['error' => 'Ukuran file melebihi batas 5MB'], 422);
+        if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > self::MAX_UPLOAD_SIZE) {
+            $response->json(['error' => 'Upload tidak valid atau melebihi batas 5MB'], 422);
             return;
         }
 
@@ -229,6 +288,11 @@ final class NewsController
             $sanitized['news_content'] = $this->sanitizeEditorHtml((string) ($body['content'] ?? $body['news_content'] ?? ''));
         }
 
+        // Editor JSON content
+        if (isset($body['content_json'])) {
+            $sanitized['content_json'] = trim((string) $body['content_json']);
+        }
+
         // Excerpt
         if (isset($body['excerpt']) || isset($body['news_content_short'])) {
             $sanitized['news_content_short'] = strip_tags(mb_substr(trim((string) ($body['excerpt'] ?? $body['news_content_short'] ?? '')), 0, self::MAX_EXCERPT_LENGTH));
@@ -247,12 +311,9 @@ final class NewsController
             $sanitized['category_id'] = (int) $body['category_id'];
         }
 
-        // Photo/Banner (filenames only, no paths)
+        // Featured photo only (filenames only, no paths)
         if (isset($body['photo'])) {
             $sanitized['photo'] = strip_tags(mb_substr(trim((string) $body['photo']), 0, 500));
-        }
-        if (isset($body['banner'])) {
-            $sanitized['banner'] = strip_tags(mb_substr(trim((string) $body['banner']), 0, 500));
         }
 
         // Comment toggle
@@ -293,14 +354,6 @@ final class NewsController
 
     private function sanitizeEditorHtml(string $html): string
     {
-        $html = mb_substr(trim($html), 0, self::MAX_CONTENT_LENGTH);
-
-        $html = preg_replace('#<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|link|meta)[^>]*>.*?<\s*/\s*\1\s*>#is', '', $html) ?? '';
-        $html = preg_replace('#<\s*(script|style|iframe|object|embed|form|input|button|textarea|select|option|link|meta)[^>]*\/?>#is', '', $html) ?? '';
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
-        $html = preg_replace('/\s+(href|src)\s*=\s*(["\'])\s*javascript:[^"\']*\2/i', ' $1="#"', $html) ?? '';
-
-        $allowed = '<p><br><strong><b><em><i><u><a><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><cite><figure><figcaption><img>';
-        return strip_tags($html, $allowed);
+        return HtmlSanitizer::sanitize(mb_substr(trim($html), 0, self::MAX_CONTENT_LENGTH));
     }
 }

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | GenBI Provinsi Jambi</title>
+  <link rel="stylesheet" href="../assets/css/tailwind.css" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-shell">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <div id="admin-topbar" class="admin-topbar"></div>
+      <main class="px-4 py-8 md:px-8 lg:px-10">
+        <section class="mx-auto max-w-7xl">
+          <div class="slide-in flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div>
+              <p class="eyebrow">Admin overview</p>
+              <h1 class="section-title mt-3">Dashboard konten GenBI.</h1>
+              <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Versi admin dibuat lebih tenang dari panel lama. Angka utama tetap cepat terbaca, tetapi tampil dengan ruang baca, ikon Heroicons, dan status operasional yang jelas.</p>
+            </div>
+            <a data-transition href="/" class="btn btn-secondary w-fit">Lihat Website</a>
+          </div>
+
+          <div id="admin-stats" class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></div>
+
+          <div class="mt-8 grid gap-6 xl:grid-cols-[1fr_0.72fr]">
+            <section class="admin-card p-5 md:p-6">
+              <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                  <h2 class="serif text-3xl font-semibold tracking-tight text-neutral-950">Aktivitas terbaru</h2>
+                  <p class="mt-2 text-sm leading-6 text-neutral-600">Simulasi ringkas untuk memantau perubahan konten sebelum masuk fitur riwayat asli.</p>
+                </div>
+                <span class="blue-badge">Mode prototipe</span>
+              </div>
+              <div id="admin-activity" class="mt-6 overflow-hidden rounded-2xl border border-neutral-900/10 bg-white"></div>
+            </section>
+
+            <aside class="admin-card p-5 md:p-6">
+              <h2 class="serif text-3xl font-semibold tracking-tight text-neutral-950">Kesehatan konten</h2>
+              <p class="mt-2 text-sm leading-6 text-neutral-600">Prioritas admin awal: dashboard, pengaturan identitas, dan navigasi menuju website publik.</p>
+              <div class="mt-6 grid gap-4" id="content-health"></div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div id="admin-mobile-backdrop" class="fixed inset-0 z-[70] hidden bg-neutral-950/35 backdrop-blur-sm lg:hidden"></div>
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/api-core.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/lib/ui.js"></script>
+  <script src="../assets/js/admin/admin.js"></script>
+  <script src="../assets/js/admin/dashboard.js"></script>
+</body>
+</html>

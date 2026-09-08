@@ -1,0 +1,50 @@
+@php
+$site = $site ?? [];
+$logo = $site['logo'] ?? 'https://genbijambi.com/public/uploads/logo.png';
+$siteName = $site['name'] ?? 'GenBI Provinsi Jambi';
+$tagline = $site['tagline'] ?? 'Bersama GenBI, Energi untuk Negeri';
+$email = $site['email'] ?? 'genbijambibi@gmail.com';
+$phone = $site['phone'] ?? '085669152702';
+$address = $site['address'] ?? 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361';
+$navItems = [
+    ['label' => 'Home', 'href' => url('/')],
+    ['label' => 'About', 'href' => url('/about')],
+    ['label' => 'Team', 'href' => url('/team')],
+    ['label' => 'Prestasi', 'href' => url('/prestasi')],
+    ['label' => 'Kegiatan', 'href' => url('/event')],
+    ['label' => 'News', 'href' => url('/news')],
+    ['label' => 'Contact', 'href' => url('/contact')],
+];
+@endphp
+<section class="border-t border-neutral-900/10 bg-blue-950 text-white">
+  <div class="site-container grid gap-10 py-14 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
+    <div>
+      <div class="flex items-center gap-3">
+        <span class="logo-shell logo-shell-light"><img src="{{ $logo }}" alt="{{ $siteName }}" class="h-10 w-auto" /></span>
+        <div>
+          <p class="font-semibold">{{ $siteName }}</p>
+          <p class="text-sm text-blue-100/80">{{ $tagline }}</p>
+        </div>
+      </div>
+      <p class="mt-5 max-w-md text-sm leading-7 text-blue-100/80">Website publik untuk profil komunitas, kegiatan, prestasi, berita, anggota, dan kontak resmi GenBI Jambi.</p>
+    </div>
+    <div>
+      <h3 class="text-sm font-semibold text-white">Navigasi</h3>
+      <div class="mt-4 grid gap-2 text-sm text-blue-100/80">
+        @foreach ($navItems as $item)
+          <a data-transition href="{{ $item['href'] }}" class="w-fit hover:text-white">{{ $item['label'] }}</a>
+        @endforeach
+      </div>
+    </div>
+    <div>
+      <h3 class="text-sm font-semibold text-white">Kontak</h3>
+      <div class="mt-4 grid gap-2 text-sm leading-6 text-blue-100/80">
+        <a href="mailto:{{ $email }}" class="hover:text-white">{{ $email }}</a>
+        <a href="tel:{{ $phone }}" class="hover:text-white">{{ $phone }}</a>
+        <p>{{ $address }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="border-t border-white/10 py-5 text-center text-xs text-blue-100/70">Copyright &copy; {{ date('Y') }}, GenBI Provinsi Jambi.</div>
+</section>
+<button id="back-to-top" class="back-to-top" aria-label="Back to top"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0-6.75 6.75M12 4.5l6.75 6.75"/></svg></button>

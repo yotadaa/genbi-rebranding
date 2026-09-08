@@ -34,10 +34,15 @@ class PrestasiTokenController
         $user = Session::get('_auth_user');
         $createdBy = (int) ($user['id'] ?? 1);
 
-        $plainToken = $this->tokenModel?->generate($label, $createdBy, $expiresAt);
+        $generated = $this->tokenModel?->generate($label, $createdBy, $expiresAt);
 
-        if ($plainToken) {
-            $response->json(['data' => ['token' => $plainToken, 'label' => $label]], 201);
+        if ($generated) {
+            $response->json(['data' => [
+                'id' => $generated['id'],
+                'token' => $generated['token'],
+                'submit_url' => '/prestasi/submit/' . rawurlencode($generated['token']),
+                'label' => $label,
+            ]], 201);
         } else {
             $response->json(['error' => 'Gagal membuat token'], 500);
         }

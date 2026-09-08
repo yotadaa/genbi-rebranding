@@ -23,6 +23,10 @@ const mimeTypes = {
 
 function resolveRequestPath(requestUrl) {
   const url = new URL(requestUrl, `http://127.0.0.1:${port}`);
+  if (url.pathname.startsWith('/assets/')) {
+    return path.join(root, 'public', decodeURIComponent(url.pathname));
+  }
+
   const routePath = Core.resolveStaticRoute(url.pathname);
   const pathname = routePath || decodeURIComponent(url.pathname);
   const safePath = path.normalize(pathname).replace(/^([.][.][\/\\])+/, '');

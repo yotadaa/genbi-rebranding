@@ -5,21 +5,37 @@
 
 # Markdown docs/plans requested to stay out of Git
 *.md
+docs/screenshot
 
 # Dependencies and generated artifacts
 node_modules/
 vendor/
+
+public/assets.zip
+public/assets-build.zip
+public/assets-build/
 
 # Runtime files
 storage/logs/*
 storage/cache/*
 storage/sessions/*
 public/uploads/*
+public/uploads.zip
 !storage/logs/.gitkeep
 !storage/cache/.gitkeep
 !storage/sessions/.gitkeep
 !public/uploads/.htaccess
 !public/uploads/**/.htaccess
+
+laravel-app/.env
+laravel-app/storage/logs/*
+laravel-app/storage/cache/*
+laravel-app/public/uploads/*
+laravel-app/public/uploads.zip
+
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 
 # Local OS/editor noise
 .DS_Store
@@ -28,5 +44,6 @@ Thumbs.db
 .vscode/
 
 # Temporary outputs
+output/playwright/
 *.log
 *.tmp

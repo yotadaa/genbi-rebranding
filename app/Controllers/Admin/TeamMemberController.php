@@ -33,6 +33,22 @@ final class TeamMemberController
 
     public function options(Request $request, Response $response): void
     {
+        $query = trim((string) ($request->query('q') ?? ''));
+        $divisionId = (int) ($request->query('division_id') ?? $request->query('divisi_id') ?? 0);
+        $activeOnly = (string) ($request->query('active_only') ?? '') === '1';
+        if ($query !== '' || $divisionId > 0 || $activeOnly || $request->query('type') === 'member') {
+            $limit = min(500, max(1, (int) ($request->query('limit') ?? 12)));
+            $filters = [];
+            if ($divisionId > 0) {
+                $filters['division_id'] = $divisionId;
+            }
+            if ($activeOnly) {
+                $filters['active_only'] = true;
+            }
+            $response->json(['data' => $this->team?->searchOptions($query, $limit, $filters) ?? []]);
+            return;
+        }
+
         $response->json(['data' => $this->team?->formOptions() ?? ['divisions' => [], 'commissions' => []]]);
     }
 
@@ -97,6 +113,18 @@ final class TeamMemberController
         $response->json(['data' => ['id' => $id, 'deleted' => true]]);
     }
 
+    public function alumni(Request $request, Response $response, array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $count = $this->team?->setAlumniStatus([$id]) ?? 0;
+        if ($count < 1) {
+            $response->json(['error' => 'Gagal menjadikan anggota alumni'], 404);
+            return;
+        }
+
+        $response->json(['data' => ['id' => $id, 'alumni' => true]]);
+    }
+
     public function setHome(Request $request, Response $response, array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -124,6 +152,7 @@ final class TeamMemberController
             'home_add' => $this->team?->setHomeVisibility($ids, true) ?? 0,
             'home_remove' => $this->team?->setHomeVisibility($ids, false) ?? 0,
             'delete' => $this->team?->bulkDelete($ids) ?? 0,
+            'alumni' => $this->team?->setAlumniStatus($ids) ?? 0,
             default => -1,
         };
 
@@ -143,22 +172,36 @@ final class TeamMemberController
         }
 
         $file = $_FILES['image'];
-        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            $response->json(['error' => 'Upload gagal'], 422);
+        $uploadError = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if (!is_array($file) || $uploadError !== UPLOAD_ERR_OK) {
+            $errorMsg = match ($uploadError) {
+                UPLOAD_ERR_INI_SIZE => 'Ukuran file melebihi batas konfigurasi server (php.ini).',
+                UPLOAD_ERR_FORM_SIZE => 'Ukuran file melebihi batas form.',
+                UPLOAD_ERR_PARTIAL => 'File hanya terupload sebagian.',
+                UPLOAD_ERR_NO_FILE => 'Tidak ada file yang diunggah.',
+                default => 'Upload gagal (Error Code: ' . $uploadError . ').',
+            };
+            $response->json(['error' => $errorMsg], 422);
             return;
         }
 
-        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
-            $response->json(['error' => 'Ukuran file maksimal 5MB'], 422);
+        if (($file['size'] ?? 0) <= 0 || ($file['size'] ?? 0) > 10 * 1024 * 1024) {
+            $response->json(['error' => 'Upload tidak valid atau melebihi batas 10MB'], 422);
             return;
         }
 
         $tmp = (string) ($file['tmp_name'] ?? '');
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = is_file($tmp) && $finfo ? (string) finfo_file($finfo, $tmp) : '';
-        if ($finfo) finfo_close($finfo);
-        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true) || @getimagesize($tmp) === false) {
+        
+        $imageSize = @getimagesize($tmp);
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true) || $imageSize === false) {
             $response->json(['error' => 'File harus berupa gambar valid'], 422);
+            return;
+        }
+
+        if ($imageSize[0] !== $imageSize[1]) {
+            $response->json(['error' => 'Rasio foto harus 1:1 (lebar dan tinggi sama)'], 422);
             return;
         }
 
@@ -170,6 +213,10 @@ final class TeamMemberController
         };
         $directory = dirname(__DIR__, 3) . '/public/uploads/team';
         if (!is_dir($directory)) mkdir($directory, 0775, true);
+        $htaccess = $directory . '/.htaccess';
+        if (!is_file($htaccess)) {
+            file_put_contents($htaccess, "php_flag engine off\nRemoveHandler .php .phtml .php3 .php4 .php5\nOptions -ExecCGI\nAddType text/plain .php .phtml .php3 .php4 .php5\n");
+        }
         $filename = bin2hex(random_bytes(12)) . '.' . $extension;
         if (!move_uploaded_file($tmp, $directory . '/' . $filename)) {
             $response->json(['error' => 'Gagal menyimpan file'], 500);
@@ -185,6 +232,12 @@ final class TeamMemberController
         $errors = [];
         if (trim((string) ($body['name'] ?? '')) === '') $errors[] = 'Nama anggota wajib diisi';
         if (mb_strlen((string) ($body['name'] ?? '')) > 255) $errors[] = 'Nama maksimal 255 karakter';
+        
+        if (trim((string) ($body['designation'] ?? '')) === '') $errors[] = 'Jabatan anggota wajib diisi';
+        if (empty($body['komsat_id'])) $errors[] = 'Komisariat wajib dipilih';
+        if (empty($body['divisi_id'])) $errors[] = 'Divisi wajib dipilih';
+        if (empty($body['tahun'])) $errors[] = 'Tahun wajib diisi';
+        
         if (!empty($body['email']) && !filter_var((string) $body['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Email tidak valid';
         return $errors;
     }

@@ -1,0 +1,33 @@
+{
+  "name": "genbi-static-html-v4",
+  "version": "1.0.0",
+  "description": "Pure HTML multi-page GenBI public website with compiled Tailwind CSS and vanilla JavaScript.",
+  "scripts": {
+    "build": "npm run build:css && npm run build:js && npm run build:themes",
+    "build:css": "tailwindcss -c tailwind.config.js -i ./public/assets/css/input.css -o ./public/assets/css/tailwind.css --minify",
+    "build:js": "node tools/build-js.js",
+    "build:themes": "php tools/build-theme-css.php",
+    "build:zip": "node tools/zip-build-assets.js",
+    "db:migrate": "php database/migrate.php",
+    "db:status": "php database/migration_status.php",
+    "watch:css": "tailwindcss -c tailwind.config.js -i ./public/assets/css/input.css -o ./public/assets/css/tailwind.css --watch",
+    "watch:js": "nodemon --watch public/assets/js --ignore public/assets/js/dist --watch public/assets/css/styles.css -e js,css --exec \"npm run build:js\"",
+    "watch:themes": "nodemon --watch app/Config/ThemeRegistry.php --exec \"npm run build:themes\"",
+    "dev": "concurrently \"npm run watch:css\" \"npm run watch:js\" \"npm run watch:themes\" \"npm run serve:php\"",
+    "test": "node --test && node tools/check-theme-contrast.js",
+    "serve": "node tools/static-server.js",
+    "serve:php": "php -S 127.0.0.1:8120 -t public public/index.php",
+    "serve:php:hot": "php -S 0.0.0.0:8120 -t public public/index.php"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^10.0.4",
+    "esbuild": "^0.28.1",
+    "nodemon": "^3.1.14",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19"
+  },
+  "dependencies": {
+    "qr-creator": "^1.0.0"
+  }
+}

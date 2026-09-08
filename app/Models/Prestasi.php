@@ -14,8 +14,10 @@ class Prestasi
         $name = $row['nama_anggota'] ?? $row['member_name'] ?? $row['name'] ?? '';
         $category = $row['kategori'] ?? $row['category'] ?? '';
         $description = $row['deskripsi_singkat'] ?? $row['description'] ?? '';
-        $detail = $row['deskripsi_lengkap'] ?? $row['detail'] ?? $row['content'] ?? '';
-        $image = self::resolveImageUrl((string) ($row['foto'] ?? $row['foto_prestasi'] ?? $row['photo'] ?? $row['image'] ?? ''));
+        $rawDetail = $row['deskripsi_lengkap'] ?? $row['detail'] ?? $row['content'] ?? '';
+        $detail = self::cleanDisplayDetail((string) $rawDetail);
+        $images = self::resolveImageCollection($row);
+        $image = $images[0] ?? '';
         $institution = $row['institusi_penyelenggara'] ?? $row['institution'] ?? '';
 
         return [
@@ -33,6 +35,7 @@ class Prestasi
             'detail' => $detail,
             'image' => $image,
             'photo' => $image,
+            'images' => $images,
             'institution' => $institution,
             'status' => $row['status'] ?? 'published',
             'meta_title' => $row['meta_title'] ?? '',
@@ -50,7 +53,7 @@ class Prestasi
         }
 
         $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi WHERE status = :status AND deleted_at IS NULL ORDER BY year DESC, created_at DESC LIMIT :limit OFFSET :offset'
+            'SELECT ' . $this->selectColumns() . ' FROM tbl_prestasi WHERE status = :status AND deleted_at IS NULL ORDER BY year DESC, created_at DESC LIMIT :limit OFFSET :offset'
         );
         $stmt->bindValue(':status', 'published', \PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
@@ -58,6 +61,39 @@ class Prestasi
         $stmt->execute();
 
         return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    public function countPublished(): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM tbl_prestasi WHERE status = :status AND deleted_at IS NULL'
+        );
+        $stmt->bindValue(':status', 'published', \PDO::PARAM_STR);
+        $stmt->execute();
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countAll(?string $status = null): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND status = :status';
+            $params['status'] = $status;
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
     }
 
     public function findBySlug(string $slug): ?array
@@ -77,7 +113,7 @@ class Prestasi
         }
 
         $statusSql = $publishedOnly ? 'AND status = :status' : '';
-        $stmt = $this->db->prepare('SELECT * FROM tbl_prestasi WHERE slug = :slug ' . $statusSql . ' AND deleted_at IS NULL LIMIT 1');
+        $stmt = $this->db->prepare('SELECT ' . $this->selectColumns() . ' FROM tbl_prestasi WHERE slug = :slug ' . $statusSql . ' AND deleted_at IS NULL LIMIT 1');
         $stmt->bindValue(':slug', $slug, \PDO::PARAM_STR);
         if ($publishedOnly) {
             $stmt->bindValue(':status', 'published', \PDO::PARAM_STR);
@@ -95,7 +131,7 @@ class Prestasi
         }
 
         $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi WHERE prestasi_id = :id AND deleted_at IS NULL LIMIT 1'
+            'SELECT ' . $this->selectColumns() . ' FROM tbl_prestasi WHERE prestasi_id = :id AND deleted_at IS NULL LIMIT 1'
         );
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
@@ -111,13 +147,75 @@ class Prestasi
         }
 
         $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT :limit OFFSET :offset'
+            'SELECT ' . $this->selectColumns() . ' FROM tbl_prestasi WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT :limit OFFSET :offset'
         );
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
 
         return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    /** @param array{q?: string|null, category?: string|null, year?: string|null, status?: string|null} $filters */
+    public function allForAdmin(array $filters = [], int $limit = 50, int $offset = 0): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        $sql = 'SELECT ' . $this->selectColumns() . ' FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        $sql = $this->applyAdminFilters($sql, $params, $filters);
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map([self::class, 'mapRow'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+    /** @param array{q?: string|null, category?: string|null, year?: string|null, status?: string|null} $filters */
+    public function countForAdmin(array $filters = []): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM tbl_prestasi WHERE deleted_at IS NULL';
+        $params = [];
+        $sql = $this->applyAdminFilters($sql, $params, $filters);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /** @param array<string, mixed> $params passed by reference */
+    private function applyAdminFilters(string $sql, array &$params, array $filters): string
+    {
+        if (!empty($filters['q'])) {
+            $sql .= ' AND (title LIKE :q OR member_name LIKE :q OR category LIKE :q OR institution LIKE :q OR description LIKE :q)';
+            $params[':q'] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
+        }
+        if (!empty($filters['category'])) {
+            $sql .= ' AND category = :category';
+            $params[':category'] = $filters['category'];
+        }
+        if (!empty($filters['year'])) {
+            $sql .= ' AND year = :year';
+            $params[':year'] = $filters['year'];
+        }
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params[':status'] = $filters['status'];
+        }
+        return $sql;
     }
 
     public function create(array $data): int
@@ -212,11 +310,116 @@ class Prestasi
             return 'https://drive.google.com/thumbnail?id=' . rawurlencode($driveId) . '&sz=w1000';
         }
 
-        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://') || str_starts_with($value, '/')) {
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return str_replace('/public/uploads/', '/uploads/', $value);
+        }
+
+        if (str_starts_with($value, '/public/uploads/')) {
+            return str_replace('/public/uploads/', '/uploads/', $value);
+        }
+
+        if (str_starts_with($value, '/')) {
             return $value;
         }
 
         return '/uploads/prestasi/' . ltrim($value, '/');
+    }
+
+    private static function cleanDisplayDetail(string $detail): string
+    {
+        return trim((string) preg_replace('/\n?Dokumentasi\s*:\s*[^\n<]*/iu', '', $detail));
+    }
+
+    private function selectColumns(): string
+    {
+        return 'tbl_prestasi.*, (SELECT s.payload_json FROM tbl_prestasi_submission s WHERE s.prestasi_id = tbl_prestasi.prestasi_id ORDER BY s.created_at DESC, s.submission_id DESC LIMIT 1) AS submission_payload_json';
+    }
+
+    /** @return string[] */
+    private static function resolveImageCollection(array $row): array
+    {
+        $candidates = [];
+
+        foreach (['foto', 'foto_prestasi', 'photo', 'image', 'certificate_photo'] as $field) {
+            $value = trim((string) ($row[$field] ?? ''));
+            if ($value !== '') {
+                $candidates[] = $value;
+            }
+        }
+
+        foreach (self::extractDocumentationLinks((string) ($row['deskripsi_lengkap'] ?? $row['detail'] ?? $row['content'] ?? '')) as $link) {
+            $candidates[] = $link;
+        }
+
+        foreach (self::extractSubmissionPhotoLinks((string) ($row['submission_payload_json'] ?? '')) as $link) {
+            $candidates[] = $link;
+        }
+
+        $resolved = [];
+        foreach ($candidates as $candidate) {
+            $url = self::resolveImageUrl($candidate);
+            if ($url !== '' && !in_array($url, $resolved, true)) {
+                $resolved[] = $url;
+            }
+        }
+
+        return $resolved;
+    }
+
+    /** @return string[] */
+    private static function extractDocumentationLinks(string $detail): array
+    {
+        if ($detail === '') {
+            return [];
+        }
+
+        $links = [];
+        if (preg_match('/Dokumentasi\s*:\s*(.+)/iu', $detail, $matches)) {
+            $segment = trim($matches[1]);
+            foreach (preg_split('/\s*,\s*/', $segment) ?: [] as $part) {
+                $candidate = trim($part);
+                if ($candidate !== '') {
+                    $links[] = $candidate;
+                }
+            }
+        }
+
+        preg_match_all('#https?://[^\s<>"]+#i', $detail, $allMatches);
+        foreach ($allMatches[0] ?? [] as $match) {
+            $candidate = rtrim($match, '.,)');
+            if (self::looksLikeImageSource($candidate)) {
+                $links[] = $candidate;
+            }
+        }
+
+        return array_values(array_unique(array_filter($links, static fn(string $value): bool => $value !== '')));
+    }
+
+    /** @return string[] */
+    private static function extractSubmissionPhotoLinks(string $payloadJson): array
+    {
+        if ($payloadJson === '') {
+            return [];
+        }
+
+        $decoded = json_decode($payloadJson, true);
+        if (!is_array($decoded) || !isset($decoded['photos']) || !is_array($decoded['photos'])) {
+            return [];
+        }
+
+        $links = [];
+        foreach ($decoded['photos'] as $photo) {
+            if (!is_array($photo)) {
+                continue;
+            }
+
+            $url = trim((string) ($photo['url'] ?? ''));
+            if ($url !== '') {
+                $links[] = $url;
+            }
+        }
+
+        return array_values(array_unique($links));
     }
 
     private static function extractDriveId(string $value): string
@@ -238,5 +441,22 @@ class Prestasi
         }
 
         return '';
+    }
+
+    private static function looksLikeImageSource(string $value): bool
+    {
+        if ($value === '') {
+            return false;
+        }
+
+        if (self::extractDriveId($value) !== '') {
+            return true;
+        }
+
+        if (preg_match('/\.(?:jpg|jpeg|png|webp|gif)(?:\?.*)?$/i', $value)) {
+            return true;
+        }
+
+        return str_starts_with($value, '/uploads/');
     }
 }

@@ -5,8 +5,10 @@ const { observeFadeUp } = window.GenBIUI;
 const { aboutBlocks } = window.GenBIData;
 
 renderShell('about');
-renderAbout();
-renderRoles();
+if (document.body.dataset.ssr !== 'true') {
+  renderAbout();
+  renderRoles();
+}
 observeFadeUp();
 
 function renderAbout() {

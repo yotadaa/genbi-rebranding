@@ -9,10 +9,11 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Services\AuthService;
 use App\Services\CsrfService;
+use App\Services\LoginThrottleService;
 
 final class AuthController
 {
-    public function __construct(private AuthService $auth) {}
+    public function __construct(private AuthService $auth, private LoginThrottleService $throttle) {}
 
     public function showLogin(Request $request, Response $response): void
     {
@@ -32,23 +33,14 @@ final class AuthController
 
     public function login(Request $request, Response $response): void
     {
-        // Validate CSRF
-        $token = $_POST['_csrf_token'] ?? null;
-        if (!CsrfService::validate($token)) {
-            Session::flash('login_error', 'Sesi tidak valid. Silakan coba lagi.');
-            $response->redirect('/admin/login');
-            return;
-        }
-
-        // IP-based rate limiting (max 20 attempts per IP per 10 minutes)
         $ip = $request->ip() ?? 'unknown';
-        if ($this->isIpRateLimited($ip)) {
+        $email = trim((string) ($_POST['email'] ?? ''));
+
+        if ($this->throttle->isBlocked($email, $ip) || $this->throttle->isEmailBlocked($email)) {
             Session::flash('login_error', 'Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.');
             $response->redirect('/admin/login');
             return;
         }
-
-        $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
         // Basic input validation
@@ -69,54 +61,16 @@ final class AuthController
         $result = $this->auth->attempt($email, $password, $ip);
 
         if ($result['success']) {
-            $this->clearIpRateLimit($ip);
+            $this->throttle->clear($email, $ip);
             CsrfService::regenerate();
             $response->redirect('/admin/dashboard');
             return;
         }
 
-        $this->recordIpAttempt($ip);
+        $this->throttle->recordFailure($email, $ip);
         Session::flash('login_error', $result['error'] ?? 'Login gagal');
         Session::flash('login_email', $email);
         $response->redirect('/admin/login');
-    }
-
-    // --- IP-based rate limiting (session-stored, simple approach) ---
-
-    private const MAX_IP_ATTEMPTS = 20;
-    private const IP_LOCKOUT_SECONDS = 600; // 10 minutes
-
-    private function isIpRateLimited(string $ip): bool
-    {
-        $key = '_login_attempts_' . md5($ip);
-        $data = Session::get($key);
-        if (!is_array($data)) {
-            return false;
-        }
-        if (($data['locked_until'] ?? 0) > time()) {
-            return true;
-        }
-        return false;
-    }
-
-    private function recordIpAttempt(string $ip): void
-    {
-        $key = '_login_attempts_' . md5($ip);
-        $data = Session::get($key);
-        if (!is_array($data) || ($data['locked_until'] ?? 0) < time()) {
-            $data = ['count' => 0, 'locked_until' => 0];
-        }
-        $data['count'] = ($data['count'] ?? 0) + 1;
-        if ($data['count'] >= self::MAX_IP_ATTEMPTS) {
-            $data['locked_until'] = time() + self::IP_LOCKOUT_SECONDS;
-        }
-        Session::set($key, $data);
-    }
-
-    private function clearIpRateLimit(string $ip): void
-    {
-        $key = '_login_attempts_' . md5($ip);
-        Session::remove($key);
     }
 
     public function logout(Request $request, Response $response): void
@@ -141,7 +95,7 @@ final class AuthController
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
-<body class="admin-login-body page-ready">
+<body class="admin-login-body page-ready" data-ssr="true">
   <main class="admin-login-page">
     <section class="admin-login-hero" aria-label="GenBI admin login introduction">
       <div class="admin-login-hero-bg"></div>

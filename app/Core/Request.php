@@ -6,6 +6,11 @@ namespace App\Core;
 
 final class Request
 {
+    private const MAX_JSON_BODY_BYTES = 1_048_576;
+
+    /** @var array<string, mixed>|null */
+    private ?array $jsonBody = null;
+
     public function method(): string
     {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -30,14 +35,25 @@ final class Request
     /** @return array<string, mixed> */
     public function json(): array
     {
+        if ($this->jsonBody !== null) {
+            return $this->jsonBody;
+        }
+
+        $contentLength = $_SERVER['CONTENT_LENGTH'] ?? null;
+        if (is_string($contentLength) && ctype_digit($contentLength) && (int) $contentLength > self::MAX_JSON_BODY_BYTES) {
+            throw new PayloadTooLargeException('JSON request body exceeds the allowed size.');
+        }
+
         $raw = file_get_contents('php://input');
         if (!is_string($raw) || trim($raw) === '') {
-            return [];
+            $this->jsonBody = [];
+            return $this->jsonBody;
         }
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? $decoded : [];
+        $this->jsonBody = is_array($decoded) ? $decoded : [];
+        return $this->jsonBody;
     }
 
     public function ip(): ?string

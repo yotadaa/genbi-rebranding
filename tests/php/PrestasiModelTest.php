@@ -74,6 +74,35 @@ $row3 = Prestasi::mapRow([
 assert($row3['image'] === 'https://drive.google.com/thumbnail?id=1XNlgeReWNp-w9uqkT4pAfcsZWyx-fnWn&sz=w1000');
 assert($row3['photo'] === 'https://drive.google.com/thumbnail?id=1XNlgeReWNp-w9uqkT4pAfcsZWyx-fnWn&sz=w1000');
 
+// --- Prestasi::mapRow builds gallery images from detail documentation and submission payload ---
+$row4 = Prestasi::mapRow([
+    'prestasi_id' => 12,
+    'title' => 'Kaligrafi Kontemporer',
+    'photo' => 'https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_',
+    'detail' => "Prestasi: Kaligrafi\nDokumentasi: https://drive.google.com/open?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_, https://drive.google.com/open?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR\nSosial media/sumber: https://instagram.com/example",
+    'submission_payload_json' => json_encode([
+        'photos' => [
+            ['url' => '/uploads/prestasi/prestasi-submit-a.jpg'],
+            ['url' => '/uploads/prestasi/prestasi-submit-b.jpg'],
+        ],
+    ], JSON_UNESCAPED_SLASHES),
+]);
+
+assert(count($row4['images']) === 4);
+assert($row4['images'][0] === 'https://drive.google.com/thumbnail?id=18nn-qACnq31z0j2I0qFmzv8epr8KuKQ_&sz=w1000');
+assert($row4['images'][1] === 'https://drive.google.com/thumbnail?id=18ouMRyodOmaxMLsDvZi4YVWSG0lscYiR&sz=w1000');
+assert($row4['images'][2] === '/uploads/prestasi/prestasi-submit-a.jpg');
+assert($row4['images'][3] === '/uploads/prestasi/prestasi-submit-b.jpg');
+
+// --- Prestasi::mapRow normalizes /public/uploads paths ---
+$row5 = Prestasi::mapRow([
+    'prestasi_id' => 13,
+    'title' => 'Juara Desain',
+    'photo' => 'https://genbijambi.com/public/uploads/prestasi/juara-desain.jpg',
+]);
+
+assert($row5['image'] === 'https://genbijambi.com/uploads/prestasi/juara-desain.jpg');
+
 // --- PrestasiToken::mapRow ---
 $token = PrestasiToken::mapRow([
     'token_id' => 3,

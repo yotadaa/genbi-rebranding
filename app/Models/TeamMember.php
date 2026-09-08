@@ -59,13 +59,19 @@ class TeamMember
         try {
             [$where, $params] = $this->buildPublicFilterSql($filters);
             $stmt = $this->db->prepare(
-                'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                 WHERE ' . $where . '
-                 ORDER BY t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
-                 LIMIT :limit OFFSET :offset'
+                 WHERE " . $where . "
+                 ORDER BY
+                    CASE
+                      WHEN (LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%')
+                        AND LOWER(COALESCE(k.nama, t.komsat, '')) LIKE '%genbi wilayah%' THEN 0
+                      ELSE 1
+                    END ASC,
+                    t.tahun DESC, COALESCE(k.nama, t.komsat) ASC, d.nama ASC, t.id ASC
+                 LIMIT :limit OFFSET :offset"
             );
             foreach ($params as $key => $value) {
                 $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
@@ -129,26 +135,108 @@ class TeamMember
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function bpiCore(int $limit = 10): array
+    public function searchOptions(string $query = '', int $limit = 12, array $filters = []): array
     {
         if (!$this->db) {
             return [];
         }
 
         try {
+            $limit = max(1, min(500, $limit));
+            $sql = 'SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM teams t
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE t.deleted_at IS NULL';
+            $params = [];
+            if (trim($query) !== '') {
+                $search = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim($query)) . '%';
+                $sql .= ' AND (t.name LIKE :q_name OR t.designation LIKE :q_designation OR d.nama LIKE :q_division OR COALESCE(k.nama, t.komsat) LIKE :q_campus)';
+                $params[':q_name'] = $search;
+                $params[':q_designation'] = $search;
+                $params[':q_division'] = $search;
+                $params[':q_campus'] = $search;
+            }
+            $divisionId = (int) ($filters['division_id'] ?? $filters['divisi_id'] ?? 0);
+            if ($divisionId > 0) {
+                $sql .= ' AND t.divisi_id = :division_id';
+                $params[':division_id'] = $divisionId;
+            }
+            if (!empty($filters['active_only'])) {
+                $sql .= " AND LOWER(COALESCE(k.nama, t.komsat, '')) NOT LIKE :alumni_komsat";
+                $params[':alumni_komsat'] = '%alumni%';
+            }
+            $sql .= ' ORDER BY t.name ASC LIMIT :limit';
+
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return array_map([self::class, 'mapRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function bpiCore(?int $limit = 10): array
+    {
+        if (!$this->db) {
+            return [];
+        }
+
+        try {
+            $yearStmt = $this->db->query('SELECT MAX(CAST(tahun AS UNSIGNED)) FROM teams WHERE deleted_at IS NULL');
+            $latestYear = (int) $yearStmt->fetchColumn();
+            if ($latestYear < 1) {
+                return [];
+            }
+
+            $limitSql = $limit !== null && $limit > 0 ? ' LIMIT :limit' : '';
+
+            $manualStmt = $this->db->prepare(
+                "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
+                 FROM teams t
+                 LEFT JOIN divisis d ON d.id = t.divisi_id
+                 LEFT JOIN komsats k ON k.id = t.komsat_id
+                 WHERE t.deleted_at IS NULL
+                   AND CAST(t.tahun AS UNSIGNED) = :year
+                   AND t.show_on_home = 1
+                  ORDER BY
+                    CASE
+                      WHEN (LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%' OR LOWER(COALESCE(d.nama, '')) LIKE '%bpi%')
+                        AND LOWER(COALESCE(k.nama, t.komsat, '')) LIKE '%genbi wilayah%' THEN 0
+                      ELSE 1
+                    END ASC,
+                    t.home_sort_order ASC, t.id ASC" . $limitSql
+            );
+            $manualStmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
+            if ($limitSql !== '') {
+                $manualStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            }
+            $manualStmt->execute();
+            $manualRows = $manualStmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($manualRows !== []) {
+                return array_map([self::class, 'mapRow'], $manualRows);
+            }
+
             $stmt = $this->db->prepare(
                 "SELECT t.*, d.id AS division_id, d.nama AS division_name, k.nama AS commission_name
                  FROM teams t
                  LEFT JOIN divisis d ON d.id = t.divisi_id
                  LEFT JOIN komsats k ON k.id = t.komsat_id
-                  WHERE t.deleted_at IS NULL
-                    AND (t.show_on_home = 1
-                      OR LOWER(COALESCE(d.nama, t.designation, '')) LIKE '%badan pengurus inti%'
-                      OR LOWER(COALESCE(t.designation, '')) REGEXP 'ketua|sekretaris|bendahara|koordinator')
-                  ORDER BY t.show_on_home DESC, t.home_sort_order ASC, t.tahun DESC, t.id ASC
-                  LIMIT :limit"
+                 WHERE t.deleted_at IS NULL
+                   AND CAST(t.tahun AS UNSIGNED) = :year
+                   AND LOWER(COALESCE(d.nama, '')) LIKE '%badan pengurus inti%'
+                  ORDER BY t.home_sort_order ASC, t.id ASC" . $limitSql
             );
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':year', $latestYear, PDO::PARAM_INT);
+            if ($limitSql !== '') {
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            }
             $stmt->execute();
 
             return array_map([self::class, 'mapRow'], $stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -215,7 +303,7 @@ class TeamMember
 
         if (!empty($filters['q'])) {
             $where[] = '(t.name LIKE :q_name OR t.designation LIKE :q_designation OR d.nama LIKE :q_division OR COALESCE(k.nama, t.komsat) LIKE :q_campus)';
-            $search = '%' . $filters['q'] . '%';
+            $search = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
             $params['q_name'] = $search;
             $params['q_designation'] = $search;
             $params['q_division'] = $search;
@@ -310,6 +398,35 @@ class TeamMember
     }
 
     /** @param array<int, int> $ids */
+    public function setAlumniStatus(array $ids): int
+    {
+        if (!$this->db || empty($ids)) return 0;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        if (empty($ids)) return 0;
+
+        try {
+            $alumniId = $this->ensureAlumniCommissionId();
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $komsatIdSql = $alumniId > 0 ? 'komsat_id = ?' : 'komsat_id = NULL';
+            $stmt = $this->db->prepare(
+                "UPDATE teams
+                 SET {$komsatIdSql},
+                     komsat = 'Alumni',
+                     show_on_home = 0,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id IN ($placeholders) AND deleted_at IS NULL"
+            );
+            $params = $alumniId > 0 ? array_merge([$alumniId], $ids) : $ids;
+            $stmt->execute($params);
+
+            return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /** @param array<int, int> $ids */
     public function setHomeVisibility(array $ids, bool $visible): int
     {
         if (!$this->db || empty($ids)) return 0;
@@ -342,6 +459,28 @@ class TeamMember
             $stmt->execute($ids);
 
             return $stmt->rowCount();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    private function ensureAlumniCommissionId(): int
+    {
+        if (!$this->db) {
+            return 0;
+        }
+
+        try {
+            $stmt = $this->db->query("SELECT id FROM komsats WHERE LOWER(nama) = 'alumni' OR LOWER(nama) LIKE '%alumni%' ORDER BY CASE WHEN LOWER(nama) = 'alumni' THEN 0 ELSE 1 END, id ASC LIMIT 1");
+            $existing = (int) ($stmt?->fetchColumn() ?: 0);
+            if ($existing > 0) {
+                return $existing;
+            }
+
+            $insert = $this->db->prepare("INSERT INTO komsats (nama) VALUES ('Alumni')");
+            $insert->execute();
+
+            return (int) $this->db->lastInsertId();
         } catch (Throwable) {
             return 0;
         }

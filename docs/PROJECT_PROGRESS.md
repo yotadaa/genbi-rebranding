@@ -1,6 +1,6 @@
 # GenBI Frontend-Backend Integration Progress
 
-Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
+Last updated: 2026-07-30 after SSR delivery/buildless migration planning
 
 ## Source Markdown Reviewed
 
@@ -39,6 +39,12 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - Backend target from plan is pure PHP MVC with routes such as `/news`, `/news/{slug}`, `/news/{slug}/comment`, `/prestasi`, `/team`, and admin routes.
 - News share image metadata now resolves legacy relative upload filenames against existing files in `public/uploads`, including same-basename extension fallback such as `news-98.jpeg` -> `news-98.jpg`.
 - Clean public routes now support `HEAD` requests by dispatching them through matching `GET` routes without a response body, so social/link validators do not receive false 404 results during preview checks.
+- **SSR Phase 1 complete**: Public news list and detail pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/public/news/`. Static HTML files remain as fallback. Client-side JS detects SSR markup and skips duplicate rendering (news list) or progressively binds behavior (news detail share/comment).
+- **SSR Phase 2 complete**: Admin news list, add, and edit pages now render initial HTML server-side via `ViewRenderer` and PHP templates in `app/Views/admin/news/`. Admin news list renders real rows from `tbl_news` with delete buttons. Admin news add/edit renders the full editor form shell with prefilled data for edit mode. JS hydrates Editor.js, image uploads, and form submission on SSR pages instead of rebuilding the DOM.
+- **Backend Pagination complete**: All item-listing pages now paginate from the backend via `?page=N` URL params. Shared `Paginator` helper parses page/per_page, computes offset, and builds query strings preserving filters. No page dumps all rows into a single response.
+- **SSR Phase 3 complete**: Public `/prestasi`, `/prestasi/{slug}`, `/team` and admin `/admin/team-member`, `/admin/prestasi` now render initial HTML server-side with paginated data. Pagination links work without JS. Filters preserved across page navigation.
+- **SSR Phase 4 complete**: Public `/event` and `/event/{id}` now render initial HTML server-side with backend pagination (9/page, max 24). Event list includes search form, paginated `<a>` links, and progressive modal enhancement. Event detail page renders full content with breadcrumb, date/location info, banner image, and map embed. "Event" added to top navigation bar. "Lihat semua event" button added to homepage Agenda Utama section. JS detects SSR and binds modal behavior without rebuilding DOM.
+- **SSR Phase 5 complete**: Admin Prestasi CMS now fully server-rendered. `/admin/prestasi` list has backend-driven search/filter (q, category, year, status) with paginated `<a>` links preserving filters. `/admin/prestasi-add` and `/admin/prestasi-edit?id=...` render SSR forms with prefilled data. Detail preview modal fetches JSON and shows item info with Edit action. JS detects SSR forms and hydrates (upload, submit, custom selects, member datalist) without rebuilding DOM. `Prestasi::allForAdmin()` and `countForAdmin()` support combined filter queries.
 
 ## Integration Strategy
 
@@ -78,6 +84,19 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - [x] P3: CLI password reset tool.
 - [x] P3: Resolve legacy news share image upload filename mismatches for Open Graph/Twitter Card URLs.
 - [x] P3: Support `HEAD` requests for clean public routes used by link preview crawlers and validators.
+- [x] P3: SSR Phase 1 — Add ViewRenderer foundation, shared layouts/partials, and migrate public `/news` and `/news/{slug}` to server-side rendering.
+- [x] P3: SSR Phase 2 — Migrate admin `/admin/news`, `/admin/news-add`, and `/admin/news-edit` to server-side rendering with JS hydration.
+- [x] P3: Backend Pagination — All listing pages paginate from backend via `?page=N`. Shared `Paginator` helper. Public news, prestasi, team; admin news, team, prestasi.
+- [x] P3: SSR Phase 3 — Migrate public `/prestasi`, `/prestasi/{slug}`, `/team` and admin `/admin/team-member`, `/admin/prestasi` to server-side rendering with pagination.
+- [x] P3: SSR Phase 4 — Migrate public `/event` and `/event/{id}` to server-side rendering with pagination. Add Event to top nav. Add event CTA to homepage.
+- [x] P3: SSR Phase 5 — Complete admin Prestasi CMS SSR: list with filters/search/pagination, add/edit forms with hydration, detail preview modal.
+
+## Current SSR Delivery Status
+
+- [x] P0: PHP front controller is the default local server; the Node static server is explicitly isolated as `serve:static-fallback`.
+- [x] P0: Runtime layouts use editable source JS/CSS, with no `dist`, minified stylesheet, or generated theme stylesheet dependency.
+- [x] P1: Public and authenticated admin display routes render initial HTML on the server; JavaScript is progressive enhancement only.
+- [ ] P1: Confirm production Apache/Nginx document root is `/public` and deploy the PHP runtime to the live domain.
 
 ## Working Checklist
 
@@ -274,8 +293,82 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - [x] Run PHP lint (12 files), all PHP tests (7 suites), auth route smoke tests, and `npm test` before marking done.
 - [x] Add report in `docs/report/` after implementation.
 
+### Task 17: SSR Phase 1 — Public News List and Detail
+
+- [x] Audit `tbl_news` schema against SSR requirements (slug, contributors, status, timestamps, indexes).
+- [x] Create `app/Core/ViewRenderer.php` with render(), renderWithLayout(), safe escaping helpers.
+- [x] Create `tests/php/ViewRendererTest.php` with escaping, layout, missing view, CSRF token tests.
+- [x] Wire ViewRenderer into `bootstrap/app.php` and pass to NewsController.
+- [x] Create `app/Views/layouts/public.php` with shell placeholders for app.js rendering.
+- [x] Create `app/Views/layouts/admin.php` with CSRF meta tag injection.
+- [x] Create minimal partials: public-header.php, public-footer.php, admin-sidebar.php, admin-topbar.php.
+- [x] Create `app/Views/public/news/index.php` with server-rendered article cards marked `data-ssr="true"`.
+- [x] Update `NewsController::index()` to render SSR view when ViewRenderer exists, fallback to static otherwise.
+- [x] Update `public/assets/js/pages/news.js` to detect SSR and skip duplicate rendering.
+- [x] Create `app/Views/public/news/show.php` with hero, article body, contributors, share/comment sections.
+- [x] Update `NewsController::show()` to render SSR view when ViewRenderer exists, return 404 status when item missing.
+- [x] Update `public/assets/js/pages/news-detail.js` to progressively bind share/comment behavior on SSR pages.
+- [x] Run PHP lint, all PHP tests (9 suites), JS tests (20 tests), and smoke tests before marking done.
+- [x] Verify `/news` returns 200 with SSR marker and article cards.
+- [x] Verify `/news/{slug}` returns 200 with SSR marker, NewsArticle JSON-LD, hero section.
+- [x] Verify HEAD requests still work correctly.
+- [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 1 completion.
+
+### Task 18: SSR Phase 2 — Admin News List, Add, and Edit
+
+- [x] Wire `AdminPageController` with `ViewRenderer` and `News` model via constructor injection.
+- [x] Update `bootstrap/app.php` to pass `$viewRenderer` and `$newsModel` to `AdminPageController`.
+- [x] Create `app/Views/admin/news/index.php` with server-rendered news table and delete buttons.
+- [x] Add SSR branch in `AdminPageController::show()` for `news` page.
+- [x] Refactor `cms.js` `renderNewsList()` to detect SSR and only bind delete behavior.
+- [x] Extend `bindNewsDeleteButtons()` to match both CSR and SSR delete button selectors.
+- [x] Create `app/Views/admin/news/form.php` with full editor form shell matching existing JS selectors.
+- [x] Add SSR branches in `AdminPageController` for `news-add` and `news-edit` pages.
+- [x] Load categories from `News::categories()` for SSR form category select.
+- [x] Prefill edit form with item data from `News::findById()` when editing.
+- [x] Include Editor.js CDN scripts in admin layout for add/edit pages.
+- [x] Add `bindNewsFormSubmit()` function to `cms.js` for reusable form submission.
+- [x] Refactor `renderNewsEditor()` to detect SSR form and hydrate instead of rebuilding.
+- [x] Run PHP lint, all PHP tests (9 suites), JS syntax check, and JS tests (20 tests).
+- [x] Verify SSR rendering for `/admin/news`, `/admin/news-add`, `/admin/news-edit?id=100`.
+- [x] Verify static fallback still works for non-news admin pages.
+- [x] Update `docs/PROJECT_PROGRESS.md` with SSR Phase 2 completion.
+
+### Task 19: SSR Delivery Cutover and Buildless Asset Serving (Complete in code; production cutover pending)
+
+- [x] Make the PHP server (`php -S ... -t public public/index.php`) the default local SSR preview; isolate the Node server as `serve:static-fallback`.
+- [ ] Verify the production document root is `/public`, rewrite rules are active, and PHP 8.2+ with `pdo_mysql` is enabled (requires hosting access).
+- [x] Add `/news/view/{id}` alongside `/news/id/{id}` redirect handling to canonical `/news/{slug}`.
+- [x] Add SSR markers and local HTTP/browser smoke checks for public SSR pages; article-detail redirect/content smoke needs a seeded published record.
+- [x] Replace PHP runtime `/assets/js/dist/...` references with direct source files and preserve hydration guards.
+- [x] Replace `styles.min.css` and generated `theme.css` runtime dependencies with `styles.css` and PHP inline theme tokens.
+- [x] Serve editable CSS from the root source asset first and mark JS/CSS `no-cache, must-revalidate` so File Manager changes become visible without a bundle upload.
+- [x] Keep the Tailwind utility stylesheet as a baseline; runtime code no longer generates or loads a build artifact, and custom visual changes belong in editable `assets/css/styles.css`.
+- [x] Migrate SSR priority routes: Event CMS, Team add/edit, comments, category, photo, Prestasi token form/list, and dashboard.
+- [x] Render FAQ, social media, slider, language, page, and Why Choose prototype screens server-side; their persistence model remains a separate backend feature.
+- [x] Run `npm test`, PHP lint, JS syntax checks, HTTP response checks, and browser snapshots without executing `npm run build`.
+
+### Task 20: SSR Regression Follow-up
+
+- [x] Restore dashboard navigation initialization for `/admin` and `/admin/dashboard`.
+- [x] Preserve a valid SSR Prestasi submission form at `/prestasi/submit/{token}` instead of replacing it with a client-side token error.
+- [x] Port the existing Laravel public Feature layout to a PHP SSR page and register `/feature`.
+- [x] Audit and remove only files proven unused after the SSR cutover; preserve active Laravel work and unrelated local changes.
+- [x] Review the final SSR diff and commit all verified implementation changes in scope.
+
+### Task 21: Canonical Public Asset Directory
+
+- [x] Make `public/assets/` the only canonical asset directory for PHP, Apache, local preview, and File Manager updates.
+- [x] Preserve the current public SSR hydration scripts and migrate the existing Tailwind output into `public/assets/css/`.
+- [x] Remove the duplicate root `assets/` directory and root-first asset resolver.
+- [x] Update build/zip tooling paths, then validate browser delivery without running a build.
+- [x] Remove only confirmed-unused PHP runtime assets; do not modify, delete, stage, or commit anything under `laravel-app/`.
+
 ## Test Log
 
+- 2026-07-30: Canonical public-asset migration passed without `npm run build`: PHP, Apache, and the static fallback server delivered `/assets/...` from `public/assets/`; `npm test` passed (26 tests), PHP/Node syntax checks passed, and the legacy root `assets/` directory no longer existed. `laravel-app/` was not modified, deleted, staged, or committed.
+- 2026-07-30: SSR regression follow-up passed: Playwright confirmed dashboard navigation/topbar rendering with zero console errors; `/feature` rendered six published programs with zero console errors; the Prestasi browser smoke test kept the SSR form intact after loading its source script. PHP lint and `npm test` (26 tests) passed without running a build.
+- 2026-07-30: SSR/buildless cutover verification passed: `npm test` (26 tests), PHP lint for changed controllers/views/routes, JS syntax checks, PHP HTTP smoke for public `/news`, `/about`, and source assets, plus Playwright snapshots for `/news` and `/about` with zero console errors. No `npm run build` was used.
 - 2026-05-06: No test harness existed at initial audit.
 - 2026-05-06: `npm test` passed after API adapter, News integration, comment integration, and Prestasi normalization tests. Result: 6 passing tests.
 - 2026-05-06: `npm test` passed after P0 UI stability changes. Result: 8 passing tests.
@@ -333,6 +426,9 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - 2026-05-07: `npm test` passed after news image filename resolution. Result: 20 passing tests.
 - 2026-05-07: PHP router HEAD request test passed; `/news/{slug}` HEAD requests now match GET routes and return an empty 200 response instead of route-level 404.
 - 2026-05-07: All PHP regression tests and `npm test` passed after HEAD request handling. JS result: 20 passing tests.
+- 2026-05-07: SSR Phase 1 complete: Added ViewRenderer foundation with tests, shared public/admin layouts and partials, migrated public `/news` and `/news/{slug}` to server-side rendering. All 9 PHP tests and 20 JS tests pass. Smoke tests confirm SSR marker, article cards, NewsArticle JSON-LD, and HEAD request support.
+- 2026-05-07: SSR Phase 2 complete: Migrated admin `/admin/news`, `/admin/news-add`, `/admin/news-edit` to server-side rendering. All 9 PHP tests and 20 JS tests pass. SSR verification confirms: news list with delete buttons, add form with empty fields, edit form with prefilled data, CSRF meta, noindex, Editor.js CDN scripts, and static fallback for non-news admin pages.
+- 2026-05-07: Backend Pagination complete: Added shared `Paginator` helper (10 PHP tests pass). Public `/news` paginated (12/page, max 24). Admin `/admin/news` paginated (25/page, max 100). Public `/prestasi` SSR with pagination (12/page). Public `/team` SSR with pagination (12/page, max 48). Admin team/prestasi URL pagination synced. Admin `/admin/team-member` and `/admin/prestasi` SSR with pagination. All 10 PHP tests and 20 JS tests pass.
 
 ## Progress Log
 
@@ -356,3 +452,8 @@ Last updated: 2026-05-07 after News Share Metadata HEAD Request Fix
 - 2026-05-06: Phase B CSRF hardening: CsrfMiddleware added to admin route group, CSRF meta tag injected into admin pages, frontend JS auto-includes X-CSRF-TOKEN header, security headers on all responses, logout button in admin topbar, CLI password reset tool.
 - 2026-05-07: Fixed news share image URL generation for legacy DB rows that reference an upload filename with the wrong extension by resolving the actual file in `public/uploads` before emitting `/uploads/...` URLs.
 - 2026-05-07: Added HEAD request support to the router/response layer so clean news URLs return successful headers for validators and crawlers without emitting HTML bodies.
+- 2026-05-07: SSR Phase 1 implementation: Added `app/Core/ViewRenderer.php` for safe PHP template rendering with escaping helpers. Created shared layouts in `app/Views/layouts/` (public.php keeps shell placeholders for app.js, admin.php includes CSRF meta). Created news views in `app/Views/public/news/` for list and detail pages. Updated `NewsController` to render SSR when ViewRenderer exists, falling back to StaticPageRenderer otherwise. Updated `news.js` to detect SSR and skip duplicate rendering. Updated `news-detail.js` to progressively bind share/comment behavior on SSR pages. Static HTML files remain as fallback.
+- 2026-05-07: SSR Phase 2 implementation: Wired `AdminPageController` with `ViewRenderer` and `News` model. Created `app/Views/admin/news/index.php` for server-rendered news list with delete buttons. Created `app/Views/admin/news/form.php` for server-rendered editor form shell matching existing `cms.js` selectors. Added SSR branches in `AdminPageController::show()` for `news`, `news-add`, and `news-edit` pages. Refactored `cms.js` to detect SSR markup and hydrate (Editor.js, uploads, form submit) instead of rebuilding. Added `bindNewsFormSubmit()` for reusable form submission. Extended `bindNewsDeleteButtons()` to match both CSR and SSR selectors. Static HTML files remain as fallback for non-news admin pages.
+- 2026-05-07: Backend Pagination implementation: Created `app/Core/Paginator.php` with resolve/totalPages/meta/buildQuery helpers and `tests/php/PaginatorTest.php`. Updated `NewsController` SSR to paginate (12/page). Updated `AdminPageController` news SSR to paginate (25/page). Added `Prestasi::countPublished()` and `Prestasi::countAll()`. Created `app/Views/public/prestasi/index.php` and `show.php` for SSR. Created `app/Views/public/team/index.php` for SSR with filters. Injected `ViewRenderer` into `PrestasiController` and `TeamController`. Updated `prestasi.js` and `team.js` for SSR detection. Updated admin `cms.js` team list to hydrate/sync URL state. Updated admin prestasi list to fetch by page from backend. Created `app/Views/admin/team/index.php` and `app/Views/admin/prestasi/index.php` for SSR. Injected `TeamMember` and `Prestasi` into `AdminPageController`. Added `bindTeamDeleteButtons()` and extended `bindPrestasiDeleteButtons()` for SSR selectors.
+- 2026-05-07: SSR Phase 4 implementation: Added "Event" to `navItems` in `data.js` for top navigation bar. Added "Lihat semua event" CTA button to homepage Agenda Utama section in `fallbacks/index.html`. Updated `EventController` to accept `ViewRenderer` and use `Paginator` for SSR (9/page, max 24). Created `app/Views/public/event/index.php` for server-rendered event list with search form, paginated `<a>` links, and event cards with detail links. Created `app/Views/public/event/show.php` for server-rendered event detail with breadcrumb, date/location, banner, content, map embed, and back link. Updated `event.js` to detect SSR markup and progressively bind modal behavior (fetch JSON + open modal) without rebuilding DOM; CSR fallback preserved for `fallbacks/event.html`. Updated `bootstrap/app.php` to pass `$viewRenderer` to `EventController`. All 10 PHP tests and 20 JS tests pass.
+- 2026-05-07: SSR Phase 5 implementation: Added `Prestasi::allForAdmin()` and `countForAdmin()` with combined filter support (q, category, year, status) using `applyAdminFilters()` helper. Updated `Admin\PrestasiController::index()` to read filter query params and use new methods. Updated `AdminPageController::renderAdminPrestasiSsr()` to accept page param and handle `prestasi`, `prestasi-add`, and `prestasi-edit` SSR branches. Enhanced `app/Views/admin/prestasi/index.php` with search input, category/status filter selects, per-page selector, image thumbnails, and Detail button per row. Created `app/Views/admin/prestasi/form.php` for SSR add/edit form matching `cms.js` selectors with `data-ssr="true"`, `data-edit`, and `data-item-id` attributes. Updated `cms.js`: added `prestasi-add` route, SSR detection in `renderPrestasiEditor()` for form hydration (member datalist, upload, custom selects, submit), extracted `bindPrestasiFormSubmit()` for reuse, added `bindPrestasiDetailButtons()` for JSON-fetched detail preview modal with Edit action, and bound search Enter key on SSR list. All 10 PHP tests and 20 JS tests pass.

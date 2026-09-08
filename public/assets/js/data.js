@@ -1,10 +1,11 @@
 (function () {
   'use strict';
+// Fallback-only site data for static prototype mode. SSR pages should prefer window.GenBISiteSettings.
 const site = {
   name: 'GenBI Provinsi Jambi',
   tagline: 'Bersama GenBI, Energi untuk Negeri',
   email: 'genbijambibi@gmail.com',
-  phone: '089627896750',
+  phone: '085669152702',
   phoneAlt: '082280226716',
   address: 'Jl. A Yani No.14, Telanaipura, Kec. Telanaipura, Kota Jambi, Jambi 36361',
   baseUrl: 'https://genbijambi.com',
@@ -27,12 +28,22 @@ const site = {
 };
 
 const navItems = [
-  { label: 'Home', href: '/', key: 'home' },
-  { label: 'About', href: '/about', key: 'about' },
-  { label: 'Team', href: '/team', key: 'team' },
+  { label: 'Beranda', href: '/', key: 'home' },
+  { label: 'Tentang', href: '/about', key: 'about' },
+  { label: 'Tim', href: '/team', key: 'team' },
   { label: 'Prestasi', href: '/prestasi', key: 'prestasi' },
-  { label: 'News', href: '/news', key: 'news' },
-  { label: 'Contact', href: '/contact', key: 'contact' }
+  { label: 'Buku', href: '/buku', key: 'buku' },
+  {
+    label: 'Kegiatan',
+    href: '/event',
+    key: 'kegiatan',
+    children: [
+      { label: 'Agenda', href: '/event', key: 'event' },
+      { label: 'Program Utama', href: '/feature', key: 'feature' }
+    ]
+  },
+  { label: 'Berita', href: '/news', key: 'news' },
+  { label: 'Kontak', href: '/contact', key: 'contact' }
 ];
 
 
@@ -63,31 +74,41 @@ const programs = [
     title: 'KKG',
     name: 'Kegiatan Kenal GenBI',
     description: 'Pintu awal bagi anggota baru untuk mengenal nilai GenBI, membangun kedekatan, dan memahami cara organisasi bergerak.',
-    focus: 'Internal komunitas'
+    focus: 'Internal komunitas',
+    icon_key: 'users',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   },
   {
     title: 'SIGINJAI',
     name: 'Semarak Ekonomi dan Keuangan Syariah Negeri Jambi',
     description: 'Forum kolaboratif untuk memperluas pemahaman ekonomi syariah, halal value chain, dan peran generasi muda dalam ekosistem keuangan.',
-    focus: 'Literasi syariah'
+    focus: 'Literasi syariah',
+    icon_key: 'bank',
+    images: [site.heroSlides[1].image, site.heroSlides[0].image]
   },
   {
     title: 'GENTALA ARASY',
     name: 'Gebyar Ekonomi Digital dan Literasi Jambi',
     description: 'Gerakan literasi digital yang mendekatkan QRIS, transaksi aman, dan peluang ekonomi digital kepada mahasiswa serta masyarakat.',
-    focus: 'Literasi digital'
+    focus: 'Literasi digital',
+    icon_key: 'chart',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   },
   {
     title: 'GGTC',
     name: 'GenBI Goes To Campus',
     description: 'Kunjungan edukatif ke kampus untuk mengenalkan beasiswa Bank Indonesia, kebanksentralan, CBP Rupiah, QRIS, dan iBI Library.',
-    focus: 'Kampus'
+    focus: 'Kampus',
+    icon_key: 'academic',
+    images: [site.heroSlides[1].image, site.heroSlides[0].image]
   },
   {
     title: 'Leadership Camp',
     name: 'Pembinaan Kepemimpinan',
     description: 'Ruang pembentukan karakter, keberanian memimpin, kerja tim, dan tanggung jawab sosial bagi anggota GenBI Jambi.',
-    focus: 'Kepemimpinan'
+    focus: 'Kepemimpinan',
+    icon_key: 'sparkles',
+    images: [site.heroSlides[0].image, site.heroSlides[1].image]
   }
 ];
 
@@ -138,7 +159,7 @@ const news = [
   {
     id: 100,
     title: 'Talkshow Siginjai Fest 2026 Dorong Generasi Muda Berkarya',
-    category: 'BANK INDONESIA',
+    category: 'Pengumuman',
     date: 'April 30, 2026',
     readTime: '5 menit baca',
     image: 'https://genbijambi.com/public/uploads/news-100.jpg',
@@ -257,7 +278,8 @@ const settingTabs = [
   { key: 'email', label: 'Email', icon: 'mail' },
   { key: 'banner', label: 'Banner', icon: 'image' },
   { key: 'sidebar', label: 'Sidebar', icon: 'list' },
-  { key: 'color', label: 'Color', icon: 'swatch' }
+  { key: 'color', label: 'Color', icon: 'swatch' },
+  { key: 'theme', label: 'Theme', icon: 'sparkles' }
 ];
 
 const adminActivity = [

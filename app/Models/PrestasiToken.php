@@ -10,12 +10,15 @@ class PrestasiToken
 
     public static function mapRow(array $row): array
     {
+        $status = self::resolveStatus($row);
+
         return [
             'id' => (int) ($row['token_id'] ?? $row['id'] ?? 0),
             'token_id' => (int) ($row['token_id'] ?? $row['id'] ?? 0),
             'token_hash' => $row['token_hash'] ?? '',
+            'submit_url' => '',
             'label' => $row['label'] ?? $row['keterangan'] ?? '',
-            'status' => $row['status'] ?? 'active',
+            'status' => $status,
             'created_by' => (int) ($row['created_by'] ?? 0),
             'used_at' => $row['used_at'] ?? null,
             'expires_at' => $row['expires_at'] ?? null,
@@ -23,27 +26,30 @@ class PrestasiToken
         ];
     }
 
-    public function generate(string $label, int $createdBy, ?string $expiresAt = null): ?string
+    /** @return array{id: int, token: string}|null */
+    public function generate(string $label, int $createdBy, ?string $expiresAt = null): ?array
     {
         if (!$this->db) {
             return null;
         }
 
-        $plainToken = bin2hex(random_bytes(32));
-        $hash = hash('sha256', $plainToken);
+        $plainToken = self::newPlainToken();
+        $hash = self::tokenHash($plainToken);
 
         $stmt = $this->db->prepare(
-            'INSERT INTO tbl_prestasi_submission_token (token_hash, label, status, created_by, expires_at, created_at) VALUES (:hash, :label, :status, :created_by, :expires_at, NOW())'
+            'INSERT INTO tbl_prestasi_submission_token (token_hash, label, created_by, expires_at, created_at) VALUES (:hash, :label, :created_by, :expires_at, NOW())'
         );
         $stmt->execute([
             ':hash' => $hash,
             ':label' => $label,
-            ':status' => 'active',
             ':created_by' => $createdBy,
             ':expires_at' => $expiresAt,
         ]);
 
-        return $plainToken;
+        return [
+            'id' => (int) $this->db->lastInsertId(),
+            'token' => $plainToken,
+        ];
     }
 
     public function validateToken(string $plainToken): ?array
@@ -53,12 +59,11 @@ class PrestasiToken
         }
 
         try {
-            $hash = hash('sha256', $plainToken);
+            $hash = self::tokenHash($plainToken);
             $stmt = $this->db->prepare(
-                'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND status = :status AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1'
+                'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1'
             );
             $stmt->bindValue(':hash', $hash, \PDO::PARAM_STR);
-            $stmt->bindValue(':status', 'active', \PDO::PARAM_STR);
             $stmt->execute();
 
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -78,12 +83,11 @@ class PrestasiToken
             return null;
         }
 
-        $hash = hash('sha256', $plainToken);
+        $hash = self::tokenHash($plainToken);
         $stmt = $this->db->prepare(
-            'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND status = :status AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1 FOR UPDATE'
+                'SELECT * FROM tbl_prestasi_submission_token WHERE token_hash = :hash AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1 FOR UPDATE'
         );
         $stmt->bindValue(':hash', $hash, \PDO::PARAM_STR);
-        $stmt->bindValue(':status', 'active', \PDO::PARAM_STR);
         $stmt->execute();
 
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -97,18 +101,9 @@ class PrestasiToken
 
     public function markUsed(int $tokenId): bool
     {
-        if (!$this->db) {
-            return false;
-        }
-
-        $stmt = $this->db->prepare(
-            'UPDATE tbl_prestasi_submission_token SET status = :status, used_at = NOW() WHERE token_id = :id AND status = :active'
-        );
-        return $stmt->execute([
-            ':status' => 'used',
-            ':id' => $tokenId,
-            ':active' => 'active',
-        ]);
+        // Tokens are reusable until expires_at/revoked_at. Keep this method as a
+        // compatibility no-op for older call sites that still invoke markUsed().
+        return $tokenId > 0;
     }
 
     public function revoke(int $tokenId): bool
@@ -118,12 +113,10 @@ class PrestasiToken
         }
 
         $stmt = $this->db->prepare(
-            'UPDATE tbl_prestasi_submission_token SET status = :status WHERE token_id = :id AND status = :active'
+            'UPDATE tbl_prestasi_submission_token SET revoked_at = NOW() WHERE token_id = :id AND revoked_at IS NULL'
         );
         return $stmt->execute([
-            ':status' => 'revoked',
             ':id' => $tokenId,
-            ':active' => 'active',
         ]);
     }
 
@@ -145,5 +138,35 @@ class PrestasiToken
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    private static function resolveStatus(array $row): string
+    {
+        if (!empty($row['status']) && is_string($row['status'])) {
+            return $row['status'];
+        }
+
+        if (!empty($row['revoked_at'])) {
+            return 'revoked';
+        }
+
+        if (!empty($row['expires_at'])) {
+            $expiresAt = strtotime((string) $row['expires_at']);
+            if ($expiresAt !== false && $expiresAt <= time()) {
+                return 'expired';
+            }
+        }
+
+        return 'active';
+    }
+
+    private static function tokenHash(string $token): string
+    {
+        return hash('sha256', trim($token));
+    }
+
+    private static function newPlainToken(): string
+    {
+        return 'pst_' . rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     }
 }

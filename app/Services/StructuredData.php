@@ -70,7 +70,7 @@ final class StructuredData
         $description = $news['excerpt'] ?? $news['news_content_short'] ?? $news['meta_description'] ?? '';
         $image = $news['image'] ?? $news['photo'] ?? $news['banner'] ?? '';
         $published = $news['published_at'] ?? $news['date'] ?? '';
-        $author = $news['author'] ?? $news['contributor_pewarta'] ?? 'Redaksi GenBI Jambi';
+        $author = !empty($news['author']) ? $news['author'] : (!empty($news['contributor_pewarta']) ? $news['contributor_pewarta'] : 'Redaksi GenBI Jambi');
 
         $data = [
             '@context' => 'https://schema.org',
@@ -112,13 +112,14 @@ final class StructuredData
         $location = $event['location'] ?? $event['event_location'] ?? '';
         $image = $event['image'] ?? $event['photo'] ?? '';
         $id = $event['id'] ?? $event['event_id'] ?? 0;
+        $slug = $event['slug'] ?? '';
 
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'Event',
             'name' => $title,
             'description' => mb_substr(strip_tags($description), 0, 200),
-            'url' => $baseUrl . '/event/' . $id,
+            'url' => $baseUrl . '/event/' . ($slug !== '' ? $slug : $id),
             'startDate' => self::isoDate($startDate),
             'organizer' => [
                 '@type' => 'Organization',
@@ -158,7 +159,18 @@ final class StructuredData
 
     private static function script(array $data): string
     {
-        return '<script type="application/ld+json">' . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . '</script>';
+        $json = json_encode(
+            $data,
+            JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+            | JSON_PRETTY_PRINT
+            | JSON_HEX_TAG
+            | JSON_HEX_AMP
+            | JSON_HEX_APOS
+            | JSON_HEX_QUOT
+        );
+
+        return '<script type="application/ld+json">' . ($json !== false ? $json : '{}') . '</script>';
     }
 
     private static function baseUrl(): string

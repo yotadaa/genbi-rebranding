@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Page | GenBI Provinsi Jambi</title>
+  <link rel="stylesheet" href="../assets/css/tailwind.css" />
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-shell">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <div id="admin-topbar" class="admin-topbar"></div>
+      <main class="px-4 py-8 md:px-8 lg:px-10">
+        <section class="mx-auto max-w-7xl">
+          <div class="slide-in flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div>
+              <p class="eyebrow">Page Editor</p>
+              <h1 class="section-title mt-3">Kelola halaman seperti menyusun blok konten.</h1>
+              <p class="mt-4 max-w-2xl text-base leading-7 text-neutral-600">Refactor dari form CMS lama. Field dibuat lebih lega, editable langsung, dan tidak terkunci dalam box sempit.</p>
+            </div>
+            <button id="save-page" class="btn btn-primary w-fit">Simpan Simulasi</button>
+          </div>
+
+          <div class="admin-card mt-8 p-4 md:p-5">
+            <div id="page-tabs" class="flex gap-2 overflow-x-auto pb-1"></div>
+          </div>
+
+          <div class="admin-page-editor-layout mt-6">
+            <div id="page-editor-canvas" class="admin-page-editor-canvas"></div>
+            <aside id="page-editor-overview" class="admin-page-editor-overview"></aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div id="admin-mobile-backdrop" class="fixed inset-0 z-[70] hidden bg-neutral-950/35 backdrop-blur-sm lg:hidden"></div>
+  <div id="admin-toast" class="admin-toast rounded-2xl bg-blue-950 px-5 py-4 text-sm font-semibold text-white shadow-2xl">Perubahan disimpan pada mode simulasi.</div>
+  <div id="admin-modal-root"></div>
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/api-core.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/lib/ui.js"></script>
+  <script src="../assets/js/admin/admin.js"></script>
+  <script src="../assets/js/admin/page.js"></script>
+</body>
+</html>
